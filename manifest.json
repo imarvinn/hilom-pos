@@ -1,0 +1,15 @@
+{
+  "name": "HILOM POS & Inventory",
+  "short_name": "HILOM",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f6f4",
+  "theme_color": "#2b4227",
+  "icons": [
+    {
+      "src": "hilom.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "hilom-pos",
+  "version": "1.0.0",
+  "description": "Hilom Restaurant POS and Inventory System",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Web deployment ready'"
+  }
+}

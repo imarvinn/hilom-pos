@@ -1,0 +1,353 @@
+/* --- HILOM THEME (EARTHY GREENS & BROWNS) --- */
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background-color: #f4f6f4; 
+    color: #333;
+    margin: 0; 
+    padding: 0;
+    height: 100vh;
+    overflow: hidden; 
+}
+.hidden { display: none !important; }
+
+/* --- MOBILE RESPONSIVE STYLES (Screens 768px and down) --- */
+@media screen and (max-width: 768px) {
+    /* Stack the dashboard layout vertically */
+    .dashboard-layout {
+        flex-direction: column !important;
+        display: block !important;
+        height: auto !important;
+    }
+
+    /* Convert sidebar into a top bar or inline navigation */
+    .sidebar {
+        width: 100% !important;
+        height: auto !important;
+        position: relative !important;
+        padding: 10px !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 5px;
+        box-sizing: border-box;
+    }
+
+    .sidebar img {
+        max-width: 100px !important;
+        margin: 0 auto 5px auto !important;
+    }
+
+    .sidebar .nav-btn, .sidebar button {
+        flex: 1;
+        min-width: 120px;
+        padding: 8px !important;
+        font-size: 12px !important;
+    }
+
+    /* Adjust main content container padding */
+    .main-content {
+        padding: 10px !important;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    /* Make grids (rooms and POS menus) single-column or fluid */
+    .pms-grid, .grid-layout {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Make inventory and report tables horizontally scrollable on mobile */
+    table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    /* Scale down modal popups to fit phone screens safely */
+    .modal-content {
+        width: 90% !important;
+        max-width: 95% !important;
+        margin: 10% auto !important;
+        padding: 15px !important;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    /* Adjust buttons inside forms for easy touch interaction */
+    button, input, select {
+        font-size: 14px !important;
+        padding: 10px !important;
+    }
+}
+
+.card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; animation: fadeIn 0.3s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+h2 { margin-top: 0; color: #2b4227; border-bottom: 2px solid #e0e5e0; padding-bottom: 10px; }
+h3 { color: #555; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-top: 20px;}
+
+input, select { padding: 10px; margin-right: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 6px; outline: none; }
+input:focus, select:focus { border-color: #557a46; }
+
+button { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s ease; }
+button:active { transform: scale(0.95); }
+
+/* Themed Action Buttons */
+.add-btn { background-color: #557a46; color: white; } 
+.save-btn { background-color: #8c5d3a; color: white; } 
+.warn-btn { background-color: #d4a373; color: #333; } 
+.delete-btn { background-color: #bd4b4b; color: white; padding: 6px 12px; font-size: 12px;} 
+
+/* --- DASHBOARD LAYOUT --- */
+.dashboard-layout { display: flex; height: 100vh; width: 100vw; }
+
+.sidebar {
+    width: 250px;
+    background: #2b4227; 
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.15);
+    z-index: 10;
+}
+.sidebar-header { text-align: center; font-size: 24px; font-weight: bold; padding: 0 20px 20px 20px; border-bottom: 1px solid #3c5e38; margin-bottom: 20px; letter-spacing: 1px;}
+.nav-btn {
+    background: transparent;
+    color: #ecf0f1;
+    text-align: left;
+    padding: 15px 25px;
+    border-radius: 0;
+    font-size: 16px;
+    font-weight: 500;
+    border-left: 5px solid transparent;
+}
+.nav-btn:hover { background: #3c5e38; color: white; } 
+.nav-btn.active { background: #3c5e38; border-left: 5px solid #d4a373; font-weight: bold; } 
+.logout-nav { margin-top: auto; color: #ff9f43; }
+.logout-nav:hover { background: #8c5d3a; color: white; }
+
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
+    background: #f4f6f4;
+}
+
+.view-section { display: none; }
+.view-section.active { display: block; animation: fadeIn 0.4s ease; }
+
+/* POS Layout */
+.pos-container { display: flex; gap: 20px; align-items: flex-start; }
+.menu-section { flex: 2; }
+.sidebar-section { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+
+.cart-card { background: #fcfbf8; border: 2px solid #8c5d3a; } 
+.active-tables-card { background: #f0f4f0; border: 2px solid #557a46; } 
+
+.menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
+.menu-item-container { position: relative; display: flex; flex-direction: column; }
+
+/* Themed Menu Buttons */
+.order-btn { background: linear-gradient(135deg, #6c8a58, #4a6839); color: white; font-size: 14px; padding: 15px 10px; border-radius: 8px; flex-grow: 1; box-shadow: 0 4px 10px rgba(74, 104, 57, 0.2);}
+.order-btn:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(74, 104, 57, 0.4); }
+
+.menu-actions { position: absolute; top: -10px; right: -10px; display: flex; gap: 5px; }
+.action-circle { border-radius: 50%; width: 28px; height: 28px; padding: 0; font-size: 12px; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2);}
+
+table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e0e5e0; }
+th { background-color: #e9ece9; color: #555; font-size: 12px;}
+
+/* Status Badges */
+.status-low { background-color: #ffeaa7; color: #d63031; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+.status-ok { background-color: #d1ebd1; color: #2b4227; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+.status-warning { background-color: #d4a373; color: #fff; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+.status-expired { background-color: #bd4b4b; color: #fff; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+
+/* Payment Method Badges */
+.badge-method { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; border: 1px solid transparent; }
+.method-Cash { background: #f8f9fa; color: #333; border-color: #ccc; }
+.method-GCash { background: #005ce6; color: white; border-color: #004bb5; } 
+.method-Maya { background: #28a745; color: white; border-color: #1e7e34; }
+
+/* Cart Styles */
+.cart-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding: 10px 0; }
+.cart-item-title { font-weight: bold; font-size: 15px; }
+.cart-controls button { padding: 5px 10px; font-size: 14px; background: #e0e5e0; color: #333; }
+.cart-total { font-size: 20px; font-weight: bold; text-align: right; margin-top: 15px; border-top: 2px solid #ccc; padding-top: 10px; }
+.checkout-btn { width: 100%; background: #557a46; color: white; font-size: 18px; padding: 15px; margin-top: 15px; }
+
+/* VISUAL TABLE MAP STYLES */
+.table-map-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+.map-table { height: 60px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.1s ease-in-out; }
+.map-table:hover { transform: scale(1.05); }
+.map-table.empty { background: #d1ebd1; border: 2px dashed #557a46; color: #2b4227; }
+.map-table.occupied { background: #fcfbf8; border: 2px solid #d4a373; box-shadow: 0 2px 8px rgba(212, 163, 115, 0.4); }
+
+.table-item { background: white; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e0e5e0;}
+
+/* Modals (Billing & PIN) */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+.modal-content { background: white; padding: 25px; border-radius: 12px; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+.bill-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 15px;}
+.bill-total { font-size: 22px; font-weight: bold; border-top: 2px solid #e0e5e0; padding-top: 10px; margin-top: 10px; display: flex; justify-content: space-between;}
+.discount-row { display: flex; align-items: center; margin: 15px 0 5px 0; padding: 10px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffeeba; color: #856404; font-weight: bold; cursor: pointer; }
+
+.pin-input { font-size: 24px; text-align: center; letter-spacing: 15px; width: 120px; padding: 10px; border-radius: 8px; border: 2px solid #ccc; margin: 15px 0;}
+.pin-input:focus { border-color: #557a46; outline: none; }
+
+.ingredient-row { display: flex; gap: 10px; margin-bottom: 5px; }
+.profit-dashboard { display: flex; gap: 10px; background: #e9ece9; padding: 15px; border-radius: 8px; margin-bottom: 15px; flex-wrap: wrap;}
+
+#toast { visibility: hidden; min-width: 250px; background-color: #2b4227; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 1000; right: 30px; bottom: 30px; font-size: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);}
+#toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+@keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+@keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+#loginScreen { max-width: 350px; margin: 80px auto; text-align: center; padding: 40px;}
+
+/* --- ADVANCED DIGITAL RECEIPT ANIMATIONS --- */
+.animate-slide-out { animation: receiptSlideOut 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+@keyframes receiptSlideOut {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(0); }
+}
+.animate-tear-off { animation: receiptTearOff 0.8s ease-in forwards; }
+@keyframes receiptTearOff {
+    0% { transform: translateY(0) rotate(0); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(15deg); opacity: 0; }
+}
+
+/* --- PAGINATION STYLES --- */
+.pagination-controls { display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 20px; }
+.page-btn { padding: 6px 14px; background: #e0e5e0; color: #333; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: bold; transition: background 0.2s; }
+.page-btn:hover:not(:disabled) { background: #c8dac8; }
+.page-btn:disabled { background: #f4f6f4; color: #bbb; cursor: not-allowed; transform: none; }
+.page-info { font-size: 14px; font-weight: bold; color: #555; }
+
+/* --- RECEIPT FORMATTING (Applies to Screen & Paper) --- */
+.receipt-logo { max-width: 100px; margin: 0 auto 10px auto; display: block; filter: grayscale(100%); }
+.receipt-header { text-align: center; border-bottom: 1px dashed black; padding-bottom: 10px; margin-bottom: 10px; font-weight: bold; font-size: 16px; }
+.receipt-item { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;}
+.receipt-footer { border-top: 1px dashed black; padding-top: 10px; margin-top: 10px; text-align: center; }
+
+/* --- PRINT ONLY STYLES (Hardware Printer) --- */
+.print-only { display: none; }
+
+@media print {
+    /* 1. Global Reset & Overrides */
+    body { 
+        background-color: white !important; 
+        padding: 0 !important; 
+        margin: 0 !important; 
+        height: auto !important; 
+        overflow: visible !important; 
+        display: block !important;
+    }
+    .dashboard-layout { display: block !important; height: auto !important; }
+
+    /* Hide general UI elements */
+    .no-print, .sidebar, button, input, select, .menu-actions, #toast { 
+        display: none !important; 
+    }
+
+    /* Hide modals by default UNLESS printing Z-Read or X-Read */
+    .modal-overlay { display: none !important; }
+    body.print-zread .modal-overlay,
+    body.print-xread .modal-overlay { 
+        display: block !important; 
+        background: transparent !important; 
+        position: static !important; 
+    }
+
+    /* Hide main content components by default */
+    .main-content > * { display: none !important; }
+    .thermal-print-area { display: none !important; }
+
+    /* 2. Thermal Receipts & Tickets */
+    body.print-zread #animatedReceiptPaper,
+    body.print-xread #animatedReceiptPaper,
+    body.print-ticket #kitchenTicketArea,
+    body.print-receipt #customerReceiptArea { 
+        display: block !important; 
+        position: absolute; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        max-width: 300px; 
+        font-family: monospace; 
+        color: black; 
+        font-size: 14px; 
+    }
+
+    body.print-zread #zReadingArea,
+    body.print-xread #xReadingArea { 
+        display: none !important; 
+    }
+
+    /* 3. Reports & Views */
+    body.print-sales #salesView { display: block !important; }
+    body.print-sales #salesCard, 
+    body.print-sales #expensesCard { 
+        display: block !important; 
+        position: relative; 
+        box-shadow: none; 
+        margin-bottom: 40px;
+    }
+
+    /* FIX FOR STOCK REPORT PRINTING */
+    body.print-inv-report #inventoryView { 
+        display: block !important; 
+    }
+    body.print-inv-report #inventoryView > .card:not(#inventoryReportCard) { 
+        display: none !important; 
+    }
+    body.print-inv-report #inventoryReportCard { 
+        display: block !important; 
+        position: absolute; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        box-shadow: none;
+    }
+
+    /* Headers / Watermarks */
+    .print-only { 
+        display: block; 
+        text-align: center; 
+        font-size: 20px; 
+        font-weight: bold; 
+        margin-bottom: 20px; 
+        border-bottom: 2px solid #333; 
+        padding-bottom: 10px; 
+    }
+
+    body.print-folio #folioInvoiceArea {
+        display: block !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: white;
+    }
+    
+    body.print-folio .modal-overlay,
+    body.print-folio .main-content {
+        display: none !important; 
+    }
+}
+
+/* --- KITCHEN KDS STYLES --- */
+.kds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 15px; }
+.kds-card { background: #2d2d2d; border-radius: 8px; border-top: 5px solid #bd4b4b; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+.kds-card.served { border-top: 5px solid #557a46; opacity: 0.5; }
+.kds-header { background: #333; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 18px; font-weight: bold; border-bottom: 1px solid #444; }
+.kds-time { font-size: 12px; color: #aaa; font-weight: normal; }
+.kds-body { padding: 15px; flex-grow: 1; color: #eee; }
+.kds-item { font-size: 16px; margin-bottom: 10px; border-bottom: 1px dashed #555; padding-bottom: 5px; }
+.kds-modifier { color: #ff9f43; font-size: 13px; font-style: italic; display: block; margin-left: 15px; }
+.kds-footer { padding: 10px; background: #222; }
+
+/* Modifier Badge for POS Cart */
+.mod-badge { background: #ffeaa7; color: #d63031; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 3px; }
