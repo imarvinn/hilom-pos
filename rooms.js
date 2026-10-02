@@ -323,3 +323,221 @@ async function addFolioCharge() {
         showToast("Error adding charge to folio.");
     }
 }
+
+// --- 1. OPEN THE PAYMENT MODAL ---
+function initiateFolioCheckout() {
+    if (!activeFolioData) return showToast("No active folio selected.");
+    
+    // Set the grand total text
+    document.getElementById("paymentTotalDue").innerText = `₱${activeFolioData.grandTotal.toFixed(2)}`;
+    
+    // Reset form fields
+    document.getElementById("paymentMethod").value = "Cash";
+    document.getElementById("cashTendered").value = "";
+    document.getElementById("paymentChange").innerText = "₱0.00";
+    toggleCashInput();
+
+    // Hide the main folio view and show the payment screen
+    document.getElementById("folioModal").classList.add("hidden"); 
+    document.getElementById("folioPaymentModal").style.display = "flex";
+}
+
+// --- 2. HIDE/SHOW CASH INPUT BASED ON PAYMENT METHOD ---
+function toggleCashInput() {
+    const method = document.getElementById("paymentMethod").value;
+    const cashSection = document.getElementById("cashInputSection");
+    
+    if (method === "Cash") {
+        cashSection.style.display = "block";
+    } else {
+        // Hide cash inputs if using GCash/Card, because exact amount is usually transferred
+        cashSection.style.display = "none";
+    }
+}
+
+// --- 3. LIVE CALCULATE CHANGE ---
+function calculateChange() {
+    const totalDue = activeFolioData.grandTotal;
+    const tendered = parseFloat(document.getElementById("cashTendered").value) || 0;
+    
+    let change = tendered - totalDue;
+    if (change < 0) change = 0; // Prevent negative change from showing
+    
+    document.getElementById("paymentChange").innerText = `₱${change.toFixed(2)}`;
+}
+
+// --- 4. CANCEL PAYMENT (GO BACK) ---
+function closePaymentModal() {
+    document.getElementById("folioPaymentModal").style.display = "none";
+    document.getElementById("folioModal").classList.remove("hidden"); // Go back to folio details
+}
+
+// --- 5. CONFIRM PAYMENT & UPDATE DATABASE ---
+async function confirmFolioCheckout() {
+    const method = document.getElementById("paymentMethod").value;
+    const totalDue = activeFolioData.grandTotal;
+    let tendered = totalDue; 
+    let change = 0;
+
+    // Validation if they are paying in cash
+    if (method === "Cash") {
+        tendered = parseFloat(document.getElementById("cashTendered").value) || 0;
+        if (tendered < totalDue) {
+            return alert("Insufficient cash tendered. Please enter a valid amount.");
+        }
+        change = tendered - totalDue;
+    }
+
+    const batch = db.batch();
+    const checkoutTime = new Date().toISOString();
+
+    // 1. Mark Folio as CLOSED and record payment details
+    batch.update(db.collection("folios").doc(activeFolioData.id), {
+        status: "CLOSED",
+        closedAt: checkoutTime,
+        paymentMethod: method,
+        amountTendered: tendered,
+        changeGiven: change
+    });
+
+    // 2. Clear the Room in the Rack
+    batch.update(db.collection("rooms").doc(activeFolioData.roomId), {
+        status: "AVAILABLE", // The room is now empty
+        currentGuestName: null,
+        currentFolioId: null
+    });
+
+    try {
+        await batch.commit();
+        
+        // Hide modal and show success message
+        document.getElementById("folioPaymentModal").style.display = "none";
+        alert(`Payment successful!\n\nMethod: ${method}\nChange: ₱${change.toFixed(2)}`);
+        
+        activeFolioData = null; // Clear memory
+        
+    } catch (e) {
+        console.error(e);
+        alert("Error processing payment.");
+    }
+}
+
+// --- 1. REAL-TIME LISTENER FOR PENDING WEB BOOKINGS ---
+function listenForWebReservations() {
+    db.collection("web_reservations").where("status", "==", "PENDING")
+        .onSnapshot((snapshot) => {
+            const panel = document.getElementById("webReservationsPanel");
+            const list = document.getElementById("webReservationsList");
+            list.innerHTML = "";
+
+            if (snapshot.empty) {
+                panel.style.display = "none";
+                return;
+            }
+
+            panel.style.display = "block"; // Show panel if there are pending bookings
+
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                
+                // Calculate number of nights
+                const checkInDate = new Date(data.checkInDate);
+                const checkOutDate = new Date(data.checkOutDate);
+                const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
+                const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                const card = document.createElement("div");
+                card.style.cssText = "background: white; padding: 12px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 250px;";
+                card.innerHTML = `
+                    <div style="font-weight: bold; font-size: 15px;">${data.guestName}</div>
+                    <div style="font-size: 12px; color: #555; margin-bottom: 5px;">📞 ${data.contact}</div>
+                    <div style="color: #557a46; font-weight: bold; font-size: 13px;">${data.roomType} Room</div>
+                    <div style="font-size: 12px; margin-bottom: 10px;">
+                        <strong>In:</strong> ${data.checkInDate} <br>
+                        <strong>Out:</strong> ${data.checkOutDate} (${nights} nights)
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button onclick="approveWebReservation('${doc.id}', '${data.guestName}', '${data.roomType}', ${nights}, '${data.checkInDate}', '${data.checkOutDate}')" style="background: #557a46; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Assign Room</button>
+                        <button onclick="rejectWebReservation('${doc.id}')" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">X</button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        });
+}
+
+// --- 2. APPROVE & ASSIGN ROOM FUNCTION ---
+async function approveWebReservation(resId, guestName, roomType, nights, checkInStr, checkOutStr) {
+    const roomId = prompt(`Assign ${guestName} (requested ${roomType}) to which Room ID? (e.g., Room 1)`);
+    if (!roomId) return;
+    
+    const rateStr = prompt(`Enter daily rate for ${roomId}:`, "1500");
+    if (!rateStr) return;
+    const rate = parseFloat(rateStr);
+
+    const inclusions = prompt(`Enter inclusions (e.g., Free Breakfast) or leave blank:`, "None");
+
+    // Format dates mathematically to match your folio ledger standards
+    let checkInDate = new Date(checkInStr);
+    checkInDate.setHours(14, 0, 0, 0); // Sets default check-in time to 2:00 PM
+    let expectedCheckOut = new Date(checkOutStr);
+    expectedCheckOut.setHours(12, 0, 0, 0); // Sets default check-out time to 12:00 PM
+
+    const batch = db.batch();
+    const folioRef = db.collection("folios").doc();
+
+    // 1. Create the Folio Ledger
+    batch.set(folioRef, {
+        roomId: roomId,
+        roomType: roomType, 
+        guestName: guestName,
+        checkInTime: checkInDate.toISOString(),
+        expectedCheckOut: expectedCheckOut.toISOString(), 
+        dailyRate: rate,
+        nights: nights,
+        inclusions: inclusions || "None", 
+        roomChargesTotal: rate * nights,
+        posChargesTotal: 0,
+        posOrders: [],
+        grandTotal: rate * nights,
+        status: "OPEN" 
+    });
+
+    // 2. Lock the physical room in the rack
+    batch.update(db.collection("rooms").doc(roomId), {
+        status: "OCCUPIED",
+        currentGuestName: guestName,
+        currentFolioId: folioRef.id
+    });
+
+    // 3. Update Web Reservation status so it clears from the notifications panel
+    batch.update(db.collection("web_reservations").doc(resId), {
+        status: "CONFIRMED",
+        assignedRoom: roomId
+    });
+
+    try { 
+        await batch.commit(); 
+        showToast(`Online booking for ${guestName} confirmed in ${roomId}!`); 
+    } 
+    catch(e) { console.error(e); showToast("Error approving reservation."); }
+}
+
+// --- 3. REJECT RESERVATION FUNCTION ---
+async function rejectWebReservation(resId) {
+    if(!confirm("Are you sure you want to decline and delete this online reservation request?")) return;
+    try {
+        await db.collection("web_reservations").doc(resId).update({ status: "DECLINED" });
+        showToast("Reservation declined.");
+    } catch(e) { console.error(e); }
+}
+
+// ==========================================
+// --- INITIALIZE LISTENERS ON PAGE LOAD ---
+// ==========================================
+document.addEventListener("DOMContentLoaded", () => {
+    // Start listening for online bookings as soon as the POS loads
+    if (typeof listenForWebReservations === "function") {
+        listenForWebReservations(); 
+    }
+});

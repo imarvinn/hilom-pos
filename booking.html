@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Your Stay - HILOM</title>
+    <link rel="icon" type="image/png" href="hilom.png">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f4;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .booking-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 500px;
+            border-top: 5px solid #557a46;
+        }
+        h2 { margin-top: 0; color: #2b4227; text-align: center; margin-bottom: 25px; }
+        label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-bottom: 5px; }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            outline: none;
+            font-family: inherit;
+        }
+        input:focus, select:focus { border-color: #557a46; }
+        .date-row { display: flex; gap: 15px; }
+        .date-row > div { flex: 1; }
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: #557a46;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+        }
+        .submit-btn:active { transform: scale(0.98); }
+        .submit-btn:hover { background: #3c5e38; }
+        #bookingMessage { text-align: center; font-weight: bold; margin-top: 15px; min-height: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="booking-card">
+        <h2>Reserve Your Room</h2>
+        
+        <label>Full Name</label>
+        <input type="text" id="bookName" placeholder="Juan Dela Cruz" required>
+        
+        <label>Contact Number</label>
+        <input type="text" id="bookPhone" placeholder="0917 123 4567" required>
+        
+        <label>Room Preference</label>
+        <select id="bookRoomType">
+            <option value="Standard">Standard Room</option>
+            <option value="Family">Family Room</option>
+            <option value="Shoreline">Shoreline Suite</option>
+        </select>
+
+        <div class="date-row">
+            <div>
+                <label>Check-in Date</label>
+                <input type="date" id="bookCheckIn" required>
+            </div>
+            <div>
+                <label>Check-out Date</label>
+                <input type="date" id="bookCheckOut" required>
+            </div>
+        </div>
+
+        <button class="submit-btn" onclick="submitReservation()">Submit Reservation Request</button>
+        
+        <p id="bookingMessage"></p>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // 1. IMPORTANT: Replace this block with your actual Firebase config from firebase-init.js
+        const firebaseConfig = {
+  apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
+  authDomain: "dbr-pos.firebaseapp.com",
+  projectId: "dbr-pos",
+  storageBucket: "dbr-pos.firebasestorage.app",
+  messagingSenderId: "176532211278",
+  appId: "1:176532211278:web:57d78462a3355a32ce251f",
+  measurementId: "G-MPYZMBHZDC"
+};
+
+        // 2. Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // 3. Set minimum dates to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById("bookCheckIn").setAttribute('min', today);
+        document.getElementById("bookCheckOut").setAttribute('min', today);
+
+        // 4. Submit Function
+        async function submitReservation() {
+            const name = document.getElementById("bookName").value.trim();
+            const phone = document.getElementById("bookPhone").value.trim();
+            const roomType = document.getElementById("bookRoomType").value;
+            const checkIn = document.getElementById("bookCheckIn").value;
+            const checkOut = document.getElementById("bookCheckOut").value;
+            const msg = document.getElementById("bookingMessage");
+
+            if (!name || !phone || !checkIn || !checkOut) {
+                msg.style.color = "#bd4b4b"; // Red
+                msg.innerText = "Please fill in all details.";
+                return;
+            }
+
+            if (new Date(checkOut) <= new Date(checkIn)) {
+                msg.style.color = "#bd4b4b";
+                msg.innerText = "Check-out date must be after check-in date.";
+                return;
+            }
+
+            try {
+                msg.style.color = "#333";
+                msg.innerText = "Sending request...";
+
+                // Push data to Firestore
+                await db.collection("web_reservations").add({
+                    guestName: name,
+                    contact: phone,
+                    roomType: roomType,
+                    checkInDate: checkIn,
+                    checkOutDate: checkOut,
+                    status: "PENDING", // This tells the Front Desk it needs approval
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Success UI
+                msg.style.color = "#557a46"; // Green
+                msg.innerText = "Reservation submitted! Our front desk will contact you shortly.";
+                
+                // Clear form
+                document.getElementById("bookName").value = "";
+                document.getElementById("bookPhone").value = "";
+                document.getElementById("bookCheckIn").value = "";
+                document.getElementById("bookCheckOut").value = "";
+                
+            } catch (error) {
+                console.error(error);
+                msg.style.color = "#bd4b4b";
+                msg.innerText = "Error sending reservation. Please try again.";
+            }
+        }
+    </script>
+</body>
+</html>

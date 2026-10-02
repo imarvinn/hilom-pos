@@ -249,6 +249,14 @@
             <button class="add-btn" onclick="addNewRoom()" style="margin: 0;">+ Save Room</button>
         </div>
     </div>
+
+    <!-- INCOMING WEB RESERVATIONS PANEL -->
+<div id="webReservationsPanel" style="display: none; background: #eef2eb; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #557a46;">
+    <h3 style="margin-top: 0; color: #2b4227; font-size: 16px;">🔔 Incoming Online Bookings</h3>
+    <div id="webReservationsList" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <!-- New reservations will populate here dynamically -->
+    </div>
+</div>
 </div>
 
     </div> <!-- End Main Content -->
@@ -594,7 +602,9 @@
 
         <div style="display: flex; gap: 10px; margin-top: 20px;">
             <button class="save-btn" style="flex:1; background: #4a6fa5;" onclick="printFolioInvoice()">🖨️ Invoice</button>
-            <button class="add-btn" style="flex:1.5;" onclick="processFolioCheckout()">✔️ Pay & Checkout</button>
+            <button onclick="initiateFolioCheckout()" style="background: #385b2d; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">
+    Pay & Checkout
+</button>
             <button class="delete-btn" style="flex:1;" onclick="closeFolioModal()">Cancel</button>
         </div>
     </div>
@@ -702,6 +712,38 @@
     </div>
 </div>
 
+<!-- FOLIO PAYMENT & SETTLEMENT MODAL -->
+<div id="folioPaymentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 2000;">
+    <div style="background: white; padding: 25px; border-radius: 8px; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+        <h3 style="margin-top: 0; color: #2b4227; border-bottom: 2px solid #eee; padding-bottom: 10px;">Settle Guest Folio</h3>
+        
+        <div style="margin-bottom: 15px; font-size: 20px;">
+            <strong>Total Due:</strong> <span id="paymentTotalDue" style="color: #bd4b4b; float: right;">₱0.00</span>
+        </div>
+
+        <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Payment Method</label>
+        <select id="paymentMethod" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ccc; font-size: 16px;" onchange="toggleCashInput()">
+            <option value="Cash">Cash</option>
+            <option value="GCash">GCash</option>
+            <option value="Maya">Maya</option>
+            <option value="Credit/Debit Card">Credit/Debit Card</option>
+        </select>
+
+        <div id="cashInputSection">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Cash Tendered (₱)</label>
+            <input type="number" id="cashTendered" placeholder="0.00" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box;" oninput="calculateChange()">
+            
+            <div style="margin-bottom: 15px; font-size: 18px; padding-top: 10px; border-top: 1px dashed #ccc;">
+                <strong>Change:</strong> <span id="paymentChange" style="color: #557a46; float: right;">₱0.00</span>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button onclick="confirmFolioCheckout()" style="flex: 2; background: #557a46; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px;">Confirm Payment</button>
+            <button onclick="closePaymentModal()" style="flex: 1; background: #ddd; color: #333; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Cancel</button>
+        </div>
+    </div>
+</div>
 
 
 </script>
