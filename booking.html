@@ -3,101 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Your Stay - HILOM</title>
-    <link rel="icon" type="image/png" href="hilom.png">
+    <title>Hilom | Book Your Stay</title>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <style>
-        body {
+        :root {
+            --primary: #557a46;
+            --primary-dark: #2b4227;
+            --accent: #8c5d3a;
+            --bg-color: #f9f9f9;
+        }
+        body, html {
+            margin: 0; padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f6f4;
+            background-color: var(--bg-color);
             color: #333;
+        }
+        /* NAVBAR */
+        nav {
+            background-color: white;
+            padding: 15px 40px;
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        nav h1 { margin: 0; color: var(--primary); font-size: 24px; }
+        nav a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            margin-left: 20px;
+        }
+        nav a.btn {
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        /* HERO SECTION */
+        .hero {
+            background: linear-gradient(rgba(43, 66, 39, 0.7), rgba(43, 66, 39, 0.7)), url('https://images.unsplash.com/photo-1542314831-c6a4d27ce6a2?auto=format&fit=crop&w=1920&q=80') center/cover;
+            height: 60vh;
+            display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
+            color: white;
+            text-align: center;
+            padding: 0 20px;
         }
-        .booking-card {
+        .hero h2 { font-size: 48px; margin-bottom: 10px; }
+        .hero p { font-size: 20px; margin-bottom: 30px; max-width: 600px; }
+        
+        /* ROOMS SHOWCASE */
+        .rooms {
+            padding: 50px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .room-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .room-card:hover { transform: translateY(-5px); }
+        .room-card img { width: 100%; height: 200px; object-fit: cover; }
+        .room-details { padding: 20px; text-align: left; }
+        .room-details h3 { margin: 0 0 10px 0; color: var(--primary-dark); }
+        .room-price { color: var(--accent); font-weight: bold; font-size: 18px; }
+        
+        /* BOOKING FORM SECTION */
+        .booking-section {
+            background-color: #e8f5e9;
+            padding: 60px 20px;
+        }
+        .booking-container {
+            max-width: 600px;
+            margin: 0 auto;
             background: white;
             padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            width: 100%;
-            max-width: 500px;
-            border-top: 5px solid #557a46;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            border-top: 5px solid var(--primary);
         }
-        h2 { margin-top: 0; color: #2b4227; text-align: center; margin-bottom: 25px; }
-        label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-bottom: 5px; }
-        input, select {
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: var(--primary-dark); }
+        .form-group input, .form-group select {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
+            padding: 12px;
             border: 1px solid #ccc;
-            border-radius: 6px;
+            border-radius: 5px;
+            font-size: 16px;
             box-sizing: border-box;
-            outline: none;
-            font-family: inherit;
         }
-        input:focus, select:focus { border-color: #557a46; }
-        .date-row { display: flex; gap: 15px; }
-        .date-row > div { flex: 1; }
         .submit-btn {
             width: 100%;
-            padding: 14px;
-            background: #557a46;
+            padding: 15px;
+            background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 6px;
-            font-size: 16px;
+            border-radius: 5px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.1s, background 0.2s;
+            transition: background 0.3s;
+            margin-top: 10px;
         }
-        .submit-btn:active { transform: scale(0.98); }
-        .submit-btn:hover { background: #3c5e38; }
-        #bookingMessage { text-align: center; font-weight: bold; margin-top: 15px; min-height: 20px; }
+        .submit-btn:hover { background-color: var(--primary-dark); }
+        
+        /* FOOTER */
+        footer {
+            background-color: var(--primary-dark);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+        }
     </style>
 </head>
 <body>
 
-    <div class="booking-card">
-        <h2>Reserve Your Room</h2>
-        
-        <label>Full Name</label>
-        <input type="text" id="bookName" placeholder="Juan Dela Cruz" required>
-        
-        <label>Contact Number</label>
-        <input type="text" id="bookPhone" placeholder="0917 123 4567" required>
-        
-        <label>Room Preference</label>
-        <select id="bookRoomType">
-            <option value="Standard">Standard Room</option>
-            <option value="Family">Family Room</option>
-            <option value="Shoreline">Shoreline Suite</option>
-        </select>
+    <!-- Navigation -->
+    <nav>
+        <h1>HILOM</h1>
+        <div>
+            <a href="#rooms">Our Rooms</a>
+            <a href="#booking" class="btn">Book Now</a>
+        </div>
+    </nav>
 
-        <div class="date-row">
-            <div>
-                <label>Check-in Date</label>
-                <input type="date" id="bookCheckIn" required>
+    <!-- Hero Section -->
+    <section class="hero">
+        <h2>Find Your Perfect Getaway</h2>
+        <p>Experience relaxation, comfort, and exceptional dining. Book your stay with us today.</p>
+        <a href="#booking" style="background: var(--accent); color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px;">Reserve a Room</a>
+    </section>
+
+    <!-- Room Showcase Section -->
+    <section id="rooms" class="rooms">
+        <h2 style="color: var(--primary-dark);">Accommodations</h2>
+        <p>Choose the perfect space for your relaxation.</p>
+        
+        <div class="rooms-grid">
+            <!-- Room 1 -->
+            <div class="room-card">
+                <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80" alt="Standard Room">
+                <div class="room-details">
+                    <h3>Standard Room</h3>
+                    <p style="color: #666; font-size: 14px;">Perfect for solo travelers or couples. Includes a queen bed, en-suite bathroom, and free Wi-Fi.</p>
+                    <p class="room-price">₱1,500 / night</p>
+                </div>
             </div>
-            <div>
-                <label>Check-out Date</label>
-                <input type="date" id="bookCheckOut" required>
+            <!-- Room 2 -->
+            <div class="room-card">
+                <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80" alt="Family Room">
+                <div class="room-details">
+                    <h3>Family Room</h3>
+                    <p style="color: #666; font-size: 14px;">Spacious and comfortable. Includes two double beds, a sitting area, and complimentary breakfast for four.</p>
+                    <p class="room-price">₱3,500 / night</p>
+                </div>
+            </div>
+            <!-- Room 3 -->
+            <div class="room-card">
+                <img src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80" alt="Suite">
+                <div class="room-details">
+                    <h3>Executive Suite</h3>
+                    <p style="color: #666; font-size: 14px;">The ultimate luxury experience. Features a king bed, living room, and premium amenities.</p>
+                    <p class="room-price">₱5,000 / night</p>
+                </div>
             </div>
         </div>
+    </section>
 
-        <button class="submit-btn" onclick="submitReservation()">Submit Reservation Request</button>
-        
-        <p id="bookingMessage"></p>
-    </div>
+    <!-- Booking Form Section -->
+    <section id="booking" class="booking-section">
+        <div class="booking-container">
+            <h2 style="text-align: center; color: var(--primary-dark); margin-top: 0;">Reservation Request</h2>
+            <p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 25px;">Submit your details below and our Front Desk will confirm your booking shortly.</p>
+            
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="guestName" placeholder="e.g. Juan Dela Cruz" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Contact Number or Email</label>
+                    <input type="text" id="contact" placeholder="e.g. 0917-123-4567" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Room Preference</label>
+                    <select id="roomType" required>
+                        <option value="" disabled selected>Select a room type...</option>
+                        <option value="Standard">Standard Room</option>
+                        <option value="Family">Family Room</option>
+                        <option value="Suite">Executive Suite</option>
+                    </select>
+                </div>
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+                <div style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Check-In Date</label>
+                        <input type="date" id="checkIn" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Check-Out Date</label>
+                        <input type="date" id="checkOut" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">Send Booking Request</button>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; <span id="year"></span> Hilom Solutions. All rights reserved.</p>
+    </footer>
 
     <script>
-        // 1. IMPORTANT: Replace this block with your actual Firebase config from firebase-init.js
+        document.getElementById('year').innerText = new Date().getFullYear();
+
+        // ==========================================
+        // ⚠️ PASTE YOUR FIREBASE CONFIG HERE ⚠️
+        // ==========================================
         const firebaseConfig = {
   apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
   authDomain: "dbr-pos.firebaseapp.com",
@@ -107,68 +253,59 @@
   appId: "1:176532211278:web:57d78462a3355a32ce251f",
   measurementId: "G-MPYZMBHZDC"
 };
+        // ==========================================
 
-        // 2. Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.firestore();
 
-        // 3. Set minimum dates to today
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById("bookCheckIn").setAttribute('min', today);
-        document.getElementById("bookCheckOut").setAttribute('min', today);
+        // Handle Form Submission
+        document.getElementById("bookingForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById("submitBtn");
+            btn.innerText = "Sending...";
+            btn.disabled = true;
 
-        // 4. Submit Function
-        async function submitReservation() {
-            const name = document.getElementById("bookName").value.trim();
-            const phone = document.getElementById("bookPhone").value.trim();
-            const roomType = document.getElementById("bookRoomType").value;
-            const checkIn = document.getElementById("bookCheckIn").value;
-            const checkOut = document.getElementById("bookCheckOut").value;
-            const msg = document.getElementById("bookingMessage");
+            const guestName = document.getElementById("guestName").value.trim();
+            const contact = document.getElementById("contact").value.trim();
+            const roomType = document.getElementById("roomType").value;
+            const checkIn = document.getElementById("checkIn").value;
+            const checkOut = document.getElementById("checkOut").value;
 
-            if (!name || !phone || !checkIn || !checkOut) {
-                msg.style.color = "#bd4b4b"; // Red
-                msg.innerText = "Please fill in all details.";
-                return;
-            }
-
+            // Basic Date Validation
             if (new Date(checkOut) <= new Date(checkIn)) {
-                msg.style.color = "#bd4b4b";
-                msg.innerText = "Check-out date must be after check-in date.";
+                alert("Check-out date must be after check-in date.");
+                btn.innerText = "Send Booking Request";
+                btn.disabled = false;
                 return;
             }
 
             try {
-                msg.style.color = "#333";
-                msg.innerText = "Sending request...";
-
-                // Push data to Firestore
+                // Save to 'web_reservations' collection to trigger POS notification
                 await db.collection("web_reservations").add({
-                    guestName: name,
-                    contact: phone,
+                    guestName: guestName,
+                    contact: contact,
                     roomType: roomType,
                     checkInDate: checkIn,
                     checkOutDate: checkOut,
-                    status: "PENDING", // This tells the Front Desk it needs approval
+                    status: "PENDING",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                // Success UI
-                msg.style.color = "#557a46"; // Green
-                msg.innerText = "Reservation submitted! Our front desk will contact you shortly.";
-                
-                // Clear form
-                document.getElementById("bookName").value = "";
-                document.getElementById("bookPhone").value = "";
-                document.getElementById("bookCheckIn").value = "";
-                document.getElementById("bookCheckOut").value = "";
-                
+                alert("Success! Your booking request has been sent to our Front Desk. We will contact you shortly to confirm.");
+                document.getElementById("bookingForm").reset();
+
             } catch (error) {
-                console.error(error);
-                msg.style.color = "#bd4b4b";
-                msg.innerText = "Error sending reservation. Please try again.";
+                console.error("Error writing document: ", error);
+                alert("There was an error submitting your request. Please try again.");
+            } finally {
+                btn.innerText = "Send Booking Request";
+                btn.disabled = false;
             }
-        }
+        });
     </script>
 </body>
 </html>
