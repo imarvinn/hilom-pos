@@ -173,6 +173,30 @@
                 <button id="tabExpenses" style="flex: 1; padding: 12px; font-size: 16px; background-color: #e0e5e0; color: #333;" onclick="switchSalesTab('expenses')">💸 Operational Expenses</button>
             </div>
 
+            <!-- SALES TABS -->
+<div style="display: flex; gap: 10px; margin-bottom: 20px;">
+    <button id="btnPosSales" onclick="switchSalesTab('pos')" style="padding: 10px 20px; background: #557a46; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+        🍽️ Restaurant / POS Sales
+    </button>
+    <button id="btnRoomSales" onclick="switchSalesTab('room')" style="padding: 10px 20px; background: #ddd; color: #333; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+        🛏️ Room Accommodations
+    </button>
+</div>
+
+<!-- POS SALES CONTAINER -->
+<div id="posSalesContainer" style="display: block;">
+    <h3 style="color: #557a46; margin-bottom: 10px;">Restaurant & Café Revenue</h3>
+    <!-- Your existing table code goes here -->
+    <table id="posSalesTable">...</table> 
+</div>
+
+<!-- ROOM SALES CONTAINER -->
+<div id="roomSalesContainer" style="display: none;">
+    <h3 style="color: #2b4227; margin-bottom: 10px;">Front Desk & Room Revenue</h3>
+    <!-- Duplicate your table code here -->
+    <table id="roomSalesTable">...</table> 
+</div>
+
             <!-- SALES CARD -->
             <div class="card" id="salesCard">
                 <div class="print-only">HILOM POS - Sales & Profit Report</div>

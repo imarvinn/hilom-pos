@@ -532,6 +532,49 @@ async function rejectWebReservation(resId) {
     } catch(e) { console.error(e); }
 }
 
+function switchSalesTab(tabName) {
+    const posContainer = document.getElementById("posSalesContainer");
+    const roomContainer = document.getElementById("roomSalesContainer");
+    const btnPos = document.getElementById("btnPosSales");
+    const btnRoom = document.getElementById("btnRoomSales");
+
+    if (tabName === 'pos') {
+        posContainer.style.display = "block";
+        roomContainer.style.display = "none";
+        btnPos.style.background = "#557a46";
+        btnPos.style.color = "white";
+        btnRoom.style.background = "#ddd";
+        btnRoom.style.color = "#333";
+    } else {
+        posContainer.style.display = "none";
+        roomContainer.style.display = "block";
+        btnRoom.style.background = "#557a46";
+        btnRoom.style.color = "white";
+        btnPos.style.background = "#ddd";
+        btnPos.style.color = "#333";
+    }
+}
+
+// Inside your existing sales snapshot listener:
+snapshot.forEach((doc) => {
+    const data = doc.data();
+    
+    // Check if this sale is a Room Checkout
+    const isRoomSale = data.itemName === "Room Folio Checkout" || (data.tableNo && String(data.tableNo).includes("Room"));
+
+    // Build your row HTML...
+    let rowHTML = `<tr>...</tr>`;
+
+    // Append to the correct table
+    if (isRoomSale) {
+        document.getElementById("roomSalesTableBody").innerHTML += rowHTML;
+        // Add to Room Sales Total
+    } else {
+        document.getElementById("posSalesTableBody").innerHTML += rowHTML;
+        // Add to POS Sales Total
+    }
+});
+
 // ==========================================
 // --- INITIALIZE LISTENERS ON PAGE LOAD ---
 // ==========================================
@@ -541,3 +584,4 @@ document.addEventListener("DOMContentLoaded", () => {
         listenForWebReservations(); 
     }
 });
+
