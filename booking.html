@@ -191,6 +191,43 @@
             padding: 20px;
             margin-top: auto;
         }
+
+        /* Date Group Flexbox */
+        .date-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* MOBILE RESPONSIVENESS */
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                padding: 15px;
+                gap: 15px;
+            }
+            nav h1 {
+                font-size: 28px;
+            }
+            nav a {
+                margin-left: 10px;
+                margin-right: 10px;
+                font-size: 14px;
+            }
+            .hero h2 {
+                font-size: 36px;
+            }
+            .hero p {
+                font-size: 18px;
+            }
+            .booking-container {
+                padding: 20px;
+            }
+            /* Stack the Check-In and Check-Out dates on phones */
+            .date-group {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -294,7 +331,7 @@
                     </select>
                 </div>
 
-                <div style="display: flex; gap: 15px;">
+                <div class="date-group">
                     <div class="form-group" style="flex: 1;">
                         <label>Check-In Date</label>
                         <input type="date" id="checkIn" required>
