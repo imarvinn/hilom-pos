@@ -73,24 +73,31 @@ function filterSales() {
     });
 }
 
-// 1. RENDER SALES TABLE
+// 1. RENDER SALES TABLE (UPDATED FOR TABS & TABLE LABELS)
 function renderSalesPage(page) {
     const list = document.getElementById("salesList");
     const paginationDiv = document.getElementById("salesPagination");
+    
+    // NEW: Filter the data based on which tab is clicked
+    let activeTabItems = currentSalesData.filter((sale) => {
+        const isRoomSale = sale.itemName === "Room Folio Checkout" || (sale.tableNo && String(sale.tableNo).includes("Room"));
+        return currentRevenueTab === 'room' ? isRoomSale : !isRoomSale;
+    });
+
     let pageItems = [];
 
     if (page === 'ALL') {
-        pageItems = currentSalesData;
+        pageItems = activeTabItems;
         paginationDiv.style.display = 'none';
     } else {
         paginationDiv.style.display = 'flex';
-        const totalPages = Math.ceil(currentSalesData.length / salesPerPage) || 1;
+        const totalPages = Math.ceil(activeTabItems.length / salesPerPage) || 1;
         if (page > totalPages) page = totalPages;
         if (page < 1) page = 1;
         currentSalesPage = page;
 
         const startIndex = (page - 1) * salesPerPage;
-        pageItems = currentSalesData.slice(startIndex, startIndex + salesPerPage);
+        pageItems = activeTabItems.slice(startIndex, startIndex + salesPerPage);
 
         paginationDiv.innerHTML = `
             <button class="page-btn" onclick="renderSalesPage(${page - 1})" ${page === 1 ? 'disabled' : ''}>◄ Prev</button>
@@ -111,7 +118,14 @@ function renderSalesPage(page) {
         
         let trStyle = isVoid ? "text-decoration: line-through; color: #888;" : "";
         
-        // NEW: Action Column with Reprint Button
+        // NEW: Fix the "Table Room" labeling bug
+        let displayLocation = sale.tableNo || "N/A";
+        if (String(displayLocation).includes("Room")) {
+            displayLocation = displayLocation; // Leave as "Room Family Room 2"
+        } else if (displayLocation !== "N/A") {
+            displayLocation = "Table " + displayLocation; // Add "Table " for POS orders
+        }
+        
         let actionBtn = isVoid 
             ? `<span style="color:#bd4b4b; font-weight:bold; display:block; margin-bottom:5px;">VOIDED</span>` 
             : `<button class="delete-btn" style="width:100%; margin-bottom:5px;" onclick="voidSale('${sale.id}')">Void</button>`;
@@ -120,7 +134,7 @@ function renderSalesPage(page) {
 
         list.innerHTML += `<tr style="${trStyle}">
             <td>${time}<br><small style="color:#8c5d3a; font-weight:bold;">${invNo}</small></td>
-            <td>Table ${sale.tableNo || 'N/A'}</td>
+            <td>${displayLocation}</td>
             <td><span class="badge-method method-${method}">${method}</span></td>
             <td>₱${gross.toFixed(2)}</td>
             <td style="color:#557a46; font-weight:bold;">₱${net.toFixed(2)}</td>
@@ -564,4 +578,24 @@ function exportEJournal() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+let currentRevenueTab = 'pos'; // Keeps track of which tab is active
+
+function switchRevenueTab(tabType) {
+    currentRevenueTab = tabType;
+    
+    const btnPos = document.getElementById("btnPosSales");
+    const btnRoom = document.getElementById("btnRoomSales");
+
+    if (tabType === 'pos') {
+        if(btnPos) { btnPos.style.background = "#557a46"; btnPos.style.color = "white"; }
+        if(btnRoom) { btnRoom.style.background = "#ddd"; btnRoom.style.color = "#333"; }
+    } else {
+        if(btnRoom) { btnRoom.style.background = "#557a46"; btnRoom.style.color = "white"; }
+        if(btnPos) { btnPos.style.background = "#ddd"; btnPos.style.color = "#333"; }
+    }
+    
+    // Refresh the table to show the correct data
+    renderSalesPage(1); 
 }

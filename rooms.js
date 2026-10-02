@@ -555,25 +555,7 @@ function switchSalesTab(tabName) {
     }
 }
 
-// Inside your existing sales snapshot listener:
-snapshot.forEach((doc) => {
-    const data = doc.data();
-    
-    // Check if this sale is a Room Checkout
-    const isRoomSale = data.itemName === "Room Folio Checkout" || (data.tableNo && String(data.tableNo).includes("Room"));
 
-    // Build your row HTML...
-    let rowHTML = `<tr>...</tr>`;
-
-    // Append to the correct table
-    if (isRoomSale) {
-        document.getElementById("roomSalesTableBody").innerHTML += rowHTML;
-        // Add to Room Sales Total
-    } else {
-        document.getElementById("posSalesTableBody").innerHTML += rowHTML;
-        // Add to POS Sales Total
-    }
-});
 
 // ==========================================
 // --- INITIALIZE LISTENERS ON PAGE LOAD ---
