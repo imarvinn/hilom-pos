@@ -21,6 +21,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: #333;
+            scroll-behavior: smooth;
         }
         /* NAVBAR */
         nav {
@@ -34,7 +35,7 @@
             top: 0;
             z-index: 100;
         }
-        nav h1 { margin: 0; color: var(--primary); font-size: 24px; }
+        nav h1 { margin: 0; color: var(--primary); font-size: 24px; letter-spacing: 2px; }
         nav a {
             text-decoration: none;
             color: #333;
@@ -47,10 +48,11 @@
             padding: 10px 20px;
             border-radius: 5px;
         }
-        /* HERO SECTION */
+        
+        /* HERO SECTION WITH VIDEO BACKGROUND */
         .hero {
-            background: linear-gradient(rgba(43, 66, 39, 0.7), rgba(43, 66, 39, 0.7)), url('https://images.unsplash.com/photo-1542314831-c6a4d27ce6a2?auto=format&fit=crop&w=1920&q=80') center/cover;
-            height: 60vh;
+            position: relative;
+            height: 70vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -58,20 +60,68 @@
             color: white;
             text-align: center;
             padding: 0 20px;
+            overflow: hidden;
         }
-        .hero h2 { font-size: 48px; margin-bottom: 10px; }
-        .hero p { font-size: 20px; margin-bottom: 30px; max-width: 600px; }
+        .hero-video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -2;
+            transform: translateX(-50%) translateY(-50%);
+            object-fit: cover;
+        }
+        .hero-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(43, 66, 39, 0.5); /* Green tint to match theme */
+            z-index: -1;
+        }
+        .hero-content {
+            z-index: 1;
+        }
+        .hero h2 { font-size: 54px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .hero p { font-size: 22px; margin-bottom: 30px; max-width: 600px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
         
+        /* GALLERY SECTION */
+        .gallery {
+            padding: 50px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .gallery h2 { color: var(--primary-dark); margin-bottom: 30px; }
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .gallery-grid img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .gallery-grid img:hover { transform: scale(1.03); }
+
         /* ROOMS SHOWCASE */
         .rooms {
             padding: 50px 20px;
+            background-color: #f1f8e9;
+        }
+        .rooms-container {
             max-width: 1200px;
             margin: 0 auto;
             text-align: center;
         }
         .rooms-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 30px;
             margin-top: 30px;
         }
@@ -83,21 +133,21 @@
             transition: transform 0.3s;
         }
         .room-card:hover { transform: translateY(-5px); }
-        .room-card img { width: 100%; height: 200px; object-fit: cover; }
+        .room-card img { width: 100%; height: 250px; object-fit: cover; }
         .room-details { padding: 20px; text-align: left; }
         .room-details h3 { margin: 0 0 10px 0; color: var(--primary-dark); }
         .room-price { color: var(--accent); font-weight: bold; font-size: 18px; }
         
         /* BOOKING FORM SECTION */
         .booking-section {
-            background-color: #e8f5e9;
+            background-color: white;
             padding: 60px 20px;
         }
         .booking-container {
             max-width: 600px;
             margin: 0 auto;
-            background: white;
-            padding: 30px;
+            background: #f9f9f9;
+            padding: 40px;
             border-radius: 10px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.05);
             border-top: 5px solid var(--primary);
@@ -143,49 +193,70 @@
     <nav>
         <h1>HILOM</h1>
         <div>
+            <a href="#gallery">Experience</a>
             <a href="#rooms">Our Rooms</a>
             <a href="#booking" class="btn">Book Now</a>
         </div>
     </nav>
 
-    <!-- Hero Section -->
+    <!-- Hero Section with Video Background -->
     <section class="hero">
-        <h2>Find Your Perfect Getaway</h2>
-        <p>Experience relaxation, comfort, and exceptional dining. Book your stay with us today.</p>
-        <a href="#booking" style="background: var(--accent); color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px;">Reserve a Room</a>
+        <!-- Sample Resort Video from a free stock CDN -->
+        <video class="hero-video" autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/video/2016/11/21/6468-192666576_large.mp4" type="video/mp4">
+            Your browser does not support HTML5 video.
+        </video>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h2>Find Your Perfect Getaway</h2>
+            <p>Experience relaxation, comfort, and exceptional coastal views. Book your stay with us today.</p>
+            <a href="#booking" style="background: var(--accent); color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px;">Reserve a Room</a>
+        </div>
     </section>
 
-    <!-- Room Showcase Section -->
+    <!-- Gallery Section (Using your exterior shots) -->
+    <section id="gallery" class="gallery">
+        <h2>Experience Hilom</h2>
+        <div class="gallery-grid">
+            <img src="708910845_122173818824854145_7561146922554022170_n.jpg" alt="Beach Pathway">
+            <img src="756139172_122180791004854145_2360574277376093530_n.jpg" alt="Villa Exteriors">
+            <img src="758304908_122180791178854145_7218014274570081338_n.jpg" alt="Beach Hammock">
+        </div>
+    </section>
+
+    <!-- Room Showcase Section (Using your interior shots) -->
     <section id="rooms" class="rooms">
-        <h2 style="color: var(--primary-dark);">Accommodations</h2>
-        <p>Choose the perfect space for your relaxation.</p>
-        
-        <div class="rooms-grid">
-            <!-- Room 1 -->
-            <div class="room-card">
-                <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80" alt="Standard Room">
-                <div class="room-details">
-                    <h3>Standard Room</h3>
-                    <p style="color: #666; font-size: 14px;">Perfect for solo travelers or couples. Includes a queen bed, en-suite bathroom, and free Wi-Fi.</p>
-                    <p class="room-price">₱1,500 / night</p>
+        <div class="rooms-container">
+            <h2 style="color: var(--primary-dark);">Accommodations</h2>
+            <p style="color: #666;">Choose the perfect space for your relaxation.</p>
+            
+            <div class="rooms-grid">
+                <!-- Standard Room -->
+                <div class="room-card">
+                    <img src="758765293_122180791148854145_8491631398410302688_n.jpg" alt="Standard Room">
+                    <div class="room-details">
+                        <h3>Standard Room</h3>
+                        <p style="color: #666; font-size: 14px;">Perfect for solo travelers or couples. Includes a comfortable bed, warm lighting, and essential amenities.</p>
+                        <p class="room-price">₱1,500 / night</p>
+                    </div>
                 </div>
-            </div>
-            <!-- Room 2 -->
-            <div class="room-card">
-                <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80" alt="Family Room">
-                <div class="room-details">
-                    <h3>Family Room</h3>
-                    <p style="color: #666; font-size: 14px;">Spacious and comfortable. Includes two double beds, a sitting area, and complimentary breakfast for four.</p>
-                    <p class="room-price">₱3,500 / night</p>
+                <!-- Family Room -->
+                <div class="room-card">
+                    <img src="757665970_122180791994854145_2924593450940225623_n.jpg" alt="Family Room">
+                    <div class="room-details">
+                        <h3>Family Room</h3>
+                        <p style="color: #666; font-size: 14px;">Spacious and comfortable. Features three large beds, stunning wall murals, and plenty of space for the whole family.</p>
+                        <p class="room-price">₱3,500 / night</p>
+                    </div>
                 </div>
-            </div>
-            <!-- Room 3 -->
-            <div class="room-card">
-                <img src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=800&q=80" alt="Suite">
-                <div class="room-details">
-                    <h3>Executive Suite</h3>
-                    <p style="color: #666; font-size: 14px;">The ultimate luxury experience. Features a king bed, living room, and premium amenities.</p>
-                    <p class="room-price">₱5,000 / night</p>
+                <!-- Suite -->
+                <div class="room-card">
+                    <img src="757863595_122180789318854145_5234982306311465279_n.jpg" alt="Suite">
+                    <div class="room-details">
+                        <h3>Ocean View Suite</h3>
+                        <p style="color: #666; font-size: 14px;">The ultimate beachside experience. Step right out of your room onto the sand with breathtaking ocean views.</p>
+                        <p class="room-price">₱5,000 / night</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -195,7 +266,7 @@
     <section id="booking" class="booking-section">
         <div class="booking-container">
             <h2 style="text-align: center; color: var(--primary-dark); margin-top: 0;">Reservation Request</h2>
-            <p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 25px;">Submit your details below and our Front Desk will confirm your booking shortly.</p>
+            <p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 25px;">Submit your details below and our Front Desk will contact you shortly to confirm your booking.</p>
             
             <form id="bookingForm">
                 <div class="form-group">
@@ -204,7 +275,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label>Contact Number or Email</label>
+                    <label>Contact Number</label>
                     <input type="text" id="contact" placeholder="e.g. 0917-123-4567" required>
                 </div>
                 
@@ -214,7 +285,7 @@
                         <option value="" disabled selected>Select a room type...</option>
                         <option value="Standard">Standard Room</option>
                         <option value="Family">Family Room</option>
-                        <option value="Suite">Executive Suite</option>
+                        <option value="Suite">Ocean View Suite</option>
                     </select>
                 </div>
 
@@ -245,23 +316,20 @@
         // ⚠️ PASTE YOUR FIREBASE CONFIG HERE ⚠️
         // ==========================================
         const firebaseConfig = {
-  apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
-  authDomain: "dbr-pos.firebaseapp.com",
-  projectId: "dbr-pos",
-  storageBucket: "dbr-pos.firebasestorage.app",
-  messagingSenderId: "176532211278",
-  appId: "1:176532211278:web:57d78462a3355a32ce251f",
-  measurementId: "G-MPYZMBHZDC"
-};
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
         // ==========================================
 
-        // Initialize Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         const db = firebase.firestore();
 
-        // Handle Form Submission
         document.getElementById("bookingForm").addEventListener("submit", async (e) => {
             e.preventDefault();
             
@@ -275,7 +343,6 @@
             const checkIn = document.getElementById("checkIn").value;
             const checkOut = document.getElementById("checkOut").value;
 
-            // Basic Date Validation
             if (new Date(checkOut) <= new Date(checkIn)) {
                 alert("Check-out date must be after check-in date.");
                 btn.innerText = "Send Booking Request";
@@ -284,7 +351,6 @@
             }
 
             try {
-                // Save to 'web_reservations' collection to trigger POS notification
                 await db.collection("web_reservations").add({
                     guestName: guestName,
                     contact: contact,
