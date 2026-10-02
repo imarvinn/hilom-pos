@@ -466,10 +466,16 @@ function listenForWebReservations() {
         });
 }
 
-// --- 2. APPROVE & ASSIGN ROOM FUNCTION ---
 async function approveWebReservation(resId, guestName, roomType, nights, checkInStr, checkOutStr) {
     const roomId = prompt(`Assign ${guestName} (requested ${roomType}) to which Room ID? (e.g., Room 1)`);
     if (!roomId) return;
+    
+    // --- ADD THIS SAFETY CHECK ---
+    const roomCheck = await db.collection("rooms").doc(roomId).get();
+    if (!roomCheck.exists) {
+        return alert(`Error: "${roomId}" does not exist in your database. Please check your spelling and try again.`);
+    }
+    // -----------------------------
     
     const rateStr = prompt(`Enter daily rate for ${roomId}:`, "1500");
     if (!rateStr) return;
