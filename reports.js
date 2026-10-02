@@ -271,7 +271,6 @@ async function voidSale(saleId) {
     }
 }
 
-// NEW: RECEIPT REPRINTING
 async function reprintReceipt(saleId) {
     try {
         const saleDoc = await db.collection("sales").doc(saleId).get();
@@ -291,13 +290,17 @@ async function reprintReceipt(saleId) {
         } else { document.getElementById("receiptBuyerInfo").classList.add("hidden"); }
 
         const receiptItems = document.getElementById("receiptItems"); receiptItems.innerHTML = "";
+        
+        // --- FIX 1: Safely handle missing price on Room Checkouts ---
         if (s.items) {
             for (let [itemName, itemData] of Object.entries(s.items)) {
-                let itemPrice = itemData.basePrice * itemData.qty;
+                let itemPrice = (itemData.basePrice || 0) * (itemData.qty || 1);
                 receiptItems.innerHTML += `<div class="receipt-item"><span>${itemData.qty}x ${itemName}</span><span>₱${itemPrice.toFixed(2)}</span></div>`;
             }
         } else if (s.itemName) {
-            receiptItems.innerHTML += `<div class="receipt-item"><span>1x ${s.itemName}</span><span>₱${s.price.toFixed(2)}</span></div>`;
+            // Checks for 'price' first, falls back to 'grossAmount' for room folios
+            let singlePrice = s.price !== undefined ? s.price : (s.grossAmount || 0);
+            receiptItems.innerHTML += `<div class="receipt-item"><span>1x ${s.itemName}</span><span>₱${singlePrice.toFixed(2)}</span></div>`;
         }
 
         const gross = s.grossAmount !== undefined ? s.grossAmount : (s.price || 0);
@@ -314,11 +317,17 @@ async function reprintReceipt(saleId) {
 
         const tenderedRow = document.getElementById("receiptTenderedRow");
         const changeRow = document.getElementById("receiptChangeRow");
+        
+        // --- FIX 2: Safely handle missing changeDue on older records ---
         if (s.paymentMethod === "Cash" && s.cashTendered !== undefined) {
             tenderedRow.classList.remove("hidden"); changeRow.classList.remove("hidden");
             tenderedRow.style.display = "flex"; changeRow.style.display = "flex";
+            
+            let safeChange = s.changeDue !== undefined ? s.changeDue : (s.cashTendered - net);
+            if (safeChange < 0) safeChange = 0;
+            
             document.getElementById("receiptTenderedAmount").innerText = `₱${(s.cashTendered).toFixed(2)}`;
-            document.getElementById("receiptChangeAmount").innerText = `₱${(s.changeDue).toFixed(2)}`;
+            document.getElementById("receiptChangeAmount").innerText = `₱${safeChange.toFixed(2)}`;
         } else {
             tenderedRow.classList.add("hidden"); changeRow.classList.add("hidden");
             tenderedRow.style.display = "none"; changeRow.style.display = "none";

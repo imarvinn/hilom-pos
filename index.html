@@ -169,8 +169,8 @@
             <!-- ================= VIEW 4: SALES & REPORTS ================= -->
         <div id="salesView" class="view-section hidden">
             <div class="no-print" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <button id="tabSales" style="flex: 1; padding: 12px; font-size: 16px; background-color: #557a46; color: white;" onclick="switchSalesTab('sales')">💰 Shift Sales & Profit</button>
-                <button id="tabExpenses" style="flex: 1; padding: 12px; font-size: 16px; background-color: #e0e5e0; color: #333;" onclick="switchSalesTab('expenses')">💸 Operational Expenses</button>
+                <button id="tabSales" style="flex: 1; padding: 12px; font-size: 16px; background-color: #557a46; color: white;" onclick="switchSalesTab('sales')">Shift Sales & Profit</button>
+                <button id="tabExpenses" style="flex: 1; padding: 12px; font-size: 16px; background-color: #e0e5e0; color: #333;" onclick="switchSalesTab('expenses')">Operational Expenses</button>
             </div>
 
             <!-- SALES TABS -->
@@ -185,7 +185,7 @@
 
 <!-- POS SALES CONTAINER -->
 <div id="posSalesContainer" style="display: block;">
-    <h3 style="color: #557a46; margin-bottom: 10px;">Restaurant & Café Revenue</h3>
+    <h3 style="color: #557a46; margin-bottom: 10px;">Revenue</h3>
     <!-- Your existing table code goes here -->
     <table id="posSalesTable">...</table> 
 </div>
@@ -206,9 +206,9 @@
                     <h2 style="margin: 0; border: none;">Shift Sales & Profit</h2>
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <input type="date" id="dateFilter" onchange="filterSales()" style="margin:0;">
-                        <button class="save-btn" onclick="exportEJournal()" style="background:#2b4227;">📄 E-Journal</button>
-                        <button class="save-btn" onclick="exportCSV()" style="background:#557a46;">📥 CSV</button>
-                        <button class="save-btn" onclick="printSales()">🖨️ PDF</button>
+                        <button class="save-btn" onclick="exportEJournal()" style="background:#2b4227;">E-Journal</button>
+                        <button class="save-btn" onclick="exportCSV()" style="background:#557a46;">CSV</button>
+                        <button class="save-btn" onclick="printSales()">PDF</button>
                         <button class="warn-btn" style="background:#d4a373;" onclick="generateXReading()">X-Read</button>
                         <button class="warn-btn" onclick="closeShift()">Z-Read</button>
                     </div>
