@@ -391,31 +391,65 @@ async function confirmFolioCheckout() {
     const batch = db.batch();
     const checkoutTime = new Date().toISOString();
 
-    // 1. Mark Folio as CLOSED and record payment details
+    // Generate Invoice Number for Sales Report
+    const configRef = db.collection('config').doc('system');
+    const configDoc = await configRef.get();
+    let invNum = configDoc.exists ? (configDoc.data().invoiceCount || 1) : 1;
+    let currentGT = configDoc.exists ? (configDoc.data().grandTotal || 0) : 0;
+    let invString = "INV-" + String(invNum).padStart(6, '0');
+
+    // 1. Log payment into Sales Report (WITH FULL FOLIO DATA)
+    const saleRef = db.collection("sales").doc();
+    batch.set(saleRef, {
+        invoiceNo: invString,
+        tableNo: `Room ${activeFolioRoomId}`,
+        itemName: "Room Folio Checkout",
+        grossAmount: activeFolioData.grandTotal,
+        netAmount: activeFolioData.grandTotal,
+        totalCost: 0, 
+        paymentMethod: method,
+        cashTendered: tendered,
+        changeDue: change,
+        status: 'COMPLETED',
+        archived: false,
+        timestamp: new Date(),
+        folioSnapshot: activeFolioData // Saves guest info so it can be reprinted later!
+    });
+
+    // 2. Mark Folio as CLOSED and record payment details
     batch.update(db.collection("folios").doc(activeFolioData.id), {
         status: "CLOSED",
         closedAt: checkoutTime,
         paymentMethod: method,
         amountTendered: tendered,
-        changeGiven: change
+        changeGiven: change,
+        invoiceNo: invString
     });
 
-    // 2. Clear the Room in the Rack
-    batch.update(db.collection("rooms").doc(activeFolioData.roomId), {
-        status: "AVAILABLE", // The room is now empty
+    // 3. Clear the Room in the Rack
+    batch.update(db.collection("rooms").doc(activeFolioRoomId), {
+        status: "AVAILABLE",
         currentGuestName: null,
         currentFolioId: null
     });
 
+    // 4. Update Global Invoice Counter
+    batch.update(configRef, { invoiceCount: invNum + 1, grandTotal: currentGT + activeFolioData.grandTotal });
+
     try {
         await batch.commit();
-        
+
+        // 🖨️ AUTO-PRINT THE GUEST INVOICE IMMEDIATELY!
+        printFolioInvoice();
+
         // Hide modal and show success message
         document.getElementById("folioPaymentModal").style.display = "none";
-        alert(`Payment successful!\n\nMethod: ${method}\nChange: ₱${change.toFixed(2)}`);
-        
-        activeFolioData = null; // Clear memory
-        
+        showToast(`Payment successful!\nMethod: ${method}\nChange: ₱${change.toFixed(2)}`);
+
+        // Clear memory
+        activeFolioData = null; 
+        activeFolioRoomId = null;
+
     } catch (e) {
         console.error(e);
         alert("Error processing payment.");
