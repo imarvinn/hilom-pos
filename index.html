@@ -428,6 +428,23 @@
                     </div>
                 </div>
 
+                <!-- NEW: GUEST ADD-ONS -->
+                <div class="form-group" style="margin-top: 20px; background: white; padding: 15px; border-radius: 8px; border: 1px solid #e0e5e0;">
+                    <label style="color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">Enhance Your Stay (Optional)</label>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <label style="font-weight: normal; cursor: pointer;"><input type="checkbox" class="addon-cb" value="Breakfast" data-price="300"> 🍳 Daily Breakfast (+₱300/night)</label>
+                        <label style="font-weight: normal; cursor: pointer;"><input type="checkbox" class="addon-cb" value="Airport Transfer" data-price="1000"> 🚐 Airport Pick-up (+₱1,000 flat)</label>
+                        <label style="font-weight: normal; cursor: pointer;"><input type="checkbox" class="addon-cb" value="Extra Bed" data-price="500"> 🛏️ Extra Bed (+₱500/night)</label>
+                    </div>
+                </div>
+
+                <!-- NEW: DYNAMIC PRICE ESTIMATE -->
+                <div style="background: #eef2eb; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--primary); text-align: right;">
+                    <span style="font-size: 14px; color: #555;">Estimated Total:</span>
+                    <div id="priceEstimate" style="font-size: 28px; font-weight: bold; color: var(--primary-dark);">₱0.00</div>
+                    <div id="priceBreakdown" style="font-size: 13px; color: #666; margin-top: 5px;">Select dates and room to see price</div>
+                </div>
+
                 <button type="submit" class="submit-btn" id="submitBtn">Send Booking Request</button>
             </form>
         </div>
@@ -441,78 +458,114 @@
     </footer>
 
     <script>
-        document.getElementById('year').innerText = new Date().getFullYear();
+       document.getElementById('year').innerText = new Date().getFullYear();
 
-        // ==========================================
         // ⚠️ PASTE YOUR FIREBASE CONFIG HERE ⚠️
-        // ==========================================
         const firebaseConfig = {
-  apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
-  authDomain: "dbr-pos.firebaseapp.com",
-  projectId: "dbr-pos",
-  storageBucket: "dbr-pos.firebasestorage.app",
-  messagingSenderId: "176532211278",
-  appId: "1:176532211278:web:57d78462a3355a32ce251f",
-  measurementId: "G-MPYZMBHZDC"
-};
-        // ==========================================
+          apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
+          authDomain: "dbr-pos.firebaseapp.com",
+          projectId: "dbr-pos",
+          storageBucket: "dbr-pos.firebasestorage.app",
+          messagingSenderId: "176532211278",
+          appId: "1:176532211278:web:57d78462a3355a32ce251f",
+          measurementId: "G-MPYZMBHZDC"
+        };
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
 
+        // --- NEW: PREVENT PAST DATE BOOKINGS ---
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById("checkIn").setAttribute('min', today);
+        document.getElementById("checkOut").setAttribute('min', today);
+
+        // --- NEW: DYNAMIC PRICING CALCULATOR ---
+        const roomRates = { "Standard": 1500, "Family": 3500, "Suite": 5000 };
+
+        function calculateTotal() {
+            const roomType = document.getElementById("roomType").value;
+            const checkIn = document.getElementById("checkIn").value;
+            const checkOut = document.getElementById("checkOut").value;
+            
+            if(!roomType || !checkIn || !checkOut) return;
+            
+            const inDate = new Date(checkIn); const outDate = new Date(checkOut);
+            if (outDate <= inDate) return; // Prevent negative math
+            
+            const nights = Math.ceil((outDate - inDate) / (1000 * 3600 * 24));
+            const baseRate = roomRates[roomType];
+            let roomTotal = baseRate * nights;
+            let addonsTotal = 0;
+            
+            document.querySelectorAll(".addon-cb:checked").forEach(cb => {
+                let price = parseFloat(cb.getAttribute("data-price"));
+                // Airport transfer is a flat fee; others are per night
+                addonsTotal += (cb.value === "Airport Transfer") ? price : (price * nights);
+            });
+            
+            const grandTotal = roomTotal + addonsTotal;
+            document.getElementById("priceEstimate").innerText = `₱${grandTotal.toLocaleString('en-PH', {minimumFractionDigits: 2})}`;
+            document.getElementById("priceBreakdown").innerText = `${nights} night(s) at ₱${baseRate.toLocaleString()} + Add-ons`;
+        }
+
+        // Listen for changes to trigger the math
+        document.getElementById("roomType").addEventListener("change", calculateTotal);
+        document.getElementById("checkIn").addEventListener("change", calculateTotal);
+        document.getElementById("checkOut").addEventListener("change", calculateTotal);
+        document.querySelectorAll(".addon-cb").forEach(cb => cb.addEventListener("change", calculateTotal));
+
+
+        // --- FIREBASE SUBMISSION ---
         document.getElementById("bookingForm").addEventListener("submit", async (e) => {
             e.preventDefault();
             
             const btn = document.getElementById("submitBtn");
-            btn.innerText = "Sending...";
-            btn.disabled = true;
+            btn.innerText = "Sending..."; btn.disabled = true;
 
-            const guestName = document.getElementById("guestName").value.trim();
-            const contact = document.getElementById("contact").value.trim();
-            const roomType = document.getElementById("roomType").value;
             const checkIn = document.getElementById("checkIn").value;
             const checkOut = document.getElementById("checkOut").value;
 
             if (new Date(checkOut) <= new Date(checkIn)) {
                 alert("Check-out date must be after check-in date.");
-                btn.innerText = "Send Booking Request";
-                btn.disabled = false;
+                btn.innerText = "Send Booking Request"; btn.disabled = false;
                 return;
             }
 
+            // Gather Add-ons
+            let selectedAddons = [];
+            document.querySelectorAll(".addon-cb:checked").forEach(cb => selectedAddons.push(cb.value));
+
             try {
                 await db.collection("web_reservations").add({
-                    guestName: guestName,
-                    contact: contact,
-                    roomType: roomType,
+                    guestName: document.getElementById("guestName").value.trim(),
+                    contact: document.getElementById("contact").value.trim(),
+                    roomType: document.getElementById("roomType").value,
                     checkInDate: checkIn,
                     checkOutDate: checkOut,
+                    addons: selectedAddons.join(", ") || "None", // NEW
+                    estimatedTotal: document.getElementById("priceEstimate").innerText, // NEW
                     status: "PENDING",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
                 alert("Success! Your booking request has been sent to our Front Desk. We will contact you shortly to confirm.");
                 document.getElementById("bookingForm").reset();
+                document.getElementById("priceEstimate").innerText = "₱0.00";
+                document.getElementById("priceBreakdown").innerText = "Select dates and room to see price";
 
             } catch (error) {
                 console.error("Error writing document: ", error);
                 alert("There was an error submitting your request. Please try again.");
             } finally {
-                btn.innerText = "Send Booking Request";
-                btn.disabled = false;
+                btn.innerText = "Send Booking Request"; btn.disabled = false;
             }
         });
         
-        // Navbar Scroll Animation Trigger
+        // Navbar Scroll Animation
         window.addEventListener("scroll", function() {
             const nav = document.querySelector("nav");
-            if (window.scrollY > 50) {
-                nav.classList.add("scrolled");
-            } else {
-                nav.classList.remove("scrolled");
-            }
+            if (window.scrollY > 50) nav.classList.add("scrolled");
+            else nav.classList.remove("scrolled");
         });
    
     </script>

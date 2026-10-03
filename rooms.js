@@ -496,11 +496,18 @@ function listenForWebReservations() {
                     <div style="font-weight: bold; font-size: 15px;">${data.guestName}</div>
                     <div style="font-size: 12px; color: #555; margin-bottom: 5px;">📞 ${data.contact}</div>
                     <div style="color: #557a46; font-weight: bold; font-size: 13px;">${data.roomType} Room</div>
-                    <div style="font-size: 12px; margin-bottom: 10px;">
+                    
+                    <div style="font-size: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc;">
                         <strong>In:</strong> ${data.checkInDate} <br>
                         <strong>Out:</strong> ${data.checkOutDate} (${nights} nights)
                     </div>
-                    <div style="display: flex; gap: 5px;">
+                    
+                    <div style="font-size: 12px; margin-top: 8px; background: #fff3cd; padding: 5px; border-radius: 4px;">
+                        <strong>Extras:</strong> ${data.addons || 'None'}<br>
+                        <strong>Est. Total:</strong> <span style="color: #bd4b4b; font-weight: bold;">${data.estimatedTotal || 'N/A'}</span>
+                    </div>
+
+                    <div style="display: flex; gap: 5px; margin-top: 10px;">
                         <button onclick="approveWebReservation('${doc.id}', '${data.guestName}', '${data.roomType}', ${nights}, '${data.checkInDate}', '${data.checkOutDate}')" style="background: #557a46; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Assign Room</button>
                         <button onclick="rejectWebReservation('${doc.id}')" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">X</button>
                     </div>
