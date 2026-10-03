@@ -240,9 +240,30 @@
         @media (max-width: 768px) {
             nav {
                 flex-direction: column;
-                padding: 15px;
-                gap: 15px;
+                padding: 10px 15px; /* Reduced top and bottom padding */
+                gap: 8px; /* Pulled the logo and buttons closer together */
             }
+            
+            nav.scrolled {
+                padding: 5px 15px; /* Even tighter when scrolling on phones */
+            }
+
+            .nav-logo {
+                position: relative;
+                left: auto;
+                top: auto;
+                transform: none;
+                height: 55px; /* Shrunk slightly for better mobile proportion */
+            }
+
+            nav.scrolled .nav-logo {
+                left: auto;
+                top: auto;
+                transform: none;
+                height: 45px;
+            }
+
+            /* Leave your existing nav h1, nav a, hero, and date-group rules below here untouched */
             nav h1 {
                 font-size: 28px;
             }
