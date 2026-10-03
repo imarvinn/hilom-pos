@@ -81,11 +81,12 @@
         .action-buttons {
             display: flex;
             gap: 10px;
+            margin-bottom: 10px;
         }
         .action-buttons button {
             flex: 1;
             padding: 15px;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             border: none;
             border-radius: 8px;
@@ -97,6 +98,8 @@
         .btn-in:hover { background-color: var(--primary-dark); }
         .btn-out { background-color: #bd4b4b; }
         .btn-out:hover { background-color: #a03f3f; }
+        .btn-break { background-color: #d4a373; }
+        .btn-break:hover { background-color: #b08055; }
     </style>
 </head>
 <body>
@@ -126,6 +129,10 @@
         <div class="action-buttons">
             <button class="btn-in" onclick="processPunch('IN')">TIME IN</button>
             <button class="btn-out" onclick="processPunch('OUT')">TIME OUT</button>
+        </div>
+        <div class="action-buttons">
+            <button class="btn-break" onclick="processPunch('START_BREAK')">START BREAK</button>
+            <button class="btn-break" style="background-color: #8c5d3a;" onclick="processPunch('END_BREAK')">END BREAK</button>
         </div>
     </div>
 
@@ -166,12 +173,11 @@
         function backspace() { currentPin = currentPin.slice(0, -1); updatePinDisplay(); }
         function updatePinDisplay() { pinDisplay.innerText = "*".repeat(currentPin.length); }
 
-        // --- CLOCK IN & OUT LOGIC ---
+      // --- CLOCK IN, OUT & BREAK LOGIC ---
         async function processPunch(type) {
             if (currentPin.length !== 4) return alert("Please enter your 4-digit PIN.");
             
             try {
-                // Find Staff Member by PIN
                 const staffQuery = await db.collection("staff").where("pinCode", "==", currentPin).get();
                 if (staffQuery.empty) {
                     clearPin();
@@ -181,65 +187,106 @@
                 const staffDoc = staffQuery.docs[0];
                 const staffId = staffDoc.id;
                 const staffData = staffDoc.data();
-                
                 const now = new Date();
                 const shiftDateStr = now.toISOString().split('T')[0]; 
                 const batch = db.batch();
 
                 if (type === 'IN') {
-                    if (staffData.status === "CLOCKED_IN") {
+                    if (staffData.status === "CLOCKED_IN" || staffData.status === "ON_BREAK") {
                         clearPin();
-                        return alert(`${staffData.name}, you are already clocked in!`);
+                        return alert(`${staffData.name}, you are already on an active shift!`);
                     }
 
-                    // Create new DTR Log
                     const dtrRef = db.collection("dtr_logs").doc();
                     batch.set(dtrRef, {
                         staffId: staffId,
                         staffName: staffData.name,
                         timeIn: firebase.firestore.FieldValue.serverTimestamp(),
                         timeOut: null,
+                        breakStart: null,
+                        breakEnd: null,
+                        lateFromBreak: false,
                         shiftDate: shiftDateStr,
                         totalHours: 0
                     });
 
-                    // Update staff status
                     batch.update(db.collection("staff").doc(staffId), { status: "CLOCKED_IN" });
-
                     await batch.commit();
-                    alert(`✅ TIME IN SUCCESS\nWelcome, ${staffData.name}!\nTime: ${now.toLocaleTimeString()}`);
+                    alert(`✅ TIME IN SUCCESS\nWelcome, ${staffData.name}!`);
                 
-                } else if (type === 'OUT') {
+                } else if (type === 'START_BREAK') {
                     if (staffData.status !== "CLOCKED_IN") {
                         clearPin();
-                        return alert(`${staffData.name}, you must Time In first.`);
+                        return alert(`You must be actively clocked in to start a break.`);
                     }
 
-                    // Find the open DTR Log
-                    const logQuery = await db.collection("dtr_logs")
-                        .where("staffId", "==", staffId)
-                        .where("timeOut", "==", null)
-                        .limit(1).get();
+                    const logQuery = await db.collection("dtr_logs").where("staffId", "==", staffId).where("timeOut", "==", null).limit(1).get();
+                    if (!logQuery.empty) {
+                        batch.update(db.collection("dtr_logs").doc(logQuery.docs[0].id), { breakStart: firebase.firestore.FieldValue.serverTimestamp() });
+                        batch.update(db.collection("staff").doc(staffId), { status: "ON_BREAK" });
+                        await batch.commit();
+                        alert(`☕ BREAK STARTED\nEnjoy your lunch, ${staffData.name}!\nReturn within 1 hour.`);
+                    }
+                    
+                } else if (type === 'END_BREAK') {
+                    if (staffData.status !== "ON_BREAK") {
+                        clearPin();
+                        return alert(`You are not currently on a break.`);
+                    }
 
+                    const logQuery = await db.collection("dtr_logs").where("staffId", "==", staffId).where("timeOut", "==", null).limit(1).get();
                     if (!logQuery.empty) {
                         const logDoc = logQuery.docs[0];
+                        const breakStartMs = logDoc.data().breakStart.toDate().getTime();
+                        const breakDurationMinutes = (now.getTime() - breakStartMs) / (1000 * 60);
+                        const isLate = breakDurationMinutes > 60; // strict 1-hour limit
                         
-                        // Calculate hours
+                        batch.update(db.collection("dtr_logs").doc(logDoc.id), { 
+                            breakEnd: firebase.firestore.FieldValue.serverTimestamp(),
+                            lateFromBreak: isLate
+                        });
+                        batch.update(db.collection("staff").doc(staffId), { status: "CLOCKED_IN" });
+                        await batch.commit();
+                        
+                        if (isLate) {
+                            alert(`⚠️ LATE RETURN\nYou exceeded the 60-minute limit (${Math.round(breakDurationMinutes)} mins). This has been logged.`);
+                        } else {
+                            alert(`▶️ BREAK ENDED\nWelcome back, ${staffData.name}!`);
+                        }
+                    }
+
+                } else if (type === 'OUT') {
+                    if (staffData.status === "CLOCKED_OUT") {
+                        clearPin();
+                        return alert(`You are already clocked out.`);
+                    }
+                    if (staffData.status === "ON_BREAK") {
+                        clearPin();
+                        return alert(`Please END BREAK before Clocking Out for the day.`);
+                    }
+
+                    const logQuery = await db.collection("dtr_logs").where("staffId", "==", staffId).where("timeOut", "==", null).limit(1).get();
+                    if (!logQuery.empty) {
+                        const logDoc = logQuery.docs[0];
                         const timeInMs = logDoc.data().timeIn.toDate().getTime();
-                        const timeOutMs = now.getTime();
-                        const hoursWorked = (timeOutMs - timeInMs) / (1000 * 60 * 60);
+                        
+                        // Deduct break duration from total hours if they took one
+                        let breakDeductionMs = 0;
+                        if (logDoc.data().breakStart && logDoc.data().breakEnd) {
+                            breakDeductionMs = logDoc.data().breakEnd.toDate().getTime() - logDoc.data().breakStart.toDate().getTime();
+                        }
+                        
+                        const netWorkedMs = (now.getTime() - timeInMs) - breakDeductionMs;
+                        const hoursWorked = netWorkedMs / (1000 * 60 * 60);
 
                         batch.update(db.collection("dtr_logs").doc(logDoc.id), {
                             timeOut: firebase.firestore.FieldValue.serverTimestamp(),
                             totalHours: parseFloat(hoursWorked.toFixed(2))
                         });
+                        batch.update(db.collection("staff").doc(staffId), { status: "CLOCKED_OUT" });
+                        await batch.commit();
+                        alert(`👋 TIME OUT SUCCESS\nGoodbye, ${staffData.name}!`);
                     }
-
-                    // Update staff status
-                    batch.update(db.collection("staff").doc(staffId), { status: "CLOCKED_OUT" });
-
-                    await batch.commit();
-                    alert(`👋 TIME OUT SUCCESS\nGoodbye, ${staffData.name}!\nTime: ${now.toLocaleTimeString()}`);
                 }
 
                 clearPin();
