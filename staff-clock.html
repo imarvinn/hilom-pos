@@ -131,14 +131,15 @@
 
     <script>
         const firebaseConfig = {
-  apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
-  authDomain: "dbr-pos.firebaseapp.com",
-  projectId: "dbr-pos",
-  storageBucket: "dbr-pos.firebasestorage.app",
-  messagingSenderId: "176532211278",
-  appId: "1:176532211278:web:57d78462a3355a32ce251f",
-  measurementId: "G-MPYZMBHZDC"
-};
+            apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
+            authDomain: "dbr-pos.firebaseapp.com",
+            projectId: "dbr-pos",
+            storageBucket: "dbr-pos.firebasestorage.app",
+            messagingSenderId: "176532211278",
+            appId: "1:176532211278:web:57d78462a3355a32ce251f",
+            measurementId: "G-MPYZMBHZDC"
+        };
+        
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
 
@@ -156,7 +157,7 @@
         const pinDisplay = document.getElementById("pinDisplay");
 
         function pressKey(num) {
-            if (currentPin.length < 4) { // Restrict to 4 digits
+            if (currentPin.length < 4) {
                 currentPin += num;
                 updatePinDisplay();
             }
@@ -170,7 +171,7 @@
             if (currentPin.length !== 4) return alert("Please enter your 4-digit PIN.");
             
             try {
-                // 1. Find Staff Member by PIN
+                // Find Staff Member by PIN
                 const staffQuery = await db.collection("staff").where("pinCode", "==", currentPin).get();
                 if (staffQuery.empty) {
                     clearPin();
@@ -182,7 +183,7 @@
                 const staffData = staffDoc.data();
                 
                 const now = new Date();
-                const shiftDateStr = now.toISOString().split('T')[0]; // "YYYY-MM-DD"
+                const shiftDateStr = now.toISOString().split('T')[0]; 
                 const batch = db.batch();
 
                 if (type === 'IN') {
