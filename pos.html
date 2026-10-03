@@ -386,6 +386,38 @@
 
     <!-- ================= MODALS & PRINT AREAS ================= -->
 
+    <!-- WALK-IN GUEST REGISTRATION MODAL -->
+<!-- WALK-IN GUEST REGISTRATION MODAL -->
+    <div id="walkInModal" class="modal-overlay hidden" style="z-index: 2600;">
+        <div class="modal-content" style="max-width: 400px; text-align: left;">
+            <h2 style="border-bottom: none; color: #2b4227; margin-top: 0; margin-bottom: 5px;">Guest Registration</h2>
+            <p style="color: #666; font-size: 14px; margin-top: 0; border-bottom: 1px solid #ccc; padding-bottom: 10px;">Checking in: <strong id="walkInRoomDisplay"></strong></p>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+                <input type="text" id="walkInName" placeholder="Full Name (Required)" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="walkInNights" placeholder="Nights" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; flex: 1; font-size: 14px;" value="1">
+                    <input type="text" id="walkInInclusions" placeholder="Inclusions (e.g. Free Breakfast)" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; flex: 2; font-size: 14px;">
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="walkInAge" placeholder="Age" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; flex: 1; font-size: 14px;">
+                    <input type="text" id="walkInContact" placeholder="Contact No." style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; flex: 2; font-size: 14px;">
+                </div>
+                
+                <input type="email" id="walkInEmail" placeholder="Email Address (Optional)" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                
+                <textarea id="walkInAddress" placeholder="Home Address" style="padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; min-height: 60px; font-family: inherit; font-size: 14px;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="add-btn" style="flex: 2; padding: 12px; background: #557a46; font-size: 15px;" onclick="confirmWalkInCheckIn()">✔️ Confirm Check-In</button>
+                <button class="delete-btn" style="flex: 1; padding: 12px; font-size: 15px;" onclick="closeWalkInModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ADMIN PIN MODAL -->
     <div id="pinModal" class="modal-overlay hidden">
         <div class="modal-content" style="text-align:center;">

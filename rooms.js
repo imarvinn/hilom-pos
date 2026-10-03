@@ -58,18 +58,59 @@ function loadRoomRack() {
     });
 }
 
-// --- 1. UPDATE THIS: CHECK-IN (CREATES FOLIO LEDGER) ---
-async function checkInRoom(roomId, rate, type) {
-    let guestName = prompt(`Enter Guest Name for Room ${roomId}:`, "Walk-in Guest");
-    if (!guestName) return; 
-    
-    let nightsStr = prompt(`How many nights? (Rate: ₱${rate}/night)`, "1");
-    if (!nightsStr) return; 
-    let nights = parseInt(nightsStr);
-    if (isNaN(nights) || nights <= 0) return showToast("Invalid number of nights.");
+// --- 1. CHECK-IN (CREATES FOLIO LEDGER & SAVES CRM DATA) ---
+let pendingWalkInRoomId = null;
+let pendingWalkInRoomNumber = null;
+let pendingWalkInRate = null;
+let pendingWalkInType = null;
 
-    // NEW: Prompt for inclusions
-    let inclusions = prompt(`Enter inclusions (e.g., Free Breakfast for 2) or leave blank:`, "Free Breakfast x2");
+// Opens the custom modal
+function checkInRoom(roomId, roomRate, roomType) {
+    pendingWalkInRoomId = roomId;
+    
+    // We need to fetch the room number from the DOM or pass it differently.
+    // For now, extract it assuming roomId is the roomNumber string based on your setup.
+    pendingWalkInRoomNumber = roomId; 
+    
+    pendingWalkInRate = roomRate;
+    pendingWalkInType = roomType;
+
+    document.getElementById("walkInRoomDisplay").innerText = "Room " + pendingWalkInRoomNumber + ` (₱${roomRate}/night)`;
+    
+    // Clear old inputs
+    document.getElementById("walkInName").value = "";
+    document.getElementById("walkInNights").value = "1";
+    document.getElementById("walkInInclusions").value = "";
+    document.getElementById("walkInAge").value = "";
+    document.getElementById("walkInContact").value = "";
+    document.getElementById("walkInEmail").value = "";
+    document.getElementById("walkInAddress").value = "";
+
+    document.getElementById("walkInModal").classList.remove("hidden");
+}
+
+function closeWalkInModal() {
+    document.getElementById("walkInModal").classList.add("hidden");
+    pendingWalkInRoomId = null;
+}
+
+// Handles the database save when they click "Confirm Check-In"
+async function confirmWalkInCheckIn() {
+    const guestName = document.getElementById("walkInName").value.trim();
+    const nightsStr = document.getElementById("walkInNights").value;
+    const inclusions = document.getElementById("walkInInclusions").value.trim() || "None";
+    
+    const guestAge = document.getElementById("walkInAge").value.trim();
+    const guestContact = document.getElementById("walkInContact").value.trim();
+    const guestEmail = document.getElementById("walkInEmail").value.trim();
+    const guestAddress = document.getElementById("walkInAddress").value.trim();
+
+    const nights = parseInt(nightsStr);
+
+    if (!guestName || isNaN(nights) || nights <= 0) {
+        alert("Please enter the guest's name and a valid number of nights.");
+        return;
+    }
 
     let checkInDate = new Date();
     let expectedCheckOut = new Date(checkInDate);
@@ -79,30 +120,43 @@ async function checkInRoom(roomId, rate, type) {
     const batch = db.batch();
     const folioRef = db.collection("folios").doc();
 
+    // 1. Create the Folio Ledger for billing
     batch.set(folioRef, {
-        roomId: roomId,
-        roomType: type || "Standard", 
+        roomId: pendingWalkInRoomId,
+        roomType: pendingWalkInType || "Standard", 
         guestName: guestName,
         checkInTime: checkInDate.toISOString(),
         expectedCheckOut: expectedCheckOut.toISOString(), 
-        dailyRate: rate,
+        dailyRate: pendingWalkInRate,
         nights: nights,
-        inclusions: inclusions || "None", // Saves the inclusions
-        roomChargesTotal: rate * nights,
+        inclusions: inclusions,
+        roomChargesTotal: pendingWalkInRate * nights,
         posChargesTotal: 0,
         posOrders: [],
-        grandTotal: rate * nights,
+        grandTotal: pendingWalkInRate * nights,
         status: "OPEN"
     });
 
-    batch.update(db.collection("rooms").doc(roomId), {
+    // 2. Lock the room and save the CRM Data
+    batch.update(db.collection("rooms").doc(pendingWalkInRoomId), {
         status: "OCCUPIED",
         currentGuestName: guestName,
-        currentFolioId: folioRef.id
+        currentFolioId: folioRef.id,
+        guestAge: guestAge,
+        guestContact: guestContact,
+        guestEmail: guestEmail,
+        guestAddress: guestAddress,
+        checkInTime: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    try { await batch.commit(); showToast(`Guest checked into Room ${roomId}!`); } 
-    catch(e) { console.error(e); showToast("Error processing check-in."); }
+    try {
+        await batch.commit();
+        alert(`Success: ${guestName} checked into Room ${pendingWalkInRoomNumber}`);
+        closeWalkInModal();
+    } catch (error) {
+        console.error("Error checking in:", error);
+        alert("Failed to check in guest. Check permissions.");
+    }
 }
 
 // --- 2. UPDATE THIS: VIEW & SETTLE FOLIO ---
