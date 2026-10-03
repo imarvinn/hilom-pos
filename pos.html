@@ -167,108 +167,22 @@
                 </div>
             </div>
 
-        <!-- ================= VIEW 4: SALES & REPORTS ================= -->
-            <div id="salesView" class="view-section hidden">
-                <div class="no-print" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <button id="tabSales" style="flex: 1; padding: 12px; font-size: 16px; background-color: #557a46; color: white;" onclick="switchSalesTab('sales')">Shift Sales & Profit</button>
-                    <button id="tabExpenses" style="flex: 1; padding: 12px; font-size: 16px; background-color: #e0e5e0; color: #333;" onclick="switchSalesTab('expenses')">Operational Expenses</button>
-                </div>
-
-                <!-- SALES TABS -->
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <button id="btnPosSales" onclick="switchRevenueTab('pos')" style="padding: 10px 20px; background: #557a46; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
-                        Restaurant / POS Sales
-                    </button>
-                    <button id="btnRoomSales" onclick="switchRevenueTab('room')" style="padding: 10px 20px; background: #ddd; color: #333; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
-                        Room Accommodations
-                    </button>
-                </div>
-
-                <!-- POS SALES CONTAINER -->
-                <div id="posSalesContainer" style="display: block;">
-                    <h3 style="color: #557a46; margin-bottom: 10px;">Revenue</h3>
-                    <table id="posSalesTable">...</table> 
-                </div>
-
-                <!-- ROOM SALES CONTAINER -->
-                <div id="roomSalesContainer" style="display: none;">
-                    <h3 style="color: #2b4227; margin-bottom: 10px;">Front Desk & Room Revenue</h3>
-                    <table id="roomSalesTable">...</table> 
-                </div>
-
-                <!-- SALES CARD -->
-                <div class="card" id="salesCard">
-                    <div class="print-only">HILOM POS - Sales & Profit Report</div>
-                    
-                    <div class="no-print" style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <h2 style="margin: 0; border: none;">Shift Sales & Profit</h2>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <input type="date" id="dateFilter" onchange="filterSales()" style="margin:0;">
-                            <button class="save-btn" onclick="exportEJournal()" style="background:#2b4227;">E-Journal</button>
-                            <button class="save-btn" onclick="exportCSV()" style="background:#557a46;">CSV</button>
-                            <button class="save-btn" onclick="printSales()">PDF</button>
-                            <button class="warn-btn" style="background:#d4a373;" onclick="generateXReading()">X-Read</button>
-                            <button class="warn-btn" onclick="closeShift()">Z-Read</button>
-                        </div>
-                    </div>
-
-                    <div class="profit-dashboard">
-                        <div style="flex:1; text-align:center;"><h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Total Net Revenue</h4><span id="metricRevenue" style="font-size:22px; font-weight:bold; color:#2b4227;">₱0.00</span></div>
-                        <div style="flex:1; text-align:center;"><h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Total Cost</h4><span id="metricCost" style="font-size:22px; font-weight:bold; color:#bd4b4b;">₱0.00</span></div>
-                        <div style="flex:1; text-align:center;"><h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Gross Profit</h4><span id="metricProfit" style="font-size:22px; font-weight:bold; color:#333;">₱0.00</span></div>
-                        <div style="flex:1; text-align:center; border-left: 2px dashed #ccc; padding-left:10px;"><h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Expenses</h4><span id="metricExpenses" style="font-size:22px; font-weight:bold; color:#8c5d3a;">₱0.00</span></div>
-                        <div style="flex:1; text-align:center;"><h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Net Profit</h4><span id="metricNet" style="font-size:22px; font-weight:bold; color:#557a46;">₱0.00</span></div>
-                    </div>
-
-                    <table>
-                        <thead><tr><th>Time / Inv #</th><th>Table Details</th><th>Method</th><th>Gross</th><th>Net Rev</th><th class="no-print">Action</th></tr></thead>
-                        <tbody id="salesList"></tbody>
-                    </table>
-                    <div id="salesPagination" class="pagination-controls no-print"></div>
-                </div>
-
-                <!-- EXPENSE TRACKER CARD -->
-                <div class="card hidden" id="expensesCard">
-                    <h2 style="margin: 0; border: none;">Operational Expenses</h2>
-                    <div class="no-print" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px; margin-top: 15px;">
-                        <input type="text" id="expName" placeholder="Expense (e.g., Rent, Sugar)" required style="flex: 1; min-width: 150px;">
-                        <input type="number" id="expAmount" placeholder="Amount (₱)" required style="width: 110px;">
-                        <button class="add-btn" onclick="addExpense()">+ Add Expense</button>
-                    </div>
-                    <table>
-                        <thead><tr><th>Time</th><th>Expense Description</th><th>Amount</th><th class="no-print">Action</th></tr></thead>
-                        <tbody id="expenseList"></tbody>
-                    </table>
-                    <div id="expensePagination" class="pagination-controls no-print"></div>
-                </div>
-            </div> <!-- END OF SALES VIEW -->
-
-            <!-- ================= VIEW: TIME CLOCK ================= -->
-            <div id="timeClockView" class="view-section hidden" style="padding: 20px;">
-                <div class="card">
-                    <h2>Staff Attendance & Time Clock</h2>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Type your name and record your shift status.</p>
-
-                    <div style="background: #f9f9f9; padding: 25px; border-radius: 8px; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary);">
-                        <div class="form-group" style="margin-bottom: 20px;">
-                            <label style="display: block; font-weight: bold; margin-bottom: 8px;">Staff Name</label>
-                            <input type="text" id="staffNameInput" placeholder="e.g. Juan Dela Cruz" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; box-sizing: border-box;">
-                        </div>
-                        
-                        <div style="display: flex; gap: 10px;">
-                            <button onclick="clockIn()" style="flex: 1; background: #557a46; color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 15px;">Clock In</button>
-                            <button onclick="clockOut()" style="flex: 1; background: #bd4b4b; color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 15px;">Clock Out</button>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 30px; max-width: 700px;">
-                        <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Recent Attendance Logs</h3>
-                        <div id="attendanceLogs" style="background: #f9f9f9; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
-                            Loading logs...
-                        </div>
-                    </div>
-                </div>
+            <!-- ================= VIEW 4: SALES & REPORTS ================= -->
+        <div id="salesView" class="view-section hidden">
+            <div class="no-print" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button id="tabSales" style="flex: 1; padding: 12px; font-size: 16px; background-color: #557a46; color: white;" onclick="switchSalesTab('sales')">Shift Sales & Profit</button>
+                <button id="tabExpenses" style="flex: 1; padding: 12px; font-size: 16px; background-color: #e0e5e0; color: #333;" onclick="switchSalesTab('expenses')">Operational Expenses</button>
             </div>
+            <!-- SALES TABS -->
+<div style="display: flex; gap: 10px; margin-bottom: 20px;">
+    <button id="btnPosSales" onclick="switchRevenueTab('pos')" style="padding: 10px 20px; background: #557a46; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+        Restaurant / POS Sales
+    </button>
+    <button id="btnRoomSales" onclick="switchRevenueTab('room')" style="padding: 10px 20px; background: #ddd; color: #333; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+        Room Accommodations
+    </button>
+</div>
+
 
 
 <!-- POS SALES CONTAINER -->
@@ -332,6 +246,34 @@
                 <div id="expensePagination" class="pagination-controls no-print"></div>
             </div>
         </div>
+
+        <!-- ================= VIEW: TIME CLOCK (NOW PROPERLY PLACED OUTSIDE) ================= -->
+            <div id="timeClockView" class="view-section hidden" style="padding: 20px;">
+                <div class="card">
+                    <h2>Staff Attendance & Time Clock</h2>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Type your name and record your shift status.</p>
+
+                    <div style="background: #f9f9f9; padding: 25px; border-radius: 8px; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary);">
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 8px;">Staff Name</label>
+                            <input type="text" id="staffNameInput" placeholder="e.g. Juan Dela Cruz" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; box-sizing: border-box;">
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="clockIn()" style="flex: 1; background: #557a46; color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 15px;">Clock In</button>
+                            <button onclick="clockOut()" style="flex: 1; background: #bd4b4b; color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 15px;">Clock Out</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 30px; max-width: 700px;">
+                        <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Recent Attendance Logs</h3>
+                        <div id="attendanceLogs" style="background: #f9f9f9; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+                            Loading logs...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
         <!-- ================= VIEW 5: FRONT DESK / ROOMS ================= -->
 <div id="roomsView" class="view-section hidden">
