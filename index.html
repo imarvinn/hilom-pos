@@ -23,6 +23,9 @@
             color: #333;
             scroll-behavior: smooth;
         }
+        body {
+            padding-top: 90px; 
+        }
         /* NAVBAR */
         nav {
             background-color: white;
@@ -245,6 +248,10 @@
 
         /* MOBILE RESPONSIVENESS */
         @media (max-width: 768px) {
+            body {
+                padding-top: 110px; /* Taller offset for the stacked mobile menu */
+            }
+
             nav {
                 flex-direction: column;
                 align-items: center; 
@@ -254,8 +261,8 @@
             
             /* WHEN SCROLLED ON MOBILE */
             nav.scrolled {
-                flex-direction: row; /* Flips layout horizontally */
-                justify-content: space-between; /* Pushes logo left, button right */
+                flex-direction: row; 
+                justify-content: space-between; 
                 padding: 10px 15px; 
             }
 
@@ -277,10 +284,10 @@
                 align-items: flex-end;
             }
             nav.scrolled .new-text-logo {
-                height: 25px; /* Shrinks the logo */
+                height: 25px; 
             }
             nav.scrolled .sub-text {
-                font-size: 11px; /* Shrinks "by Dondeezco" */
+                font-size: 11px;
                 margin-bottom: 2px;
             }
 
@@ -289,11 +296,17 @@
                 margin-left: 10px;
                 margin-right: 10px;
                 font-size: 14px;
+                transition: all 0.3s ease; /* Adds smooth fade to the text links */
+                overflow: hidden;
+                white-space: nowrap;
             }
             
-            /* Hides the standard text links to make room for the button */
+            /* Smoothly collapse the text links instead of instantly hiding them */
             nav.scrolled a:not(.btn) {
-                display: none;
+                opacity: 0;
+                width: 0;
+                margin: 0;
+                padding: 0;
             }
             
             /* Shrinks the Book Now button slightly when scrolled */
