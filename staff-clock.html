@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hilom Staff Time Clock</title>
+    <link rel="icon" type="image/png" href="hilom.png">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+    <style>
+        :root { --primary: #557a46; --primary-dark: #2b4227; --bg-color: #f4f6f4; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .hidden { display: none !important; }
+        
+        /* Layout */
+        .header { background: var(--primary-dark); color: white; width: 100%; text-align: center; padding: 15px 0; font-size: 20px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .container { background: white; width: 100%; max-width: 500px; padding: 30px; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-top: 40px; border-top: 5px solid var(--primary); text-align: center; }
+        
+        /* Inputs & Buttons */
+        input { width: 100%; padding: 15px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 5px; font-size: 18px; box-sizing: border-box; text-align: center; }
+        .btn-group { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 15px; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        .btn-in { background: #557a46; } .btn-in:active { background: #3a5330; }
+        .btn-out { background: #bd4b4b; } .btn-out:active { background: #8a3535; }
+        
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; text-align: left; }
+        th { padding: 10px; border-bottom: 2px solid #eee; color: #555; }
+        td { padding: 10px; border-bottom: 1px solid #f2f2f2; }
+    </style>
+</head>
+<body>
+
+    <!-- AUTHENTICATION SCREEN -->
+    <div id="loginScreen" class="container">
+        <img src="hilom.png" alt="Hilom Logo" style="height: 60px; margin-bottom: 10px; border-radius: 8px;">
+        <h2 style="margin-top: 0; color: var(--primary-dark);">System Login</h2>
+        <p style="color: #666; font-size: 14px;">Please sign in to connect to the database.</p>
+        <input type="email" id="email" placeholder="Email Address" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button class="btn btn-in" style="width: 100%;" onclick="login()">Connect Device</button>
+    </div>
+
+    <!-- MAIN CLOCK SCREEN -->
+    <div id="appScreen" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div class="header">🕒 HILOM STAFF TIME CLOCK</div>
+        
+        <div class="container" style="margin-top: 20px;">
+            <h2 style="margin-top: 0; color: var(--primary-dark);">Record Shift</h2>
+            <p style="color: #666; margin-bottom: 20px;">Enter your full name to clock in or out.</p>
+            
+            <input type="text" id="staffNameInput" placeholder="Enter Your Name (e.g. Juan)">
+            
+            <div class="btn-group">
+                <button class="btn btn-in" onclick="recordTime('CLOCK_IN')">CLOCK IN</button>
+                <button class="btn btn-out" onclick="recordTime('CLOCK_OUT')">CLOCK OUT</button>
+            </div>
+        </div>
+
+        <div class="container" style="margin-top: 20px; border-top: 5px solid #8c5d3a;">
+            <h3 style="margin-top: 0; color: #8c5d3a; text-align: left;">Today's Activity</h3>
+            <div id="logsContainer">Loading...</div>
+        </div>
+        
+        <button onclick="auth.signOut()" style="margin-top: 20px; background: none; border: none; color: #888; cursor: pointer; text-decoration: underline;">Disconnect Device</button>
+    </div>
+
+    <script>
+        // ⚠️ PASTE YOUR FIREBASE CONFIG HERE ⚠️
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
+            authDomain: "dbr-pos.firebaseapp.com",
+            projectId: "dbr-pos",
+            storageBucket: "dbr-pos.firebasestorage.app",
+            messagingSenderId: "176532211278",
+            appId: "1:176532211278:web:57d78462a3355a32ce251f"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // AUTHENTICATION LOGIC
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('appScreen').classList.remove('hidden');
+                loadLogs();
+            } else {
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('appScreen').classList.add('hidden');
+            }
+        });
+
+        function login() {
+            auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value)
+                .catch(err => alert("Login failed: " + err.message));
+        }
+
+        // TIME CLOCK LOGIC
+        async function recordTime(type) {
+            const nameInput = document.getElementById("staffNameInput");
+            const name = nameInput.value.trim();
+            
+            if (!name) return alert("Please enter your name first!");
+            
+            const today = new Date().toISOString().split('T')[0];
+            
+            try {
+                await db.collection("staff_attendance").add({
+                    staffName: name,
+                    type: type,
+                    date: today,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                alert(`Success! ${name} is now logged ${type === 'CLOCK_IN' ? 'IN' : 'OUT'}.`);
+                nameInput.value = ""; // Clear for next person
+                loadLogs();
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Failed to save. Check your connection.");
+            }
+        }
+
+        // LIVE LOG LOADER
+        async function loadLogs() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            db.collection("staff_attendance")
+              .where("date", "==", today)
+              .orderBy("timestamp", "desc")
+              .limit(10)
+              .onSnapshot((snapshot) => {
+                  let html = `<table><tr><th>Name</th><th>Status</th><th>Time</th></tr>`;
+                  if (snapshot.empty) {
+                      document.getElementById("logsContainer").innerHTML = "<p style='color: #888;'>No logs yet today.</p>";
+                      return;
+                  }
+                  
+                  snapshot.forEach(doc => {
+                      const data = doc.data();
+                      let timeStr = "Just now";
+                      if (data.timestamp && data.timestamp.toDate) {
+                          timeStr = data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                      }
+                      
+                      const badge = data.type === "CLOCK_IN" 
+                          ? `<span style="background: #557a46; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">IN</span>`
+                          : `<span style="background: #bd4b4b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">OUT</span>`;
+                          
+                      html += `<tr><td><b>${data.staffName}</b></td><td>${badge}</td><td>${timeStr}</td></tr>`;
+                  });
+                  document.getElementById("logsContainer").innerHTML = html + "</table>";
+              });
+        }
+    </script>
+</body>
+</html>
