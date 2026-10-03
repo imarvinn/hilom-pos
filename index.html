@@ -324,6 +324,7 @@
         <div>
             <a href="#gallery">Experience</a>
             <a href="#rooms">Our Rooms</a>
+            <a href="#status">Check Status</a>
             <a href="#booking" class="btn">Book Now</a>
         </div>
     </nav>
@@ -453,6 +454,22 @@
         </div>
     </section>
 
+    <!-- BOOKING STATUS TRACKER -->
+    <section id="status" style="padding: 60px 20px; background-color: #f1f8e9; text-align: center;">
+        <div style="max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--accent);">
+            <h2 style="color: var(--primary-dark); margin-top: 0;">Check Reservation Status</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Enter the contact number you used to book.</p>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" id="trackContact" placeholder="e.g. 0917-123-4567" style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; min-width: 200px;">
+                <button onclick="checkStatus()" style="background-color: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px;">Search</button>
+            </div>
+            
+            <!-- Where the results will appear -->
+            <div id="statusResult" style="margin-top: 20px; text-align: left; display: none;"></div>
+        </div>
+    </section>
+
     <footer style="background-color: var(--primary-dark); color: white; padding: 30px 20px 20px; margin-top: auto;">
         <!-- NEW: CONTACT DETAILS -->
         <div style="text-align: center; margin-bottom: 20px; font-size: 15px; color: #e0e5e0;">
@@ -569,6 +586,67 @@
                 btn.innerText = "Send Booking Request"; btn.disabled = false;
             }
         });
+
+        // --- BOOKING STATUS TRACKER ---
+        async function checkStatus() {
+            const contact = document.getElementById("trackContact").value.trim();
+            const resultDiv = document.getElementById("statusResult");
+            
+            if (!contact) {
+                alert("Please enter a contact number.");
+                return;
+            }
+
+            resultDiv.style.display = "block";
+            resultDiv.innerHTML = "<p style='text-align:center; color: #666;'>Searching our system...</p>";
+
+            try {
+                // Search Firebase for matching phone number
+                const snapshot = await db.collection("web_reservations").where("contact", "==", contact).get();
+                
+                if (snapshot.empty) {
+                    resultDiv.innerHTML = "<p style='color: #bd4b4b; text-align:center; font-weight: bold;'>No reservation found for this number.</p>";
+                    return;
+                }
+
+                let bookings = [];
+                snapshot.forEach(doc => bookings.push(doc.data()));
+                
+                // Sort so newest bookings appear at the top
+                bookings.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+                let html = "";
+                bookings.forEach(data => {
+                    let statusColor = "#f39c12"; // Orange for Pending
+                    let statusText = data.status ? data.status.toUpperCase() : "PENDING";
+                    
+                    if (statusText === "CONFIRMED" || statusText === "APPROVED") {
+                        statusColor = "#557a46"; // Green
+                        statusText = "CONFIRMED";
+                    } else if (statusText === "REJECTED" || statusText === "CANCELLED") {
+                        statusColor = "#bd4b4b"; // Red
+                    }
+
+                    html += `
+                        <div style="border: 1px solid #e0e5e0; padding: 15px; border-radius: 8px; margin-bottom: 10px; background: #f9f9f9;">
+                            <div style="font-weight: bold; font-size: 18px; color: var(--primary-dark); margin-bottom: 5px;">${data.guestName}</div>
+                            <div style="font-size: 14px; color: #555; margin-bottom: 3px;"><strong>Room:</strong> ${data.roomType}</div>
+                            <div style="font-size: 14px; color: #555; margin-bottom: 15px;"><strong>Dates:</strong> ${data.checkInDate} to ${data.checkOutDate}</div>
+                            
+                            <div style="font-size: 15px; font-weight: bold; color: ${statusColor}; border-top: 1px dashed #ccc; padding-top: 10px;">
+                                ⬤ STATUS: ${statusText}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                resultDiv.innerHTML = html;
+
+            } catch (error) {
+                console.error("Error fetching status:", error);
+                resultDiv.innerHTML = "<p style='color: #bd4b4b; text-align:center;'>Error retrieving data. Please try again.</p>";
+            }
+        }
         
         // Navbar Scroll Animation
         window.addEventListener("scroll", function() {
