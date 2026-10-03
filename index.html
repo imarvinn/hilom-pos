@@ -37,37 +37,44 @@
             transition: padding 0.4s ease;
         }
         
-        nav h1 { 
-            margin: 0; 
-            color: var(--primary); 
-            font-size: 24px; 
-            letter-spacing: 2px; 
-            transition: opacity 0.4s ease;
-        }
         
         nav a {
             text-decoration: none;
             color: #333;
             font-weight: bold;
             margin-left: 20px;
+            display: inline-block; /* Forces parent to respect height */
+            vertical-align: middle; /* Centers standard links with the button */
         }
         
         nav a.btn {
+            display: inline-block; /* Stops the vertical overlap */
             background-color: var(--primary);
             color: white;
             padding: 10px 20px;
             border-radius: 5px;
         }
         
-        .nav-logo { 
-            height: 80px; /* Slightly reduced so it breathes inside the padding */
-            width: auto; 
+        /* NEW BRAND LOGO LAYOUT */
+        .brand-container {
+            display: flex;
+            align-items: flex-end; /* Aligns the text with the bottom of your image */
+            gap: 10px;
+            transition: transform 0.3s ease;
+        }
+        
+        .new-text-logo {
+            height: 50px; /* Adjust this to make the script bigger/smaller */
+            width: auto;
             object-fit: contain;
-            position: absolute;
-            left: 50%;
-            top: 50%; /* Pin to vertical center */
-            transform: translate(-50%, -50%); /* Center perfectly on both X and Y */
-            transition: all 0.4s ease;
+        }
+        
+        .sub-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 8px; /* Nudges the text up slightly so it aligns perfectly */
+            letter-spacing: 1px;
         }
 
         /* NEW: SCROLLED ANIMATION STATES */
@@ -301,6 +308,17 @@
                 transform: none;
                 height: 50px;
             }
+            .brand-container {
+                align-items: center; /* Centers them together on small screens */
+                gap: 5px;
+            }
+            .new-text-logo {
+                height: 40px; /* Shrinks the script image slightly for mobile */
+            }
+            .sub-text {
+                font-size: 14px;
+                margin-bottom: 0;
+            }
         }
 
         
@@ -309,10 +327,11 @@
 <body>
 
     <!-- Navigation -->
-    
     <nav>
-        <h1>HILOM by Dondeezco</h1>
-        <img src="hilom.png" alt="Hilom Resort" class="nav-logo">
+        <div class="brand-container">
+            <img src="text-1790998905612.png" alt="Hilom" class="new-text-logo">
+            <span class="sub-text">by Dondeezco</span>
+        </div>
         <div>
             <a href="#gallery">Experience</a>
             <a href="#rooms">Our Rooms</a>
