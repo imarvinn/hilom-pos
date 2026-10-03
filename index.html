@@ -428,14 +428,15 @@
                     </div>
                 </div>
 
-                <!-- NEW: GUEST ADD-ONS -->
-                <div class="form-group" style="margin-top: 20px; background: white; padding: 15px; border-radius: 8px; border: 1px solid #e0e5e0;">
-                    <label style="color: var(--primary); border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px;">Enhance Your Stay (Optional)</label>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <label style="font-weight: normal; cursor: pointer;"><input type="checkbox" class="addon-cb" value="Breakfast" data-price="300">  Daily Breakfast (+₱300/night)</label>
-                        <label style="font-weight: normal; cursor: pointer;"><input type="checkbox" class="addon-cb" value="Airport Transfer" data-price="1000">  Airport Pick-up (+₱1,000 flat)</label>
-                        <label style="font-weight: normal; cursor: pointer;"><input type="checkbox" class="addon-cb" value="Extra Bed" data-price="500">  Extra Bed (+₱500/night)</label>
-                    </div>
+                <!-- NEW: GUEST ADD-ONS DROPDOWN -->
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Enhance Your Stay (Optional)</label>
+                    <select id="addonSelect">
+                        <option value="None" data-price="0">No Extra Add-ons</option>
+                        <option value="Breakfast" data-price="300">🍳 Daily Breakfast (+₱300/night)</option>
+                        <option value="Airport Transfer" data-price="1000">🚐 Airport Pick-up (+₱1,000 flat)</option>
+                        <option value="Extra Bed" data-price="500">🛏️ Extra Bed (+₱500/night)</option>
+                    </select>
                 </div>
 
                 <!-- NEW: DYNAMIC PRICE ESTIMATE -->
@@ -490,30 +491,32 @@
             if(!roomType || !checkIn || !checkOut) return;
             
             const inDate = new Date(checkIn); const outDate = new Date(checkOut);
-            if (outDate <= inDate) return; // Prevent negative math
+            if (outDate <= inDate) return; 
             
             const nights = Math.ceil((outDate - inDate) / (1000 * 3600 * 24));
             const baseRate = roomRates[roomType];
             let roomTotal = baseRate * nights;
+            
+            // Dropdown Add-on Math
+            const addonSelect = document.getElementById("addonSelect");
+            const selectedOption = addonSelect.options[addonSelect.selectedIndex];
+            const addonPrice = parseFloat(selectedOption.getAttribute("data-price"));
             let addonsTotal = 0;
             
-            document.querySelectorAll(".addon-cb:checked").forEach(cb => {
-                let price = parseFloat(cb.getAttribute("data-price"));
-                // Airport transfer is a flat fee; others are per night
-                addonsTotal += (cb.value === "Airport Transfer") ? price : (price * nights);
-            });
+            if (addonPrice > 0) {
+                addonsTotal = (selectedOption.value === "Airport Transfer") ? addonPrice : (addonPrice * nights);
+            }
             
             const grandTotal = roomTotal + addonsTotal;
             document.getElementById("priceEstimate").innerText = `₱${grandTotal.toLocaleString('en-PH', {minimumFractionDigits: 2})}`;
             document.getElementById("priceBreakdown").innerText = `${nights} night(s) at ₱${baseRate.toLocaleString()} + Add-ons`;
         }
 
-        // Listen for changes to trigger the math
+        // Listen for changes
         document.getElementById("roomType").addEventListener("change", calculateTotal);
         document.getElementById("checkIn").addEventListener("change", calculateTotal);
         document.getElementById("checkOut").addEventListener("change", calculateTotal);
-        document.querySelectorAll(".addon-cb").forEach(cb => cb.addEventListener("change", calculateTotal));
-
+        document.getElementById("addonSelect").addEventListener("change", calculateTotal);
 
         // --- FIREBASE SUBMISSION ---
         document.getElementById("bookingForm").addEventListener("submit", async (e) => {
@@ -531,10 +534,6 @@
                 return;
             }
 
-            // Gather Add-ons
-            let selectedAddons = [];
-            document.querySelectorAll(".addon-cb:checked").forEach(cb => selectedAddons.push(cb.value));
-
             try {
                 await db.collection("web_reservations").add({
                     guestName: document.getElementById("guestName").value.trim(),
@@ -542,8 +541,8 @@
                     roomType: document.getElementById("roomType").value,
                     checkInDate: checkIn,
                     checkOutDate: checkOut,
-                    addons: selectedAddons.join(", ") || "None", // NEW
-                    estimatedTotal: document.getElementById("priceEstimate").innerText, // NEW
+                    addons: document.getElementById("addonSelect").value, // Pulls from dropdown
+                    estimatedTotal: document.getElementById("priceEstimate").innerText,
                     status: "PENDING",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
