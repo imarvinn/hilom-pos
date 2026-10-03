@@ -28,7 +28,7 @@
             background-color: white;
             padding: 20px 40px;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end; /* This forces the buttons to the right edge */
             align-items: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             position: sticky;
@@ -240,8 +240,9 @@
         @media (max-width: 768px) {
             nav {
                 flex-direction: column;
-                padding: 10px 15px; /* Reduced top and bottom padding */
-                gap: 8px; /* Pulled the logo and buttons closer together */
+                align-items: center; /* Keeps everything centered on mobile */
+                padding: 10px 15px; 
+                gap: 8px; 
             }
             
             nav.scrolled {
