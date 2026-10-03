@@ -247,39 +247,63 @@
         @media (max-width: 768px) {
             nav {
                 flex-direction: column;
-                align-items: center; /* Keeps everything centered on mobile */
-                padding: 10px 15px; 
-                gap: 8px; 
+                align-items: center; 
+                padding: 15px; 
+                gap: 12px; 
             }
             
+            /* WHEN SCROLLED ON MOBILE */
             nav.scrolled {
-                padding: 5px 15px; /* Even tighter when scrolling on phones */
+                flex-direction: row; /* Flips layout horizontally */
+                justify-content: space-between; /* Pushes logo left, button right */
+                padding: 10px 15px; 
             }
 
-            .nav-logo {
-                position: relative;
-                left: auto;
-                top: auto;
-                transform: none;
-                height: 55px; /* Shrunk slightly for better mobile proportion */
+            /* BASE MOBILE LOGO */
+            .brand-container {
+                align-items: center; 
+                gap: 5px;
+            }
+            .new-text-logo {
+                height: 40px; 
+            }
+            .sub-text {
+                font-size: 14px;
+                margin-bottom: 0;
             }
 
-            nav.scrolled .nav-logo {
-                left: auto;
-                top: auto;
-                transform: none;
-                height: 45px;
+            /* SCROLLED LOGO STATES */
+            nav.scrolled .brand-container {
+                align-items: flex-end;
+            }
+            nav.scrolled .new-text-logo {
+                height: 25px; /* Shrinks the logo */
+            }
+            nav.scrolled .sub-text {
+                font-size: 11px; /* Shrinks "by Dondeezco" */
+                margin-bottom: 2px;
             }
 
-            /* Leave your existing nav h1, nav a, hero, and date-group rules below here untouched */
-            nav h1 {
-                font-size: 28px;
-            }
+            /* BUTTON SETTINGS FOR MOBILE */
             nav a {
                 margin-left: 10px;
                 margin-right: 10px;
                 font-size: 14px;
             }
+            
+            /* Hides the standard text links to make room for the button */
+            nav.scrolled a:not(.btn) {
+                display: none;
+            }
+            
+            /* Shrinks the Book Now button slightly when scrolled */
+            nav.scrolled a.btn {
+                padding: 8px 12px;
+                font-size: 13px;
+                margin-left: 0;
+            }
+
+            /* REMAINING MOBILE RULES */
             .hero h2 {
                 font-size: 36px;
             }
@@ -289,35 +313,9 @@
             .booking-container {
                 padding: 20px;
             }
-            /* Stack the Check-In and Check-Out dates on phones */
             .date-group {
                 flex-direction: column;
                 gap: 0;
-            }
-            /* Add this inside your existing @media block */
-            .nav-logo {
-                position: relative;
-                left: auto;
-                top: auto;
-                transform: none;
-                height: 70px;
-            }
-            nav.scrolled .nav-logo {
-                left: auto;
-                top: auto;
-                transform: none;
-                height: 50px;
-            }
-            .brand-container {
-                align-items: center; /* Centers them together on small screens */
-                gap: 5px;
-            }
-            .new-text-logo {
-                height: 40px; /* Shrinks the script image slightly for mobile */
-            }
-            .sub-text {
-                font-size: 14px;
-                margin-bottom: 0;
             }
         }
 
