@@ -3,774 +3,427 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HILOM POS & Inventory</title>
-    <link rel="icon" type="image/png" href="hilom.png">
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="./manifest.json">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <title>Hilom | Book Your Stay</title>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <style>
-        /* Add this to your style.css or keep here for the print views */
-        body.print-zread #zReadingArea { display: block !important; position: absolute; top: 0; left: 0; width: 100%; max-width: 300px; font-family: monospace; color: black; font-size: 14px; }
+        :root {
+            --primary: #557a46;
+            --primary-dark: #2b4227;
+            --accent: #8c5d3a;
+            --bg-color: #f9f9f9;
+        }
+        body, html {
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            scroll-behavior: smooth;
+        }
+        /* NAVBAR */
+        nav {
+            background-color: white;
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        nav h1 { margin: 0; color: var(--primary); font-size: 24px; letter-spacing: 2px; }
+        nav a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+            margin-left: 20px;
+        }
+        nav a.btn {
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
+        .nav-logo { 
+            height: 100px; /* Adjust this number to make the logo bigger or smaller */
+            width: auto; 
+            object-fit: contain;
+        }
+        
+        /* HERO SECTION WITH VIDEO BACKGROUND */
+        .hero {
+            position: relative;
+            height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            padding: 0 20px;
+            overflow: hidden;
+        }
+        .hero-video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translateX(-50%) translateY(-50%);
+    object-fit: cover;
+    z-index: 1; /* Changed to positive 1 */
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    background: rgba(43, 66, 39, 0.5); 
+    z-index: 2; /* Changed to positive 2 */
+}
+
+.hero-content {
+    position: relative;
+    z-index: 3; /* Added to keep your text floating on top */
+}
+        .hero h2 { font-size: 54px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .hero p { font-size: 22px; margin-bottom: 30px; max-width: 600px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
+        
+        /* GALLERY SECTION */
+        .gallery {
+            padding: 50px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .gallery h2 { color: var(--primary-dark); margin-bottom: 30px; }
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .gallery-grid img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .gallery-grid img:hover { transform: scale(1.03); }
+
+        /* ROOMS SHOWCASE */
+        .rooms {
+            padding: 50px 20px;
+            background-color: #f1f8e9;
+        }
+        .rooms-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .room-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .room-card:hover { transform: translateY(-5px); }
+        .room-card img { width: 100%; height: 250px; object-fit: cover; }
+        .room-details { padding: 20px; text-align: left; }
+        .room-details h3 { margin: 0 0 10px 0; color: var(--primary-dark); }
+        .room-price { color: var(--accent); font-weight: bold; font-size: 18px; }
+        
+        /* BOOKING FORM SECTION */
+        .booking-section {
+            background-color: white;
+            padding: 60px 20px;
+        }
+        .booking-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #f9f9f9;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            border-top: 5px solid var(--primary);
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: var(--primary-dark); }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        .submit-btn:hover { background-color: var(--primary-dark); }
+        
+        /* FOOTER */
+        footer {
+            background-color: var(--primary-dark);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+        }
+
+        /* Date Group Flexbox */
+        .date-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* MOBILE RESPONSIVENESS */
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                padding: 15px;
+                gap: 15px;
+            }
+            nav h1 {
+                font-size: 28px;
+            }
+            nav a {
+                margin-left: 10px;
+                margin-right: 10px;
+                font-size: 14px;
+            }
+            .hero h2 {
+                font-size: 36px;
+            }
+            .hero p {
+                font-size: 18px;
+            }
+            .booking-container {
+                padding: 20px;
+            }
+            /* Stack the Check-In and Check-Out dates on phones */
+            .date-group {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+
+        
     </style>
 </head>
 <body>
 
-    <div id="toast">Message goes here</div>
-
-    <!-- LOGIN SCREEN -->
-    <div id="loginScreen" class="card">
-        <h2 style="font-size: 28px; margin-bottom: 20px;">HILOM POS</h2>
-        <input type="email" id="email" placeholder="Email Address" required style="width:100%; box-sizing:border-box;">
-        <input type="password" id="password" placeholder="Password" required style="width:100%; box-sizing:border-box;">
-        <button class="add-btn" onclick="login()" style="width: 100%; margin-top: 10px; padding: 12px; font-size: 16px;">Sign In</button>
-        <p id="errorMessage" style="color: #bd4b4b; font-size: 14px; margin-top: 15px;"></p>
-    </div>
-
-    <!-- MAIN APP SCREEN -->
-    <div id="appScreen" class="hidden dashboard-layout">
-        
-     <!-- SIDEBAR NAVIGATION -->
-    <div class="sidebar no-print">
-        <div class="sidebar-header">
-            <img src="hilom.png" alt="Hilom Logo" style="max-width: 180px; display: block; margin: 0 auto 10px auto; border-radius: 8px;">
-            HILOM POS
-        </div>
-        <button class="nav-btn" onclick="switchView('roomsView', this)"> Front Desk Rack</button>
-        <button class="nav-btn active" onclick="switchView('posView', this)"> POS / Ordering</button>
-        <button class="nav-btn" onclick="switchView('kitchenView', this)"> Kitchen KDS</button>
-        <button class="nav-btn" onclick="switchView('inventoryView', this)"> Inventory Mgmt</button>
-        <button class="nav-btn" onclick="switchView('menuManageView', this)"> Menu Builder</button>
-        <button class="nav-btn" onclick="switchView('salesView', this)"> Sales & Reports</button>
-        
-        <button class="nav-btn logout-nav hidden" id="changePinBtn" onclick="openChangePinModal()" style="margin-top: auto;">🔑 Change PIN</button>
-        <button class="nav-btn logout-nav hidden" id="lockBtn" onclick="lockAdmin()" style="margin-top: 5px;">🔒 Lock Admin</button>
-        <button class="nav-btn logout-nav" onclick="logout()" style="margin-top: 5px;"> Logout</button>
-    </div>
-
-        <!-- MAIN CONTENT AREA -->
-        <div class="main-content">
-
-            <!-- ================= VIEW: KITCHEN KDS ================= -->
-        <div id="kitchenView" class="view-section hidden">
-            <div class="card" style="background: #1a1a1a; color: white; border: none;">
-                <h2 style="color: #55efc4; border-bottom: 1px solid #333;"> Kitchen Queue</h2>
-                <div id="kitchenBoard" class="kds-grid">
-                    <p style="color: #666;">No active orders...</p>
-                </div>
-            </div>
-        </div>
-
-            <!-- ================= VIEW 1: POS & ORDERING ================= -->
-            <div id="posView" class="view-section active">
-                <div class="pos-container">
-                    <div class="card menu-section" style="margin-bottom: 0;">
-                        <h2>Customer Menu</h2>
-                        <div id="menuGridContainer"></div>
-                    </div>
-
-                    <div class="sidebar-section">
-                        <!-- CART -->
-                        <div class="card cart-card" style="margin-bottom: 0;">
-                            <h2 style="color: #8c5d3a; border-color: #e0e5e0;">Current Order</h2>
-                            <input type="text" id="tableNoInput" placeholder="Table Number (e.g., T1 or Takeout)" style="width: 100%; box-sizing: border-box; margin-bottom: 15px; font-weight: bold; font-size: 16px; text-transform: uppercase;">
-                            <div id="cartItemsContainer"><p style="color:#888; text-align:center;">Cart is empty</p></div>
-                            <div class="cart-total" id="cartTotal">Total: ₱0.00</div>
-                            <button class="checkout-btn" onclick="sendToKitchen()">Send to Kitchen 🖨️</button>
-                            <button class="save-btn" style="width: 100%; margin-top: 5px; background: #2b4227; font-size: 16px; padding: 12px;" onclick="directCheckout()">Direct Pay (Skip Kitchen)</button>
-                            <button class="save-btn" style="width: 100%; margin-top: 5px; background: #4a6fa5; font-size: 16px; padding: 12px;" onclick="chargeToRoomFolio()">Charge to Room Folio</button>
-                            <button class="warn-btn" style="width: 100%; margin-top: 5px;" onclick="clearCart()">Clear Cart</button>
-                        </div>
-                        
-                        <!-- VISUAL ACTIVE TABLES -->
-                        <div class="card active-tables-card" style="margin-bottom: 0;">
-                            <h2 style="color: #557a46; border-color: #c8dac8;">Active Tables</h2>
-                            <div id="activeTablesContainer"><p style="color:#888; text-align:center; font-size: 14px;">Loading Map...</p></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ================= VIEW 2: INVENTORY ================= -->
-        <div id="inventoryView" class="view-section hidden">
-            <div class="no-print" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <button id="tabLiveInventory" style="flex: 1; padding: 12px; font-size: 16px; background-color: #557a46; color: white;" onclick="switchInvTab('live')">📋 Live Inventory Tracker</button>
-                <button id="tabShiftAnalysis" style="flex: 1; padding: 12px; font-size: 16px; background-color: #e0e5e0; color: #333;" onclick="switchInvTab('analysis')">📊 Shift Stock Analysis</button>
-            </div>
-
-            <!-- LIVE INVENTORY CARD -->
-            <div class="card" id="liveInventoryCard">
-                <h2>Live Inventory Tracker</h2>
-                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
-                    <input type="text" id="itemName" placeholder="Ingredient Name" required style="flex: 1; min-width: 150px;">
-                    <input type="number" id="itemQty" placeholder="Qty" required style="width: 80px;">
-                    <input type="number" id="itemCost" placeholder="Cost (₱)" required style="width: 90px;">
-                    <input type="date" id="itemExpiry" title="Expiration Date (Optional)" style="width: 130px;">
-                    <button class="add-btn no-print" onclick="addItem()">+ Add Stock</button>
-                </div>
-                <table>
-                    <thead><tr><th>Item Name</th><th>Qty</th><th>Cost/Unit</th><th>Expiry</th><th>Stock Status</th><th class="no-print">Actions</th></tr></thead>
-                    <tbody id="inventoryList"></tbody>
-                </table>
-                <div id="inventoryPagination" class="pagination-controls no-print"></div>
-            </div>
-
-            <!-- SHIFT ANALYSIS CARD -->
-            <div class="card hidden" id="inventoryReportCard">
-                <div class="print-only">HILOM POS - End of Shift Stock Report</div>
-                <div class="no-print" style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                    <h2 style="margin: 0; border: none;">Shift Stock Analysis</h2>
-                    <button class="save-btn" onclick="printInventoryReport()">🖨️ Print Stock Report</button>
-                </div>
-                <table>
-                    <thead><tr><th>Item Name</th><th>Start of Shift</th><th>End of Shift (Current)</th><th>Deducted During Shift</th></tr></thead>
-                    <tbody id="inventoryReportList"></tbody>
-                </table>
-                <div id="reportPagination" class="pagination-controls no-print"></div>
-            </div>
-        </div>
-
-           <!-- ================= VIEW 3: MENU BUILDER ================= -->
-            <div id="menuManageView" class="view-section hidden">
-                
-                <!-- NEW: DYNAMIC CATEGORY MANAGER -->
-                <div class="card" id="categoryManageCard" style="margin-bottom: 20px;">
-                    <h2 style="color: #8c5d3a; border-bottom: 1px dashed #ccc;">Manage Menu Categories</h2>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
-                        <input type="text" id="newCategoryName" placeholder="New Category (e.g., Pastries, Coffee)" style="flex:1; min-width: 200px; margin: 0;">
-                        <button class="add-btn" onclick="addCategory()">+ Add Category</button>
-                    </div>
-                    <div id="categoryList" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <p style="color:#888; font-size:14px; margin:0;">Loading categories...</p>
-                    </div>
-                </div>
-
-                <!-- MENU ITEM BUILDER -->
-                <div class="card" id="menuFormCard">
-                    <h2 id="menuFormTitle">Create New Menu Item</h2>
-                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                        <input type="text" id="newMenuName" placeholder="Menu Name" style="flex: 1; min-width: 200px;">
-                        <input type="number" id="menuPrice" placeholder="Selling Price (₱)" style="width: 130px;">
-                        <!-- This is now completely empty so JS can populate it -->
-                        <select id="menuCategory"></select>
-                    </div>
-                    
-                    <div id="ingredientInputs">
-                        <div class="ingredient-row"><input type="text" class="ing-name" placeholder="Ingredient Needed" style="flex: 1;"><input type="number" class="ing-qty" placeholder="Qty" style="width: 80px;"></div>
-                    </div>
-                    
-                    <div style="margin-top: 10px; display: flex; gap: 10px;">
-                        <button class="add-btn" onclick="addIngredientRow()">+ Add Ingredient</button>
-                        <button class="save-btn" id="saveMenuBtn" onclick="saveMenuItem()">Save Menu Recipe</button>
-                        <button class="delete-btn hidden" id="cancelEditBtn" onclick="resetMenuForm()">Cancel Edit</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ================= VIEW 4: SALES & REPORTS ================= -->
-        <div id="salesView" class="view-section hidden">
-            <div class="no-print" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <button id="tabSales" style="flex: 1; padding: 12px; font-size: 16px; background-color: #557a46; color: white;" onclick="switchSalesTab('sales')">Shift Sales & Profit</button>
-                <button id="tabExpenses" style="flex: 1; padding: 12px; font-size: 16px; background-color: #e0e5e0; color: #333;" onclick="switchSalesTab('expenses')">Operational Expenses</button>
-            </div>
-
-            <!-- SALES TABS -->
-<div style="display: flex; gap: 10px; margin-bottom: 20px;">
-    <button id="btnPosSales" onclick="switchRevenueTab('pos')" style="padding: 10px 20px; background: #557a46; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
-        Restaurant / POS Sales
-    </button>
-    <button id="btnRoomSales" onclick="switchRevenueTab('room')" style="padding: 10px 20px; background: #ddd; color: #333; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
-        Room Accommodations
-    </button>
-</div>
-
-<!-- POS SALES CONTAINER -->
-<div id="posSalesContainer" style="display: block;">
-    <h3 style="color: #557a46; margin-bottom: 10px;">Revenue</h3>
-    <!-- Your existing table code goes here -->
-    <table id="posSalesTable">...</table> 
-</div>
-
-<!-- ROOM SALES CONTAINER -->
-<div id="roomSalesContainer" style="display: none;">
-    <h3 style="color: #2b4227; margin-bottom: 10px;">Front Desk & Room Revenue</h3>
-    <!-- Duplicate your table code here -->
-    <table id="roomSalesTable">...</table> 
-</div>
-
-            <!-- SALES CARD -->
-            <div class="card" id="salesCard">
-                <div class="print-only">HILOM POS - Sales & Profit Report</div>
-                
-                <!-- THIS IS THE ROW THAT WAS MISSING -->
-                <div class="no-print" style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <h2 style="margin: 0; border: none;">Shift Sales & Profit</h2>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="date" id="dateFilter" onchange="filterSales()" style="margin:0;">
-                        <button class="save-btn" onclick="exportEJournal()" style="background:#2b4227;">E-Journal</button>
-                        <button class="save-btn" onclick="exportCSV()" style="background:#557a46;">CSV</button>
-                        <button class="save-btn" onclick="printSales()">PDF</button>
-                        <button class="warn-btn" style="background:#d4a373;" onclick="generateXReading()">X-Read</button>
-                        <button class="warn-btn" onclick="closeShift()">Z-Read</button>
-                    </div>
-                </div>
-
-                <div class="profit-dashboard">
-                    <div style="flex:1; text-align:center;"><h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Total Net Revenue</h4><span id="metricRevenue" style="font-size:22px; font-weight:bold; color:#2b4227;">₱0.00</span></div>
-                    <div style="flex:1; text-align:center;"><h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Total Cost</h4><span id="metricCost" style="font-size:22px; font-weight:bold; color:#bd4b4b;">₱0.00</span></div>
-                    <div style="flex:1; text-align:center;"><h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Gross Profit</h4><span id="metricProfit" style="font-size:22px; font-weight:bold; color:#333;">₱0.00</span></div>
-                    <div style="flex:1; text-align:center; border-left: 2px dashed #ccc; padding-left:10px;"><h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Expenses</h4><span id="metricExpenses" style="font-size:22px; font-weight:bold; color:#8c5d3a;">₱0.00</span></div>
-                    <div style="flex:1; text-align:center;"><h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Net Profit</h4><span id="metricNet" style="font-size:22px; font-weight:bold; color:#557a46;">₱0.00</span></div>
-                </div>
-
-                <table>
-                    <thead><tr><th>Time / Inv #</th><th>Table Details</th><th>Method</th><th>Gross</th><th>Net Rev</th><th class="no-print">Action</th></tr></thead>
-                    <tbody id="salesList"></tbody>
-                </table>
-                <div id="salesPagination" class="pagination-controls no-print"></div>
-            </div>
-
-            <!-- EXPENSE TRACKER CARD -->
-            <div class="card hidden" id="expensesCard">
-                <h2 style="margin: 0; border: none;">Operational Expenses</h2>
-                <div class="no-print" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px; margin-top: 15px;">
-                    <input type="text" id="expName" placeholder="Expense (e.g., Rent, Sugar)" required style="flex: 1; min-width: 150px;">
-                    <input type="number" id="expAmount" placeholder="Amount (₱)" required style="width: 110px;">
-                    <button class="add-btn" onclick="addExpense()">+ Add Expense</button>
-                </div>
-                <table>
-                    <thead><tr><th>Time</th><th>Expense Description</th><th>Amount</th><th class="no-print">Action</th></tr></thead>
-                    <tbody id="expenseList"></tbody>
-                </table>
-                <div id="expensePagination" class="pagination-controls no-print"></div>
-            </div>
-        </div>
-
-        <!-- ================= VIEW 5: FRONT DESK / ROOMS ================= -->
-<div id="roomsView" class="view-section hidden">
+    <!-- Navigation -->
     
-    <!-- ROOM RACK (LIVE STATUS) -->
-    <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e0e5e0; padding-bottom: 10px; margin-bottom: 15px;">
-            <h2 style="margin: 0; border: none;">Front Desk Room Rack</h2>
-            <div style="display: flex; gap: 10px;">
-                <span style="font-size: 13px; color: #2e7d32; font-weight: bold;">● Available</span>
-                <span style="font-size: 13px; color: #c62828; font-weight: bold;">● Occupied</span>
-                <span style="font-size: 13px; color: #d4a373; font-weight: bold;">● Maintenance</span>
+    <nav>
+        <h1>HILOM by Dondeezco</h1>
+        <img src="hilom.png" alt="Hilom Resort" class="nav-logo">
+        <div>
+            <a href="#gallery">Experience</a>
+            <a href="#rooms">Our Rooms</a>
+            <a href="#booking" class="btn">Book Now</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section with Video Background -->
+    <section class="hero">
+       <video class="hero-video" autoplay muted loop playsinline>
+    <source src="hilom-resort.mp4" type="video/mp4">
+    Your browser does not support HTML5 video.
+</video>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h2>Find Your Perfect Getaway</h2>
+            <p>Experience relaxation, comfort, and exceptional coastal views. Book your stay with us today.</p>
+            <a href="#booking" style="background: var(--accent); color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px;">Reserve a Room</a>
+        </div>
+    </section>
+
+    <!-- Gallery Section (Using your exterior shots) -->
+    <section id="gallery" class="gallery">
+        <h2>Experience Hilom</h2>
+        <div class="gallery-grid">
+            <img src="708910845_122173818824854145_7561146922554022170_n.jpg" alt="Beach Pathway">
+            <img src="756139172_122180791004854145_2360574277376093530_n.jpg" alt="Villa Exteriors">
+            <img src="758304908_122180791178854145_7218014274570081338_n.jpg" alt="Beach Hammock">
+        </div>
+    </section>
+
+    <!-- Room Showcase Section (Using your interior shots) -->
+    <section id="rooms" class="rooms">
+        <div class="rooms-container">
+            <h2 style="color: var(--primary-dark);">Accommodations</h2>
+            <p style="color: #666;">Choose the perfect space for your relaxation.</p>
+            
+            <div class="rooms-grid">
+                <!-- Standard Room -->
+                <div class="room-card">
+                    <img src="758765293_122180791148854145_8491631398410302688_n.jpg" alt="Standard Room">
+                    <div class="room-details">
+                        <h3>Standard Room</h3>
+                        <p style="color: #666; font-size: 14px;">Perfect for solo travelers or couples. Includes a comfortable bed, warm lighting, and essential amenities.</p>
+                        <p class="room-price">₱1,500 / night</p>
+                    </div>
+                </div>
+                <!-- Family Room -->
+                <div class="room-card">
+                    <img src="757665970_122180791994854145_2924593450940225623_n.jpg" alt="Family Room">
+                    <div class="room-details">
+                        <h3>Family Room</h3>
+                        <p style="color: #666; font-size: 14px;">Spacious and comfortable. Features three large beds, stunning wall murals, and plenty of space for the whole family.</p>
+                        <p class="room-price">₱3,500 / night</p>
+                    </div>
+                </div>
+                <!-- Suite -->
+                <div class="room-card">
+                    <img src="757863595_122180789318854145_5234982306311465279_n.jpg" alt="Suite">
+                    <div class="room-details">
+                        <h3>Ocean View Suite</h3>
+                        <p style="color: #666; font-size: 14px;">The ultimate beachside experience. Step right out of your room onto the sand with breathtaking ocean views.</p>
+                        <p class="room-price">₱5,000 / night</p>
+                    </div>
+                </div>
             </div>
         </div>
-        <div id="roomRackContainer" class="pms-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px;">
-            <!-- Live room cards will appear here -->
-            <p style="color: #888;">Loading Room Rack...</p>
-        </div>
-    </div>
+    </section>
 
-    <!-- ROOM SETUP MANAGER -->
-    <div class="card no-print" style="margin-top: 20px;">
-        <h3 style="margin-top: 0; color: #8c5d3a;">Add New Room</h3>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <input type="text" id="newRoomNumber" placeholder="Room No. (e.g., 101)" style="width: 150px; margin: 0;">
-            <input type="text" id="newRoomType" placeholder="Type (e.g., Deluxe Suite)" style="flex: 1; min-width: 150px; margin: 0;">
-            <input type="number" id="newRoomRate" placeholder="Nightly Rate (₱)" style="width: 150px; margin: 0;">
-            <button class="add-btn" onclick="addNewRoom()" style="margin: 0;">+ Save Room</button>
-        </div>
-    </div>
-
-    <!-- INCOMING WEB RESERVATIONS PANEL -->
-<div id="webReservationsPanel" style="display: none; background: #eef2eb; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #557a46;">
-    <h3 style="margin-top: 0; color: #2b4227; font-size: 16px;">🔔 Incoming Online Bookings</h3>
-    <div id="webReservationsList" style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <!-- New reservations will populate here dynamically -->
-    </div>
-</div>
-</div>
-
-    </div> <!-- End Main Content -->
-    </div> <!-- End Dashboard Layout -->
-
-
-    <!-- ================= MODALS & PRINT AREAS ================= -->
-
-    <!-- ADMIN PIN MODAL -->
-    <div id="pinModal" class="modal-overlay hidden">
-        <div class="modal-content" style="text-align:center;">
-            <h2 style="border-bottom:none; color: #2b4227;">Admin Access</h2>
-            <p style="color:#666; margin-top:0;">Enter 4-digit PIN to access backend.</p>
-            <input type="password" id="adminPin" class="pin-input" maxlength="4" placeholder="••••">
-            <br>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="add-btn" style="flex:1;" onclick="verifyPin()">Unlock</button>
-                <button class="delete-btn" style="flex:1;" onclick="closePinModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- CHANGE PIN MODAL -->
-    <div id="changePinModal" class="modal-overlay hidden">
-        <div class="modal-content" style="text-align:center;">
-            <h2 style="border-bottom:none; color: #2b4227;">Change Admin PIN</h2>
-            <p style="color:#666; margin-top:0;">Enter a new 4-digit PIN.</p>
-            <input type="password" id="newAdminPin" class="pin-input" maxlength="4" placeholder="NEW">
-            <input type="password" id="confirmAdminPin" class="pin-input" maxlength="4" placeholder="CONFIRM">
-            <br>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="add-btn" style="flex:1;" onclick="saveNewPin()">Save PIN</button>
-                <button class="delete-btn" style="flex:1;" onclick="closeChangePinModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- BILLING MODAL -->
-    <div id="billingModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2 style="border-bottom:none; text-align:center; margin-bottom: 5px; color: #2b4227;">Bill Payment</h2>
-            <p style="text-align:center; color:#557a46; font-weight:bold; margin-top:0; font-size:18px;" id="billingTableNo"></p>
+    <!-- Booking Form Section -->
+    <section id="booking" class="booking-section">
+        <div class="booking-container">
+            <h2 style="text-align: center; color: var(--primary-dark); margin-top: 0;">Reservation Request</h2>
+            <p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 25px;">Submit your details below and our Front Desk will contact you shortly to confirm your booking.</p>
             
-            <div id="billingItemsList" style="margin-bottom: 10px; max-height: 200px; overflow-y: auto; border-top: 1px solid #e0e5e0; padding-top: 10px;"></div>
-            <div class="bill-row"><span>Gross Subtotal:</span><span id="billingSubtotal">₱0.00</span></div>
-            
-            <!-- DISCOUNT TOGGLES & SC/PWD INPUTS -->
-            <label class="discount-row" style="margin-bottom: 5px;">
-                <input type="checkbox" id="discountCheck" onchange="toggleDiscountInputs()" style="margin: 0 10px 0 0; width: 18px; height: 18px;">
-                Apply Senior/PWD (20%)
-            </label>
-            
-            <div id="seniorDetailsRow" class="hidden" style="margin-bottom: 10px; background:#fff3cd; padding:10px; border-radius:6px; border: 1px solid #ffeeba;">
-                <input type="text" id="seniorNameInput" placeholder="Senior/PWD Name" style="width:100%; margin-bottom:5px; box-sizing:border-box; padding:6px;">
-                <input type="text" id="seniorIdInput" placeholder="ID Number" style="width:100%; margin:0; box-sizing:border-box; padding:6px;">
-            </div>
-
-            <!-- NEW: BUYER DETAILS (B2B) -->
-            <div id="buyerDetailsRow" style="margin-bottom: 10px; background:#e9ece9; padding:10px; border-radius:6px; border: 1px solid #c8dac8;">
-                <p style="margin: 0 0 5px 0; font-size: 12px; font-weight: bold; color: #2b4227;">Buyer Details (Optional B2B)</p>
-                <input type="text" id="buyerNameInput" placeholder="Buyer Name / Company" style="width:100%; margin-bottom:5px; box-sizing:border-box; padding:6px;">
-                <input type="text" id="buyerTinInput" placeholder="Buyer TIN" style="width:100%; margin-bottom:5px; box-sizing:border-box; padding:6px;">
-                <input type="text" id="buyerAddressInput" placeholder="Buyer Address" style="width:100%; margin:0; box-sizing:border-box; padding:6px;">
-            </div>
-
-            <label class="discount-row" style="background: #e9ece9; border: 1px solid #c8dac8; color: #2b4227; margin-top: 0;">
-                <input type="checkbox" id="freeBreakfastCheck" onchange="updateBillingTotal()" style="margin: 0 10px 0 0; width: 18px; height: 18px;">
-                Complimentary Breakfast (Waives Meals)
-            </label>
-            
-            <div class="bill-row hidden" id="discountDisplayRow" style="color:#bd4b4b;"><span>Total Discount:</span><span id="billingDiscountAmount">-₱0.00</span></div>
-            
-            <div class="bill-total"><span>Net Amount Due:</span><span id="billingFinalTotal" style="color: #2b4227;">₱0.00</span></div>
-            
-            <div style="background: #f4f6f4; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #e0e5e0;">
-                <div class="bill-row">
-                    <span style="font-weight:bold;">Pay Method:</span>
-                    <select id="paymentMethod" onchange="togglePaymentInputs()" style="margin: 0; padding: 6px; border-radius: 4px; border: 1px solid #ccc; width: 120px;">
-                        <option value="Cash">Cash</option>
-                        <option value="GCash">GCash</option>
-                        <option value="Maya">Maya</option>
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="guestName" placeholder="e.g. Juan Dela Cruz" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Contact Number</label>
+                    <input type="text" id="contact" placeholder="e.g. 0917-123-4567" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Room Preference</label>
+                    <select id="roomType" required>
+                        <option value="" disabled selected>Select a room type...</option>
+                        <option value="Standard">Standard Room</option>
+                        <option value="Family">Family Room</option>
+                        <option value="Suite">Ocean View Suite</option>
                     </select>
                 </div>
-                
-                <div id="cashInputRow" class="bill-row" style="margin-top: 10px;">
-                    <span>Tendered:</span>
-                    <input type="number" id="amountTendered" autocomplete="off" oninput="calculateChange()" style="width: 105px; margin: 0; padding: 6px;" placeholder="₱0.00">
+
+                <div class="date-group">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Check-In Date</label>
+                        <input type="date" id="checkIn" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Check-Out Date</label>
+                        <input type="date" id="checkOut" required>
+                    </div>
                 </div>
-                
-                <div id="changeRow" class="bill-row" style="margin-top: 10px; color: #557a46; font-weight: bold; border-top: 1px dashed #ccc; padding-top: 10px;">
-                    <span>Change Due:</span>
-                    <span id="changeDueAmount">₱0.00</span>
-                </div>
-            </div>
-            
-           <!-- BUTTON LAYOUT -->
-<div style="display: flex; gap: 5px; margin-top: 20px;">
-    <button class="warn-btn" style="flex:0.8; font-size:14px; padding:10px 2px;" onclick="openSplitModal()">✂️ Split</button>
-    <button class="save-btn" style="flex:1; background:#d4a373; font-size:14px; padding:10px 2px;" onclick="printPreBill()">🖨️ Bill</button>
-    
-    <!-- NEW PRINT INVOICE BUTTON -->
-    <button class="save-btn" style="flex:1; background:#4a6fa5; font-size:14px; padding:10px 2px;" onclick="printFolioInvoice()">🖨️ Invoice</button>
-    
-    <button class="add-btn" style="flex:1.5; font-size:14px; padding:10px 2px;" onclick="processPayment()">✔️ Pay</button>
-    <button class="delete-btn" style="flex:0.7; font-size:14px; padding:10px 2px;" onclick="closeBillingModal()">Cancel</button>
-</div>
-        <div style="margin-top: 10px;">
-             <button class="delete-btn" style="width: 100%; padding: 8px; font-size: 13px;" onclick="voidActiveTableModal()">Void Complete Table</button>
-        </div>
-        </div>
-    </div>
 
-    <!-- NEW: SPLIT BILL MODAL -->
-<div id="splitModal" class="modal-overlay hidden" style="z-index: 1500;">
-    <div class="modal-content">
-        <h2 style="border-bottom:none; color: #2b4227; margin-bottom: 5px;">Split Bill (By Item)</h2>
-        <p style="color:#666; margin-top:0; font-size: 14px;">Select the items to move to a new separate bill for the Senior/PWD.</p>
-        
-        <div id="splitItemsList" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
-            <!-- Split items injected here -->
+                <button type="submit" class="submit-btn" id="submitBtn">Send Booking Request</button>
+            </form>
         </div>
-        
-        <div style="display: flex; gap: 10px;">
-            <button class="add-btn" style="flex:2;" onclick="confirmSplitBill()">✔️ Confirm & Split</button>
-            <button class="delete-btn" style="flex:1;" onclick="closeSplitModal()">Cancel</button>
-        </div>
-    </div>
-</div>
+    </section>
 
-    <!-- ITEM MODIFIER MODAL -->
-    <div id="modifierModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2 style="border-bottom:none; color: #2b4227; margin-bottom: 5px;" id="modItemName">Add Modifiers</h2>
-            <p style="color:#666; margin-top:0; font-size: 14px;">Add notes for the kitchen.</p>
-            
-            <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px;">
-                <button class="add-btn" style="background: #e9ece9; color: #333; font-size: 12px; padding: 6px 10px;" onclick="addQuickMod('No Garlic')">No Garlic</button>
-                <button class="add-btn" style="background: #e9ece9; color: #333; font-size: 12px; padding: 6px 10px;" onclick="addQuickMod('Extra Egg')">Extra Egg</button>
-                <button class="add-btn" style="background: #e9ece9; color: #333; font-size: 12px; padding: 6px 10px;" onclick="addQuickMod('Less Sugar')">Less Sugar</button>
-                <button class="add-btn" style="background: #e9ece9; color: #333; font-size: 12px; padding: 6px 10px;" onclick="addQuickMod('Spicy')">Spicy</button>
-            </div>
-            
-            <input type="text" id="modifierInput" placeholder="Type custom note..." style="width: 100%; box-sizing: border-box; margin-bottom: 15px;">
-            
-            <div style="display: flex; gap: 10px;">
-                <button class="add-btn" style="flex:2;" onclick="confirmAddToCart()">➕ Add to Order</button>
-                <button class="delete-btn" style="flex:1;" onclick="closeModifierModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
+    <footer>
+        <p>&copy; <span id="year"></span> Hilom Solutions. All rights reserved.</p>
+    </footer>
 
-    <!-- DIGITAL RECEIPT ANIMATION MODAL -->
-    <div id="digitalReceiptModal" class="modal-overlay hidden" style="background: rgba(0,0,0,0.8); flex-direction: column; justify-content: flex-start; padding-top: 40px; z-index: 2000;">
-        <div style="position: relative; width: 350px; display: flex; flex-direction: column; align-items: center;">
-            <div style="width: 320px; height: 35px; background: linear-gradient(to bottom, #4a4a4a, #1a1a1a); border-radius: 18px; box-shadow: inset 0 -5px 10px rgba(0,0,0,0.5), 0 10px 15px rgba(0,0,0,0.3); z-index: 10; position: relative;">
-                <div style="position: absolute; top: 12px; right: 20px; width: 8px; height: 8px; border-radius: 50%; background: #55efc4; box-shadow: 0 0 8px #55efc4;"></div>
-            </div>
-            <div style="width: 300px; max-height: 60vh; overflow: hidden; margin-top: -18px; z-index: 5;">
-                <div id="animatedReceiptPaper" style="background: white; padding: 40px 20px 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); font-family: monospace; color: black; font-size: 14px; transform: translateY(-100%);">
-                    <!-- HTML Content will be injected here automatically -->
-                </div>
-            </div>
-            <div id="animatedReceiptActions" style="margin-top: 25px; display: flex; gap: 10px; opacity: 0; transition: opacity 0.5s ease; z-index: 10;">
-                <button class="save-btn" onclick="triggerPhysicalPrint()" style="padding: 12px 20px;">🖨️ Print Hardware</button>
-                <button class="delete-btn" onclick="tearReceipt()" style="padding: 12px 20px;">✂️ Tear & Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ================= SECURITY PIN PAD MODAL ================= -->
-    <div id="pinModal" class="modal-overlay hidden" style="z-index: 3000;">
-        <div class="modal-content" style="max-width: 320px; text-align: center; padding: 25px;">
-            <h2 style="color: #2b4227; margin-top: 0; border: none; font-size: 20px;">Manager Authorization</h2>
-            <p style="color: #666; font-size: 13px; margin-top: 0;">Enter Admin PIN to continue</p>
-            
-            <div id="pinDisplay" style="font-size: 30px; letter-spacing: 15px; margin-bottom: 20px; height: 40px; border-bottom: 2px solid #e0e5e0; color: #2b4227;"></div>
-            
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 15px;">
-                <button class="pin-btn" onclick="enterPin('1')">1</button>
-                <button class="pin-btn" onclick="enterPin('2')">2</button>
-                <button class="pin-btn" onclick="enterPin('3')">3</button>
-                <button class="pin-btn" onclick="enterPin('4')">4</button>
-                <button class="pin-btn" onclick="enterPin('5')">5</button>
-                <button class="pin-btn" onclick="enterPin('6')">6</button>
-                <button class="pin-btn" onclick="enterPin('7')">7</button>
-                <button class="pin-btn" onclick="enterPin('8')">8</button>
-                <button class="pin-btn" onclick="enterPin('9')">9</button>
-                <button class="pin-btn delete-btn" style="border: none;" onclick="clearPin()">C</button>
-                <button class="pin-btn" onclick="enterPin('0')">0</button>
-                <button class="pin-btn add-btn" style="border: none;" onclick="submitPin()">OK</button>
-            </div>
-            
-            <button class="delete-btn" style="width: 100%; padding: 12px;" onclick="closePinModal()">Cancel Action</button>
-        </div>
-    </div>
-
-    <style>
-        .pin-btn { padding: 15px; font-size: 22px; font-weight: bold; border: 1px solid #c8dac8; border-radius: 8px; background: #f4f6f4; color: #333; cursor: pointer; transition: 0.1s; }
-        .pin-btn:active { background: #d1ebd1; transform: scale(0.95); }
-    </style>
-
-    <!-- THERMAL PRINT AREAS -->
-<div id="kitchenTicketArea" class="hidden thermal-print-area">
-    <div class="receipt-header">KITCHEN TICKET<br><span style="font-size: 22px;" id="ticketTableNo"></span><br><span style="font-size: 12px; font-weight: normal;" id="ticketTime"></span></div>
-    <div id="ticketItems"></div>
-    <div class="receipt-footer">--- END OF ORDER ---</div>
-</div>
-
-<!-- UPDATED: BIR SALES INVOICE AREA -->
-    <div id="customerReceiptArea" class="hidden thermal-print-area">
-        <div class="receipt-header">
-            <img src="hilom.png" class="receipt-logo" alt="Hilom Logo" onerror="this.style.display='none'">
-            HILOM POS<br>
-            <span style="font-size: 14px; font-weight: normal;" id="receiptHeaderTitle">SALES INVOICE</span><br>
-            <span style="font-size: 16px; font-weight: bold;" id="receiptInvoiceNo"></span><br>
-            <span style="font-size: 16px;" id="receiptTableNo"></span><br>
-            <span style="font-size: 12px; font-weight: normal;" id="receiptTime"></span>
-        </div>
-
-        <!-- NEW: BUYER INFO SECTION -->
-        <div id="receiptBuyerInfo" class="hidden" style="border-bottom: 1px dashed black; padding-bottom: 5px; margin-bottom: 10px; font-size: 12px; text-align: left;">
-            <div>Buyer: <span id="receiptBuyerName"></span></div>
-            <div>TIN: <span id="receiptBuyerTin"></span></div>
-            <div>Address: <span id="receiptBuyerAddress"></span></div>
-        </div>
-
-        <div id="receiptItems" style="margin-bottom: 10px;"></div>
-        <div style="border-top: 1px dashed black; padding-top: 5px;">
-            <div class="receipt-item"><span>Gross Amount:</span><span id="receiptSubtotal"></span></div>
-            <div class="receipt-item hidden" id="receiptDiscountRow"><span id="receiptDiscountLabel">Discount:</span><span id="receiptDiscountAmount"></span></div>
-            <div class="receipt-item" style="font-weight: bold; font-size: 18px; margin-top: 5px; margin-bottom: 10px;"><span>NET DUE:</span><span id="receiptFinalTotal"></span></div>
-        </div>
-        
-        <div id="receiptPaymentSection" style="border-top: 1px dashed black; padding-top: 5px;">
-            <div class="receipt-item"><span>Method:</span><span id="receiptPayMethod"></span></div>
-            <div class="receipt-item hidden" id="receiptTenderedRow"><span>Cash Tendered:</span><span id="receiptTenderedAmount"></span></div>
-            <div class="receipt-item hidden" id="receiptChangeRow"><span>Change:</span><span id="receiptChangeAmount"></span></div>
-        </div>
-
-        <!-- NEW: BIR TAX BREAKDOWN -->
-        <div id="receiptTaxSection" style="border-top: 1px dashed black; padding-top: 5px; font-size: 11px; color: #555;">
-            <div style="display:flex; justify-content:space-between;"><span>VATable Sales:</span><span id="receiptVatSales">₱0.00</span></div>
-            <div style="display:flex; justify-content:space-between;"><span>VAT Amount (12%):</span><span id="receiptVatAmount">₱0.00</span></div>
-            <div style="display:flex; justify-content:space-between;"><span>VAT-Exempt Sales:</span><span id="receiptVatExempt">₱0.00</span></div>
-            <div id="receiptSeniorInfo" class="hidden" style="margin-top: 5px; border-top: 1px dashed #ccc; padding-top: 5px;">
-                <div>SC/PWD Name: <span id="receiptScName"></span></div>
-                <div>SC/PWD ID: <span id="receiptScId"></span></div>
-            </div>
-        </div>
-
-        <div class="receipt-footer">
-            This document is not valid for claiming input taxes.<br>Thank you for dining with us!<br><br>
-            <!-- BIR CREDENTIALS -->
-            <div style="font-size: 10px; line-height: 1.2; text-align: center; color: #000; font-family: monospace;">
-                Developer: HILOM Solutions Inc.<br>
-                Address: Bacolod City, Negros Occidental<br>
-                TIN: 000-000-000-000<br>
-                Accreditation No: xxxxxxx<br>
-                Date Issued: MM/DD/YYYY | Valid Until: MM/DD/YYYY<br>
-                PTU/ACN No: xxxxxxx<br>
-                MIN: MIN-xxxxxx<br>
-                SN: SN-xxxxxx
-            </div>
-        </div>
-    </div>
-
-<!-- NEW: Z-READING PRINT AREA -->
-    <div id="zReadingArea" class="hidden thermal-print-area">
-        <div class="receipt-header">
-            <img src="hilom.png" class="receipt-logo" alt="Hilom Logo" onerror="this.style.display='none'">
-            HILOM POS<br>
-            <span style="font-size: 16px; font-weight:bold;">Z-READING REPORT</span><br>
-            <span style="font-size: 12px; font-weight: normal;" id="zReadTime"></span>
-        </div>
-        <div style="border-top: 1px dashed black; padding-top: 5px; font-size: 14px;">
-            <div class="receipt-item"><span>Z-Counter:</span><span id="zCounterDisplay"></span></div>
-            <div class="receipt-item"><span>Beg. Inv:</span><span id="zBegInv"></span></div>
-            <div class="receipt-item"><span>End. Inv:</span><span id="zEndInv"></span></div>
-        </div>
-        <div style="border-top: 1px dashed black; padding-top: 5px; font-size: 14px;">
-            <div class="receipt-item"><span>Gross Sales:</span><span id="zGross"></span></div>
-            <div class="receipt-item"><span>Less Voids:</span><span id="zVoids"></span></div>
-            <div class="receipt-item"><span>Less Discounts:</span><span id="zDiscounts"></span></div>
-            <div class="receipt-item" style="font-weight: bold; font-size: 16px; margin-top:5px;"><span>Net Sales:</span><span id="zNet"></span></div>
-        </div>
-        <!-- NEW: CASH DRAWER MATH -->
-        <div style="border-top: 1px dashed black; padding-top: 5px; font-size: 14px;">
-            <div class="receipt-item"><span>Starting Float:</span><span id="zFloat"></span></div>
-            <div class="receipt-item"><span>Cash Sales:</span><span id="zCashSales"></span></div>
-            <div class="receipt-item"><span>Less Expenses:</span><span id="zExpenses"></span></div>
-            <div class="receipt-item" style="font-weight: bold; font-size: 16px; margin-top:5px;"><span>Cash in Drawer:</span><span id="zExpectedCash"></span></div>
-        </div>
-        <div style="border-top: 1px dashed black; padding-top: 5px; font-size: 14px;">
-            <div class="receipt-item" style="font-weight: bold; margin-top:5px;"><span>NRCST (Grand Total):</span><span id="zNewTotal"></span></div>
-        </div>
-        <div class="receipt-footer">END OF Z-READ</div>
-    </div>
-
-    <!-- NEW: X-READING PRINT AREA -->
-    <div id="xReadingArea" class="hidden thermal-print-area">
-        <div class="receipt-header">
-            <img src="hilom.png" class="receipt-logo" alt="Hilom Logo" onerror="this.style.display='none'">
-            HILOM POS<br>
-            <span style="font-size: 16px; font-weight:bold;">X-READING (MID-SHIFT)</span><br>
-            <span style="font-size: 12px; font-weight: normal;" id="xReadTime"></span>
-        </div>
-        <div style="border-top: 1px dashed black; padding-top: 5px; font-size: 14px;">
-            <div class="receipt-item"><span>Shift Beg. Inv:</span><span id="xBegInv"></span></div>
-            <div class="receipt-item"><span>Current End Inv:</span><span id="xEndInv"></span></div>
-        </div>
-        <div style="border-top: 1px dashed black; padding-top: 5px; font-size: 14px;">
-            <div class="receipt-item"><span>Gross Sales:</span><span id="xGross"></span></div>
-            <div class="receipt-item"><span>Less Voids:</span><span id="xVoids"></span></div>
-            <div class="receipt-item"><span>Less Discounts:</span><span id="xDiscounts"></span></div>
-            <div class="receipt-item" style="font-weight: bold; font-size: 16px; margin-top:5px;"><span>Net Sales:</span><span id="xNet"></span></div>
-        </div>
-        <!-- NEW: CASH DRAWER MATH -->
-        <div style="border-top: 1px dashed black; padding-top: 5px; font-size: 14px;">
-            <div class="receipt-item"><span>Starting Float:</span><span id="xFloat"></span></div>
-            <div class="receipt-item"><span>Cash Sales:</span><span id="xCashSales"></span></div>
-            <div class="receipt-item"><span>Less Expenses:</span><span id="xExpenses"></span></div>
-            <div class="receipt-item" style="font-weight: bold; font-size: 16px; margin-top:5px;"><span>Expected Drawer:</span><span id="xExpectedCash"></span></div>
-        </div>
-        <div class="receipt-footer">END OF X-READ<br>Not a shift closure.</div>
-    </div>
-
-<!-- DEDICATED ROOM FOLIO MODAL -->
-<div id="folioModal" class="modal-overlay hidden" style="z-index: 2500;">
-    <div class="modal-content" style="max-width: 450px;">
-        <h2 style="border-bottom: none; color: #2b4227; margin-top: 0;">Guest Folio Billing</h2>
-        <div id="folioHeader" style="background: #e9ece9; padding: 10px; border-radius: 6px; margin-bottom: 15px;"></div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 15px;">
-            <h4 style="margin: 0;">Charges Breakdown</h4>
-            <button class="add-btn" style="padding: 4px 10px; font-size: 12px; background: #557a46;" onclick="addFolioCharge()">+ Add Extra</button>
-        </div>
-        <div id="folioBreakdown" style="max-height: 200px; overflow-y: auto; border: 1px solid #e0e5e0; padding: 10px; border-radius: 6px; font-size: 13px;"></div>
-
-        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 18px; margin-top: 15px; color: #2b4227;">
-            <span>Grand Total Due:</span>
-            <span id="folioGrandTotal">₱0.00</span>
-        </div>
-
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button class="save-btn" style="flex:1; background: #4a6fa5;" onclick="printFolioInvoice()">🖨️ Invoice</button>
-            <button onclick="initiateFolioCheckout()" style="background: #385b2d; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">
-    Pay & Checkout
-</button>
-            <button class="delete-btn" style="flex:1;" onclick="closeFolioModal()">Cancel</button>
-        </div>
-    </div>
-</div>
-
-    <!-- PRINTABLE GUEST FOLIO INVOICE -->
-<div id="folioInvoiceArea" class="hidden">
-    <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="margin: 0; color: #2b4227;">HILOM</h1>
-            <p style="margin: 5px 0;">Property Management System</p>
-            <h2 style="border-bottom: 2px solid #333; padding-bottom: 10px;">GUEST FOLIO INVOICE</h2>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-            <div>
-                <p><strong>Guest Name:</strong> <span id="invGuestName"></span></p>
-                <p><strong>Room Number:</strong> <span id="invRoom"></span></p>
-            </div>
-            <div style="text-align: right;">
-                <p><strong>Check-In:</strong> <span id="invCheckIn"></span></p>
-                <p><strong>Check-Out:</strong> <span id="invCheckOut"></span></p>
-            </div>
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-            <thead>
-                <tr style="background-color: #e9ece9; text-align: left;">
-                    <th style="padding: 10px; border: 1px solid #ccc;">Description</th>
-                    <th style="padding: 10px; border: 1px solid #ccc; text-align: right;">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Room Charges -->
-                <tr>
-                    <td style="padding: 10px; border: 1px solid #ccc;">
-                        <!-- ADD THE ID HERE -->
-                        <strong id="invRoomTitle">Room Stay</strong><br>
-                        <small id="invRoomRate"></small>
-                    </td>
-                    <td style="padding: 10px; border: 1px solid #ccc; text-align: right; font-weight: bold;" id="invRoomTotal"></td>
-                </tr>
-            </tbody>
-            <!-- POS Charges -->
-            <tbody id="invPosList">
-                <!-- Dynamically populated POS orders go here -->
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td style="padding: 10px; border: 1px solid #ccc; text-align: right; font-size: 18px; font-weight: bold;">GRAND TOTAL:</td>
-                    <td style="padding: 10px; border: 1px solid #ccc; text-align: right; font-size: 18px; font-weight: bold; color: #2b4227;" id="invGrandTotal"></td>
-                </tr>
-            </tfoot>
-        </table>
-
-        <div style="text-align: center; margin-top: 40px; color: #666;">
-            <p>Thank you for staying with us!</p>
-        </div>
-    </div>
-</div>
-
-    
-
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-
-    <!-- Modular Files -->
-    <script src="firebase-init.js"></script>
-    <script src="rooms.js"></script>
-    <script src="auth-nav.js"></script>
-    <script src="pos-billing.js"></script>
-    <script src="inventory.js"></script>
-    <script src="reports.js"></script>
     <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('Service Worker Registered Successfully'))
-      .catch((error) => console.log('Service Worker Registration Failed:', error));
-  }
-  </script>
+        document.getElementById('year').innerText = new Date().getFullYear();
 
-  <!-- Document Preview Modal -->
-<div id="document-preview-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 z-[100] flex items-center justify-center backdrop-blur-sm">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col">
-        <div class="flex justify-between items-center p-4 border-b bg-gray-50 rounded-t-xl flex-none">
-            <h3 id="doc-preview-title" class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <span>📄</span> Document Preview
-            </h3>
-            <div class="flex gap-3">
-                <button id="btn-download-pdf" class="btn btn-secondary flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-300 hover:bg-gray-100 text-gray-700">
-                    <span>📥</span> Download PDF
-                </button>
-                <button id="btn-print-doc" class="btn btn-primary flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700">
-                    <span>🖨️</span> Print
-                </button>
-                <button onclick="hideModal('document-preview-modal')" class="text-gray-500 hover:text-gray-700 text-2xl px-2">&times;</button>
-            </div>
-        </div>
-        <div class="flex-1 overflow-hidden p-0 bg-gray-200">
-            <!-- The iframe isolates the print CSS from your main dashboard -->
-            <iframe id="doc-preview-iframe" class="w-full h-full bg-white border-none"></iframe>
-        </div>
-    </div>
-</div>
+        // ==========================================
+        // ⚠️ PASTE YOUR FIREBASE CONFIG HERE ⚠️
+        // ==========================================
+        const firebaseConfig = {
+  apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
+  authDomain: "dbr-pos.firebaseapp.com",
+  projectId: "dbr-pos",
+  storageBucket: "dbr-pos.firebasestorage.app",
+  messagingSenderId: "176532211278",
+  appId: "1:176532211278:web:57d78462a3355a32ce251f",
+  measurementId: "G-MPYZMBHZDC"
+};
+        // ==========================================
 
-<!-- FOLIO PAYMENT & SETTLEMENT MODAL -->
-<div id="folioPaymentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 2000;">
-    <div style="background: white; padding: 25px; border-radius: 8px; width: 350px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-        <h3 style="margin-top: 0; color: #2b4227; border-bottom: 2px solid #eee; padding-bottom: 10px;">Settle Guest Folio</h3>
-        
-        <div style="margin-bottom: 15px; font-size: 20px;">
-            <strong>Total Due:</strong> <span id="paymentTotalDue" style="color: #bd4b4b; float: right;">₱0.00</span>
-        </div>
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
 
-        <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Payment Method</label>
-        <select id="paymentMethod" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ccc; font-size: 16px;" onchange="toggleCashInput()">
-            <option value="Cash">Cash</option>
-            <option value="GCash">GCash</option>
-            <option value="Maya">Maya</option>
-            <option value="Credit/Debit Card">Credit/Debit Card</option>
-        </select>
-
-        <div id="cashInputSection">
-            <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Cash Tendered (₱)</label>
-            <input type="number" id="cashTendered" placeholder="0.00" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box;" oninput="calculateChange()">
+        document.getElementById("bookingForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
             
-            <div style="margin-bottom: 15px; font-size: 18px; padding-top: 10px; border-top: 1px dashed #ccc;">
-                <strong>Change:</strong> <span id="paymentChange" style="color: #557a46; float: right;">₱0.00</span>
-            </div>
-        </div>
+            const btn = document.getElementById("submitBtn");
+            btn.innerText = "Sending...";
+            btn.disabled = true;
 
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button onclick="confirmFolioCheckout()" style="flex: 2; background: #557a46; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px;">Confirm Payment</button>
-            <button onclick="closePaymentModal()" style="flex: 1; background: #ddd; color: #333; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Cancel</button>
-        </div>
-    </div>
-</div>
+            const guestName = document.getElementById("guestName").value.trim();
+            const contact = document.getElementById("contact").value.trim();
+            const roomType = document.getElementById("roomType").value;
+            const checkIn = document.getElementById("checkIn").value;
+            const checkOut = document.getElementById("checkOut").value;
 
+            if (new Date(checkOut) <= new Date(checkIn)) {
+                alert("Check-out date must be after check-in date.");
+                btn.innerText = "Send Booking Request";
+                btn.disabled = false;
+                return;
+            }
 
-</script>
+            try {
+                await db.collection("web_reservations").add({
+                    guestName: guestName,
+                    contact: contact,
+                    roomType: roomType,
+                    checkInDate: checkIn,
+                    checkOutDate: checkOut,
+                    status: "PENDING",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                alert("Success! Your booking request has been sent to our Front Desk. We will contact you shortly to confirm.");
+                document.getElementById("bookingForm").reset();
+
+            } catch (error) {
+                console.error("Error writing document: ", error);
+                alert("There was an error submitting your request. Please try again.");
+            } finally {
+                btn.innerText = "Send Booking Request";
+                btn.disabled = false;
+            }
+        });
+    </script>
 </body>
 </html>
