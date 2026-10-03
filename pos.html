@@ -292,6 +292,27 @@
                     </div>
                 </div>
             </div>
+<!-- STAFF MANAGEMENT SECTION -->
+                <div class="card no-print" style="margin-top: 40px; border-top: 2px dashed #ccc; padding-top: 20px;">
+                    <h3 style="color: #8c5d3a; margin-top: 0;">Manage Staff & PINs</h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Create accounts for your team so they can use the PIN Kiosk.</p>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="newStaffName" placeholder="Full Name (e.g. Maria Clara)" style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                        
+                        <select id="newStaffRole" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                            <option value="Front Desk">Front Desk</option>
+                            <option value="Housekeeping">Housekeeping</option>
+                            <option value="Kitchen">Kitchen</option>
+                            <option value="Manager">Manager</option>
+                        </select>
+                        
+                        <input type="password" id="newStaffPin" placeholder="4-Digit PIN" maxlength="4" style="width: 120px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                        
+                        <button onclick="addStaffMember()" style="background: #557a46; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">+ Add Staff</button>
+                    </div>
+                </div>
+
         </div>
 
 
@@ -878,6 +899,44 @@
             } catch (error) {
                 console.error("Error fetching DTR:", error);
                 resultsDiv.innerHTML = "<p style='color: #bd4b4b;'>Error loading DTR. Check your internet connection.</p>";
+            }
+        }
+
+        // --- ADD NEW STAFF MEMBER ---
+        async function addStaffMember() {
+            const name = document.getElementById("newStaffName").value.trim();
+            const role = document.getElementById("newStaffRole").value;
+            const pin = document.getElementById("newStaffPin").value.trim();
+
+            // 1. Validation
+            if (!name || pin.length !== 4 || isNaN(pin)) {
+                return alert("Please enter a valid name and a 4-digit numeric PIN.");
+            }
+
+            try {
+                // 2. Check if PIN is already in use by someone else
+                const pinCheck = await db.collection("staff").where("pinCode", "==", pin).get();
+                if (!pinCheck.empty) {
+                    return alert("This PIN is already being used. Please choose a different 4-digit PIN for security.");
+                }
+
+                // 3. Save to Firebase
+                await db.collection("staff").add({
+                    name: name,
+                    role: role,
+                    pinCode: pin,
+                    status: "CLOCKED_OUT" // Default status when created
+                });
+
+                alert(`Success! ${name} has been added to the system.`);
+                
+                // 4. Clear the inputs
+                document.getElementById("newStaffName").value = "";
+                document.getElementById("newStaffPin").value = "";
+
+            } catch (error) {
+                console.error("Error adding staff:", error);
+                alert("Failed to add staff member. Please check your internet connection.");
             }
         }
 
