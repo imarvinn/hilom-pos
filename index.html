@@ -26,7 +26,7 @@
         /* NAVBAR */
         nav {
             background-color: white;
-            padding: 15px 40px;
+            padding: 20px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -34,24 +34,55 @@
             position: sticky;
             top: 0;
             z-index: 100;
+            transition: padding 0.4s ease;
         }
-        nav h1 { margin: 0; color: var(--primary); font-size: 24px; letter-spacing: 2px; }
+        
+        nav h1 { 
+            margin: 0; 
+            color: var(--primary); 
+            font-size: 24px; 
+            letter-spacing: 2px; 
+            transition: opacity 0.4s ease;
+        }
+        
         nav a {
             text-decoration: none;
             color: #333;
             font-weight: bold;
             margin-left: 20px;
         }
+        
         nav a.btn {
             background-color: var(--primary);
             color: white;
             padding: 10px 20px;
             border-radius: 5px;
         }
+        
         .nav-logo { 
-            height: 100px; /* Adjust this number to make the logo bigger or smaller */
+            height: 100px; 
             width: auto; 
             object-fit: contain;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.4s ease;
+        }
+
+        /* NEW: SCROLLED ANIMATION STATES */
+        nav.scrolled {
+            padding: 10px 40px;
+        }
+        
+        nav.scrolled h1 {
+            opacity: 0; /* Fades out text to make room */
+            pointer-events: none;
+        }
+        
+        nav.scrolled .nav-logo {
+            height: 50px; /* Shrinks the logo */
+            left: 40px; /* Slides it to the far left */
+            transform: translateX(0);
         }
         
         /* HERO SECTION WITH VIDEO BACKGROUND */
@@ -231,6 +262,18 @@
             .date-group {
                 flex-direction: column;
                 gap: 0;
+            }
+            /* Add this inside your existing @media block */
+            .nav-logo {
+                position: relative;
+                left: auto;
+                transform: none;
+                height: 70px;
+            }
+            nav.scrolled .nav-logo {
+                left: auto;
+                transform: none;
+                height: 50px;
             }
         }
 
@@ -424,6 +467,17 @@
                 btn.disabled = false;
             }
         });
+        
+        // Navbar Scroll Animation Trigger
+        window.addEventListener("scroll", function() {
+            const nav = document.querySelector("nav");
+            if (window.scrollY > 50) {
+                nav.classList.add("scrolled");
+            } else {
+                nav.classList.remove("scrolled");
+            }
+        });
+   
     </script>
 </body>
 </html>
