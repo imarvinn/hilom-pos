@@ -60,12 +60,13 @@
         }
         
         .nav-logo { 
-            height: 100px; 
+            height: 80px; /* Slightly reduced so it breathes inside the padding */
             width: auto; 
             object-fit: contain;
             position: absolute;
             left: 50%;
-            transform: translateX(-50%);
+            top: 50%; /* Pin to vertical center */
+            transform: translate(-50%, -50%); /* Center perfectly on both X and Y */
             transition: all 0.4s ease;
         }
 
@@ -80,9 +81,10 @@
         }
         
         nav.scrolled .nav-logo {
-            height: 50px; /* Shrinks the logo */
-            left: 40px; /* Slides it to the far left */
-            transform: translateX(0);
+            height: 50px; 
+            left: 40px; 
+            top: 50%;
+            transform: translateY(-50%); /* Keep vertical center, but let it sit on the left */
         }
         
         /* HERO SECTION WITH VIDEO BACKGROUND */
@@ -267,11 +269,13 @@
             .nav-logo {
                 position: relative;
                 left: auto;
+                top: auto;
                 transform: none;
                 height: 70px;
             }
             nav.scrolled .nav-logo {
                 left: auto;
+                top: auto;
                 transform: none;
                 height: 50px;
             }
