@@ -832,30 +832,23 @@
         }
 
         // --- GENERATE FULL DTR REPORT ---
+        // --- GENERATE FULL DTR REPORT ---
         async function generateDTR() {
             const dateVal = document.getElementById("dtrDate").value;
             const resultsDiv = document.getElementById("dtrResults");
             
             if (!dateVal) return alert("Please select a date to generate the DTR.");
-            
             resultsDiv.innerHTML = "<p style='color: #666;'>Loading DTR...</p>";
             
             try {
-                const snapshot = await db.collection("dtr_logs")
-                                         .where("shiftDate", "==", dateVal)
-                                         .get();
-                                         
-                if (snapshot.empty) {
-                    resultsDiv.innerHTML = `<p style="color: #bd4b4b; font-weight: bold;">No attendance records found for ${dateVal}.</p>`;
-                    return;
-                }
+                const snapshot = await db.collection("dtr_logs").where("shiftDate", "==", dateVal).get();
+                if (snapshot.empty) return resultsDiv.innerHTML = `<p style="color: #bd4b4b; font-weight: bold;">No attendance records found for ${dateVal}.</p>`;
 
                 let logs = [];
                 let totalDailyHours = 0;
                 snapshot.forEach(doc => {
-                    const d = doc.data();
-                    logs.push(d);
-                    if (d.totalHours) totalDailyHours += d.totalHours;
+                    logs.push(doc.data());
+                    if (doc.data().totalHours) totalDailyHours += doc.data().totalHours;
                 });
                 
                 logs.sort((a, b) => (a.timeIn?.seconds || 0) - (b.timeIn?.seconds || 0));
@@ -870,32 +863,48 @@
                             <th style="padding: 10px;">Staff Name</th>
                             <th style="padding: 10px;">Time In</th>
                             <th style="padding: 10px;">Time Out</th>
-                            <th style="padding: 10px;">Total Hours</th>
+                            <th style="padding: 10px; color: #8c5d3a;">Break Mins</th>
+                            <th style="padding: 10px;">Remarks</th>
+                            <th style="padding: 10px;">Net Hours</th>
                         </tr>`;
                 
                 logs.forEach(data => {
                     let timeInStr = data.timeIn ? data.timeIn.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "N/A";
-                    let timeOutStr = data.timeOut ? data.timeOut.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "<span style='color:#557a46;'>ACTIVE</span>";
+                    let timeOutStr = data.timeOut ? data.timeOut.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (data.breakStart && !data.breakEnd ? "<span style='color:#8c5d3a; font-weight:bold;'>ON BREAK</span>" : "<span style='color:#557a46; font-weight:bold;'>ACTIVE</span>");
                     let hoursStr = data.totalHours ? data.totalHours.toFixed(2) : "-";
+                    
+                    // --- CALCULATE BREAK MINUTES ---
+                    let breakMinsDisplay = "-";
+                    if (data.breakStart && data.breakEnd) {
+                        const startMs = data.breakStart.toDate().getTime();
+                        const endMs = data.breakEnd.toDate().getTime();
+                        const mins = Math.round((endMs - startMs) / (1000 * 60));
+                        breakMinsDisplay = `<strong>${mins} mins</strong>`;
+                    } else if (data.breakStart && !data.breakEnd) {
+                        breakMinsDisplay = "<span style='color:#8c5d3a; font-style:italic;'>Ongoing</span>";
+                    }
+
+                    let remarks = data.lateFromBreak ? "<span style='color: white; background: #bd4b4b; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;'>⚠️ LATE</span>" : (data.breakStart ? "Completed" : "");
                     
                     html += `
                         <tr style="border-bottom: 1px solid #eee;">
                             <td style="padding: 10px; font-weight: bold; color: #333;">${data.staffName}</td>
                             <td style="padding: 10px; color: #557a46;">${timeInStr}</td>
                             <td style="padding: 10px; color: #bd4b4b;">${timeOutStr}</td>
+                            <td style="padding: 10px; color: #8c5d3a;">${breakMinsDisplay}</td>
+                            <td style="padding: 10px;">${remarks}</td>
                             <td style="padding: 10px; font-weight: bold;">${hoursStr}</td>
                         </tr>`;
                 });
                 
                 html += `
                     <tr style="background: #f9f9f9; font-weight: bold; font-size: 16px;">
-                        <td colspan="3" style="padding: 15px; text-align: right;">Total Payroll Hours:</td>
+                        <td colspan="5" style="padding: 15px; text-align: right;">Total Net Payroll Hours:</td>
                         <td style="padding: 15px; color: var(--accent);">${totalDailyHours.toFixed(2)} hrs</td>
                     </tr>
                 </table>`;
                 
                 resultsDiv.innerHTML = html;
-                
             } catch (error) {
                 console.error("Error fetching DTR:", error);
                 resultsDiv.innerHTML = "<p style='color: #bd4b4b;'>Error loading DTR. Check your internet connection.</p>";
