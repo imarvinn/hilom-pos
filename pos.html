@@ -247,47 +247,52 @@
             </div>
         </div>
 
-        <!-- ================= VIEW: TIME CLOCK (NOW PROPERLY PLACED OUTSIDE) ================= -->
-            <div id="timeClockView" class="view-section hidden" style="padding: 20px;">
-                <div class="card">
-                    <h2>Staff Attendance & Time Clock</h2>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Type your name and record your shift status.</p>
+       <!-- ================= VIEW: TIME CLOCK & PAYROLL ================= -->
+        <div id="timeClockView" class="view-section hidden" style="padding: 20px;">
+            <div class="card">
+                <h2>Staff Attendance & Payroll Logs</h2>
+                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Review staff hours, active shifts, and historical attendance.</p>
+                
+                <!-- Link to open the actual punch-in kiosk -->
+                <a href="staff-clock.html" target="_blank" style="display:inline-block; margin-bottom: 30px; padding: 12px 20px; background: var(--primary); color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    🖥️ Open Staff PIN Kiosk
+                </a>
 
-                    <div style="background: #f9f9f9; padding: 25px; border-radius: 8px; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--primary);">
-                        <div class="form-group" style="margin-bottom: 20px;">
-                            <label style="display: block; font-weight: bold; margin-bottom: 8px;">Staff Name</label>
-                            <input type="text" id="staffNameInput" placeholder="e.g. Juan Dela Cruz" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; box-sizing: border-box;">
-                        </div>
-                        
-                        <div style="display: flex; gap: 10px;">
-                            <button onclick="clockIn()" style="flex: 1; background: #557a46; color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 15px;">Clock In</button>
-                            <button onclick="clockOut()" style="flex: 1; background: #bd4b4b; color: white; border: none; padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 15px;">Clock Out</button>
-                        </div>
-                    </div>
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                    <h3 style="margin-top: 0; color: var(--primary-dark);">Recent Shift Logs</h3>
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                        <thead>
+                            <tr style="background: #f1f8e9; border-bottom: 2px solid #557a46;">
+                                <th style="padding: 12px;">Staff Name</th>
+                                <th style="padding: 12px;">Shift Date</th>
+                                <th style="padding: 12px;">Time In</th>
+                                <th style="padding: 12px;">Time Out</th>
+                                <th style="padding: 12px;">Total Hours</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dtrTableBody">
+                            <tr><td colspan="5" style="padding: 12px; color: #888;">Loading logs...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
 
-                    <div style="margin-top: 30px; max-width: 700px;">
-                        <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Recent Attendance Logs</h3>
-                        <div id="attendanceLogs" style="background: #f9f9f9; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
-                            Loading logs...
-                        </div>
+                <!-- FULL DTR REPORTING -->
+                <div style="margin-top: 40px; border-top: 2px dashed #ccc; padding-top: 20px; max-width: 700px;">
+                    <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Generate Daily Time Record (DTR)</h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 15px; margin-top: 0;">Select a date to view total hours for payroll.</p>
+                    
+                    <div class="no-print" style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <input type="date" id="dtrDate" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                        <button onclick="generateDTR()" style="background: #4a6fa5; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">View DTR</button>
+                        <button onclick="window.print()" style="background: #8c5d3a; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">🖨️ Print DTR</button>
                     </div>
-                    <!-- NEW: FULL DTR REPORTING -->
-                    <div style="margin-top: 40px; border-top: 2px dashed #ccc; padding-top: 20px; max-width: 700px;">
-                        <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Generate Daily Time Record (DTR)</h3>
-                        <p style="color: #666; font-size: 14px; margin-bottom: 15px; margin-top: 0;">Select a date to view all staff shift times.</p>
-                        
-                        <div class="no-print" style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
-                            <input type="date" id="dtrDate" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                            <button onclick="generateDTR()" style="background: #4a6fa5; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">View DTR</button>
-                            <button onclick="window.print()" style="background: #8c5d3a; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">🖨️ Print DTR</button>
-                        </div>
-                        
-                        <div id="dtrResults" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
-                            Select a date and click "View DTR" to load logs.
-                        </div>
+                    
+                    <div id="dtrResults" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
+                        Select a date and click "View DTR" to load logs.
                     </div>
                 </div>
             </div>
+        </div>
 
 
         <!-- ================= VIEW 5: FRONT DESK / ROOMS ================= -->
@@ -758,96 +763,51 @@
   }
 
   // --- TIME CLOCK LOGIC ---
-        async function clockIn() {
-            const name = document.getElementById("staffNameInput").value.trim();
-            if (!name) {
-                alert("Please enter your staff name.");
-                return;
-            }
-            
-            const today = new Date().toISOString().split('T')[0];
-            
-            try {
-                await db.collection("staff_attendance").add({
-                    staffName: name,
-                    type: "CLOCK_IN",
-                    date: today,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                alert(`Success! ${name} clocked IN.`);
-                document.getElementById("staffNameInput").value = "";
-                loadAttendanceLogs();
-            } catch (error) {
-                console.error("Error clocking in:", error);
-                alert("Failed to record clock-in. Check permissions.");
-            }
-        }
+        
+        // Loads the recent logs table automatically
+        function loadAttendanceLogs() {
+            const tableBody = document.getElementById("dtrTableBody");
+            if(!tableBody) return;
 
-        async function clockOut() {
-            const name = document.getElementById("staffNameInput").value.trim();
-            if (!name) {
-                alert("Please enter your staff name.");
-                return;
-            }
-            
-            const today = new Date().toISOString().split('T')[0];
-            
-            try {
-                await db.collection("staff_attendance").add({
-                    staffName: name,
-                    type: "CLOCK_OUT",
-                    date: today,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                alert(`Success! ${name} clocked OUT.`);
-                document.getElementById("staffNameInput").value = "";
-                loadAttendanceLogs();
-            } catch (error) {
-                console.error("Error clocking out:", error);
-                alert("Failed to record clock-out. Check permissions.");
-            }
-        }
+            db.collection("dtr_logs")
+              .orderBy("timeIn", "desc")
+              .limit(30)
+              .onSnapshot((snapshot) => {
+                  tableBody.innerHTML = ""; 
+                  
+                  if(snapshot.empty) {
+                      tableBody.innerHTML = "<tr><td colspan='5' style='padding: 12px; color: #888;'>No recent shifts found.</td></tr>";
+                      return;
+                  }
 
-        async function loadAttendanceLogs() {
-            const logsDiv = document.getElementById("attendanceLogs");
-            if (!logsDiv) return;
-            
-            try {
-                const snapshot = await db.collection("staff_attendance").orderBy("timestamp", "desc").limit(10).get();
-                if (snapshot.empty) {
-                    logsDiv.innerHTML = "<p style='color: #666; margin: 0;'>No attendance records found yet.</p>";
-                    return;
-                }
-                
-                let html = `<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                    <tr style="border-bottom: 2px solid #eee; text-align: left; color: #555;">
-                        <th style="padding: 8px;">Staff Name</th>
-                        <th style="padding: 8px;">Status</th>
-                        <th style="padding: 8px;">Time & Date</th>
-                    </tr>`;
-                
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    let timeStr = "Just now";
-                    if (data.timestamp && data.timestamp.toDate) {
-                        timeStr = data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    }
-                    
-                    const badgeColor = data.type === "CLOCK_IN" ? "#557a46" : "#bd4b4b";
-                    
-                    html += `<tr style="border-bottom: 1px solid #f2f2f2;">
-                        <td style="padding: 10px; font-weight: bold; color: #333;">${data.staffName}</td>
-                        <td style="padding: 10px;"><span style="background: ${badgeColor}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">${data.type}</span></td>
-                        <td style="padding: 10px; color: #666;">${timeStr} (${data.date})</td>
-                    </tr>`;
-                });
-                
-                html += "</table>";
-                logsDiv.innerHTML = html;
-            } catch (error) {
-                console.error("Error loading attendance logs:", error);
-                logsDiv.innerHTML = "<p style='color: #bd4b4b;'>Error loading logs. Make sure you are logged in.</p>";
-            }
+                  snapshot.forEach((doc) => {
+                      const data = doc.data();
+                      
+                      let timeInStr = "N/A";
+                      if (data.timeIn) {
+                          timeInStr = data.timeIn.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                      }
+                      
+                      let timeOutStr = "<span style='color: #557a46; font-weight: bold; background: #e8f5e9; padding: 4px 8px; border-radius: 4px;'>ACTIVE SHIFT</span>";
+                      let hoursStr = "-";
+                      
+                      if (data.timeOut) {
+                          timeOutStr = data.timeOut.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                          hoursStr = data.totalHours ? data.totalHours.toFixed(2) + " hrs" : "0 hrs";
+                      }
+
+                      const tr = document.createElement("tr");
+                      tr.style.borderBottom = "1px solid #eee";
+                      tr.innerHTML = `
+                          <td style="padding: 12px;"><strong>${data.staffName}</strong></td>
+                          <td style="padding: 12px; color: #666;">${data.shiftDate || "N/A"}</td>
+                          <td style="padding: 12px;">${timeInStr}</td>
+                          <td style="padding: 12px;">${timeOutStr}</td>
+                          <td style="padding: 12px; font-weight: bold; color: var(--accent);">${hoursStr}</td>
+                      `;
+                      tableBody.appendChild(tr);
+                  });
+              });
         }
 
         // --- GENERATE FULL DTR REPORT ---
@@ -860,9 +820,8 @@
             resultsDiv.innerHTML = "<p style='color: #666;'>Loading DTR...</p>";
             
             try {
-                // Fetch all logs matching the selected date
-                const snapshot = await db.collection("staff_attendance")
-                                         .where("date", "==", dateVal)
+                const snapshot = await db.collection("dtr_logs")
+                                         .where("shiftDate", "==", dateVal)
                                          .get();
                                          
                 if (snapshot.empty) {
@@ -870,41 +829,50 @@
                     return;
                 }
 
-                // Extract and sort logs chronologically by time
                 let logs = [];
-                snapshot.forEach(doc => logs.push(doc.data()));
-                logs.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+                let totalDailyHours = 0;
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    logs.push(d);
+                    if (d.totalHours) totalDailyHours += d.totalHours;
+                });
                 
-                // Build the visual table
+                logs.sort((a, b) => (a.timeIn?.seconds || 0) - (b.timeIn?.seconds || 0));
+                
                 let html = `
                     <div class="print-only" style="text-align: center; margin-bottom: 20px;">
                         <h2>HILOM POS - Daily Time Record</h2>
                         <p>Date: <b>${dateVal}</b></p>
                     </div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                        <tr style="border-bottom: 2px solid #333; text-align: left;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: left;">
+                        <tr style="border-bottom: 2px solid #333;">
                             <th style="padding: 10px;">Staff Name</th>
-                            <th style="padding: 10px;">Action</th>
-                            <th style="padding: 10px;">Time</th>
+                            <th style="padding: 10px;">Time In</th>
+                            <th style="padding: 10px;">Time Out</th>
+                            <th style="padding: 10px;">Total Hours</th>
                         </tr>`;
                 
                 logs.forEach(data => {
-                    let timeStr = "-";
-                    if (data.timestamp && data.timestamp.toDate) {
-                        timeStr = data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    }
-                    
-                    const typeText = data.type === "CLOCK_IN" ? "IN" : "OUT";
-                    const badgeColor = data.type === "CLOCK_IN" ? "#557a46" : "#bd4b4b";
+                    let timeInStr = data.timeIn ? data.timeIn.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "N/A";
+                    let timeOutStr = data.timeOut ? data.timeOut.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "<span style='color:#557a46;'>ACTIVE</span>";
+                    let hoursStr = data.totalHours ? data.totalHours.toFixed(2) : "-";
                     
                     html += `
                         <tr style="border-bottom: 1px solid #eee;">
                             <td style="padding: 10px; font-weight: bold; color: #333;">${data.staffName}</td>
-                            <td style="padding: 10px; color: ${badgeColor}; font-weight: bold;">${typeText}</td>
-                            <td style="padding: 10px; color: #666;">${timeStr}</td>
+                            <td style="padding: 10px; color: #557a46;">${timeInStr}</td>
+                            <td style="padding: 10px; color: #bd4b4b;">${timeOutStr}</td>
+                            <td style="padding: 10px; font-weight: bold;">${hoursStr}</td>
                         </tr>`;
                 });
-                html += "</table>";
+                
+                html += `
+                    <tr style="background: #f9f9f9; font-weight: bold; font-size: 16px;">
+                        <td colspan="3" style="padding: 15px; text-align: right;">Total Payroll Hours:</td>
+                        <td style="padding: 15px; color: var(--accent);">${totalDailyHours.toFixed(2)} hrs</td>
+                    </tr>
+                </table>`;
+                
                 resultsDiv.innerHTML = html;
                 
             } catch (error) {
@@ -912,6 +880,7 @@
                 resultsDiv.innerHTML = "<p style='color: #bd4b4b;'>Error loading DTR. Check your internet connection.</p>";
             }
         }
+
   </script>
 
   <!-- Document Preview Modal -->
