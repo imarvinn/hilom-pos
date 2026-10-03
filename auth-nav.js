@@ -96,6 +96,7 @@ auth.onAuthStateChanged((user) => {
         loadMenu(); 
         filterSales(); 
         loadActiveTables();
+        loadAttendanceLogs();
     } else {
         document.getElementById('loginScreen').classList.remove('hidden');
         document.getElementById('appScreen').classList.add('hidden');
