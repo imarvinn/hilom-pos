@@ -41,8 +41,7 @@
         <button class="nav-btn" onclick="switchView('inventoryView', this)"> Inventory Mgmt</button>
         <button class="nav-btn" onclick="switchView('menuManageView', this)"> Menu Builder</button>
         <button class="nav-btn" onclick="switchView('salesView', this)"> Sales & Reports</button>
-        <!-- Add this inside your navigation menu container -->
-<button class="nav-btn" onclick="switchView('timeClockView', this)"> Time Clock /button>
+        <button class="nav-btn" onclick="switchView('timeClockView', this)">Time Clock</button>
         
         <button class="nav-btn logout-nav hidden" id="changePinBtn" onclick="openChangePinModal()" style="margin-top: auto;">🔑 Change PIN</button>
         <button class="nav-btn logout-nav hidden" id="lockBtn" onclick="lockAdmin()" style="margin-top: 5px;">🔒 Lock Admin</button>
@@ -174,8 +173,17 @@
                 <button id="tabSales" style="flex: 1; padding: 12px; font-size: 16px; background-color: #557a46; color: white;" onclick="switchSalesTab('sales')">Shift Sales & Profit</button>
                 <button id="tabExpenses" style="flex: 1; padding: 12px; font-size: 16px; background-color: #e0e5e0; color: #333;" onclick="switchSalesTab('expenses')">Operational Expenses</button>
             </div>
+            <!-- SALES TABS -->
+<div style="display: flex; gap: 10px; margin-bottom: 20px;">
+    <button id="btnPosSales" onclick="switchRevenueTab('pos')" style="padding: 10px 20px; background: #557a46; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+        Restaurant / POS Sales
+    </button>
+    <button id="btnRoomSales" onclick="switchRevenueTab('room')" style="padding: 10px 20px; background: #ddd; color: #333; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+        Room Accommodations
+    </button>
+</div>
 
-            <!-- TIME CLOCK VIEW SECTION -->
+ <!-- TIME CLOCK VIEW SECTION -->
 <div id="timeClockView" class="view-section hidden" style="padding: 20px;">
     <h2>Staff Attendance & Time Clock</h2>
     <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Type your name and record your shift status.</p>
@@ -202,15 +210,6 @@
     </div>
 </div>
 
-            <!-- SALES TABS -->
-<div style="display: flex; gap: 10px; margin-bottom: 20px;">
-    <button id="btnPosSales" onclick="switchRevenueTab('pos')" style="padding: 10px 20px; background: #557a46; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
-        Restaurant / POS Sales
-    </button>
-    <button id="btnRoomSales" onclick="switchRevenueTab('room')" style="padding: 10px 20px; background: #ddd; color: #333; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
-        Room Accommodations
-    </button>
-</div>
 
 <!-- POS SALES CONTAINER -->
 <div id="posSalesContainer" style="display: block;">
