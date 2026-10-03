@@ -18,13 +18,24 @@ function loadRoomRack() {
 
         snapshot.forEach((doc) => {
             const room = doc.data();
-            let borderColor = room.status === "AVAILABLE" ? "#2e7d32" : "#c62828";
-            let bgColor = room.status === "AVAILABLE" ? "#f1f8e9" : "#ffebee";
             
-            // Dedicated Check-In vs Folio Buttons
-            let actionBtn = room.status === "AVAILABLE" 
-                ? `<button class="add-btn" style="width: 100%; padding: 10px; font-size: 14px;" onclick="checkInRoom('${doc.id}', ${room.dailyRate}, '${room.roomType}')">Check-In Guest</button>`
-                : `<button class="warn-btn" style="width: 100%; padding: 10px; font-size: 14px; background:#4a6fa5; color:white;" onclick="openFolioModal('${doc.id}', '${room.currentFolioId}')">View Room Folio</button>`;
+            // --- NEW MAINTENANCE COLORS ---
+            let borderColor = "#2e7d32"; let bgColor = "#f1f8e9";
+            if (room.status === "OCCUPIED") { borderColor = "#c62828"; bgColor = "#ffebee"; }
+            else if (room.status === "MAINTENANCE") { borderColor = "#d4a373"; bgColor = "#fff3cd"; }
+            
+            // --- DYNAMIC ACTION BUTTONS ---
+            let actionBtn = "";
+            if (room.status === "AVAILABLE") {
+                actionBtn = `
+                    <button class="add-btn" style="width: 100%; padding: 10px; font-size: 14px; margin-bottom: 5px;" onclick="checkInRoom('${doc.id}', ${room.dailyRate}, '${room.roomType}')">Check-In Guest</button>
+                    <button class="warn-btn" style="width: 100%; padding: 6px; font-size: 12px; background: #d4a373; border: none; color: white;" onclick="setRoomMaintenance('${doc.id}')">🛠️ Set Maintenance</button>
+                `;
+            } else if (room.status === "OCCUPIED") {
+                actionBtn = `<button class="warn-btn" style="width: 100%; padding: 10px; font-size: 14px; background:#4a6fa5; color:white;" onclick="openFolioModal('${doc.id}', '${room.currentFolioId}')">View Room Folio</button>`;
+            } else if (room.status === "MAINTENANCE") {
+                actionBtn = `<button class="save-btn" style="width: 100%; padding: 10px; font-size: 14px; background: #557a46;" onclick="finishRoomMaintenance('${doc.id}')">✔️️ Ready / Available</button>`;
+            }
 
             container.innerHTML += `
                 <div style="border: 2px solid ${borderColor}; background: ${bgColor}; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; min-height: 160px;">
@@ -39,7 +50,6 @@ function loadRoomRack() {
                     </div>
                     <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;">
                         ${actionBtn}
-                        <!-- RESTORED DELETE BUTTON -->
                         <button class="delete-btn" style="background: transparent; color: #bd4b4b; border: 1px solid #bd4b4b; padding: 5px; font-size: 11px;" onclick="deleteRoom('${doc.id}')">Delete Room</button>
                     </div>
                 </div>
@@ -592,6 +602,22 @@ function switchSalesTab(tabName) {
         btnRoom.style.color = "white";
         btnPos.style.background = "#ddd";
         btnPos.style.color = "#333";
+    }
+}
+// --- NEW: MAINTENANCE TOGGLES ---
+function setRoomMaintenance(roomId) {
+    if(confirm(`Mark Room ${roomId} as under maintenance? It will not be available for check-in.`)) {
+        db.collection("rooms").doc(roomId).update({ status: "MAINTENANCE" })
+          .then(() => showToast(`Room ${roomId} is now under maintenance.`))
+          .catch((e) => console.error(e));
+    }
+}
+
+function finishRoomMaintenance(roomId) {
+    if(confirm(`Is Room ${roomId} ready for guests?`)) {
+        db.collection("rooms").doc(roomId).update({ status: "AVAILABLE" })
+          .then(() => showToast(`Room ${roomId} is now Available.`))
+          .catch((e) => console.error(e));
     }
 }
 
