@@ -292,26 +292,55 @@
                     </div>
                 </div>
             </div>
-<!-- STAFF MANAGEMENT SECTION -->
-                <div class="card no-print" style="margin-top: 40px; border-top: 2px dashed #ccc; padding-top: 20px;">
-                    <h3 style="color: #8c5d3a; margin-top: 0;">Manage Staff & PINs</h3>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Create accounts for your team so they can use the PIN Kiosk.</p>
-                    
-                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                        <input type="text" id="newStaffName" placeholder="Full Name (e.g. Maria Clara)" style="flex: 1; min-width: 200px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                        
-                        <select id="newStaffRole" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                            <option value="Front Desk">Front Desk</option>
-                            <option value="Housekeeping">Housekeeping</option>
-                            <option value="Kitchen">Kitchen</option>
-                            <option value="Manager">Manager</option>
-                        </select>
-                        
-                        <input type="password" id="newStaffPin" placeholder="4-Digit PIN" maxlength="4" style="width: 120px; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                        
-                        <button onclick="addStaffMember()" style="background: #557a46; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">+ Add Staff</button>
-                    </div>
-                </div>
+
+                <!-- STAFF MANAGEMENT SECTION & DATA SHEET -->
+<div class="card no-print" style="margin-top: 40px; border-top: 2px dashed #ccc; padding-top: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div>
+            <h3 style="color: #8c5d3a; margin-top: 0; margin-bottom: 5px;">Staff Information Sheet</h3>
+            <p style="color: #666; font-size: 14px; margin: 0;">Manage your team's 201 files, contact details, and PIN access.</p>
+        </div>
+    </div>
+    
+    <!-- Registration Form -->
+    <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #e0e5e0; margin-bottom: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 10px;">
+            <input type="text" id="newStaffName" placeholder="Full Name (Required)" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+            <select id="newStaffRole" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <option value="Front Desk">Front Desk</option>
+                <option value="Housekeeping">Housekeeping</option>
+                <option value="Kitchen">Kitchen</option>
+                <option value="Manager">Manager</option>
+            </select>
+            <input type="password" id="newStaffPin" placeholder="4-Digit PIN (Required)" maxlength="4" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 10px;">
+            <input type="text" id="newStaffContact" placeholder="Contact Number" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+            <input type="text" id="newStaffAddress" placeholder="Home Address" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+            <input type="text" id="newStaffEmergency" placeholder="Emergency Contact Name & No." style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        </div>
+        <button onclick="addStaffMember()" style="background: #557a46; color: white; border: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%;">+ Register Staff Member</button>
+    </div>
+
+    <!-- Staff Data Table -->
+    <div style="overflow-x: auto; background: white; border: 1px solid #ccc; border-radius: 8px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+            <thead>
+                <tr style="background: #e9ece9; border-bottom: 2px solid #557a46;">
+                    <th style="padding: 12px;">Name</th>
+                    <th style="padding: 12px;">Role</th>
+                    <th style="padding: 12px;">Contact No.</th>
+                    <th style="padding: 12px;">Address</th>
+                    <th style="padding: 12px;">Emergency Contact</th>
+                    <th style="padding: 12px; text-align: center;">Action</th>
+                </tr>
+            </thead>
+            <tbody id="staffDirectoryBody">
+                <tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">Loading staff data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 
         </div>
 
@@ -900,6 +929,7 @@
         let dtrListener = null;
 
         function loadAttendanceLogs() {
+            loadStaffDirectory();
             const tableBody = document.getElementById("dtrTableBody");
             if(!tableBody) return;
 
@@ -1032,41 +1062,114 @@
             }
         }
 
-        // --- ADD NEW STAFF MEMBER ---
+        // --- 1. EXPANDED: ADD NEW STAFF MEMBER ---
         async function addStaffMember() {
             const name = document.getElementById("newStaffName").value.trim();
             const role = document.getElementById("newStaffRole").value;
             const pin = document.getElementById("newStaffPin").value.trim();
+            
+            const contact = document.getElementById("newStaffContact").value.trim() || "N/A";
+            const address = document.getElementById("newStaffAddress").value.trim() || "N/A";
+            const emergency = document.getElementById("newStaffEmergency").value.trim() || "N/A";
 
-            // 1. Validation
             if (!name || pin.length !== 4 || isNaN(pin)) {
                 return alert("Please enter a valid name and a 4-digit numeric PIN.");
             }
 
             try {
-                // 2. Check if PIN is already in use by someone else
                 const pinCheck = await db.collection("staff").where("pinCode", "==", pin).get();
                 if (!pinCheck.empty) {
                     return alert("This PIN is already being used. Please choose a different 4-digit PIN for security.");
                 }
 
-                // 3. Save to Firebase
                 await db.collection("staff").add({
                     name: name,
                     role: role,
                     pinCode: pin,
-                    status: "CLOCKED_OUT" // Default status when created
+                    contact: contact,
+                    address: address,
+                    emergencyContact: emergency,
+                    status: "CLOCKED_OUT",
+                    dateHired: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
                 alert(`Success! ${name} has been added to the system.`);
                 
-                // 4. Clear the inputs
+                // Clear the form
                 document.getElementById("newStaffName").value = "";
                 document.getElementById("newStaffPin").value = "";
+                document.getElementById("newStaffContact").value = "";
+                document.getElementById("newStaffAddress").value = "";
+                document.getElementById("newStaffEmergency").value = "";
 
             } catch (error) {
                 console.error("Error adding staff:", error);
-                alert("Failed to add staff member. Please check your internet connection.");
+                alert("Failed to add staff member.");
+            }
+        }
+
+        // --- 2. NEW: LOAD STAFF DIRECTORY TABLE ---
+        let staffDirectoryListener = null;
+
+        function loadStaffDirectory() {
+            const tableBody = document.getElementById("staffDirectoryBody");
+            if(!tableBody) return;
+
+            if (staffDirectoryListener !== null) {
+                staffDirectoryListener(); 
+            }
+
+            staffDirectoryListener = db.collection("staff").orderBy("name").onSnapshot((snapshot) => {
+                tableBody.innerHTML = ""; 
+                
+                if(snapshot.empty) {
+                    tableBody.innerHTML = "<tr><td colspan='6' style='padding: 15px; text-align: center; color: #888;'>No staff members registered yet.</td></tr>";
+                    return;
+                }
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    
+                    // Color code the roles for easy reading
+                    let roleColor = "#557a46";
+                    if (data.role === "Manager") roleColor = "#bd4b4b";
+                    else if (data.role === "Kitchen") roleColor = "#d4a373";
+
+                    const tr = document.createElement("tr");
+                    tr.style.borderBottom = "1px solid #eee";
+                    tr.innerHTML = `
+                        <td style="padding: 12px; font-weight: bold; color: #333;">${data.name}</td>
+                        <td style="padding: 12px;"><span style="background: #f4f6f4; border: 1px solid ${roleColor}; color: ${roleColor}; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">${data.role}</span></td>
+                        <td style="padding: 12px; color: #555;">${data.contact || "N/A"}</td>
+                        <td style="padding: 12px; color: #555;">${data.address || "N/A"}</td>
+                        <td style="padding: 12px; color: #bd4b4b; font-weight: bold; font-size: 12px;">${data.emergencyContact || "N/A"}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="deleteStaffMember('${doc.id}', '${data.name}')" style="background: transparent; color: #bd4b4b; border: 1px solid #bd4b4b; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer;">Remove</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            });
+        }
+
+        // --- 3. SECURE STAFF DELETION ---
+        async function deleteStaffMember(staffId, staffName) {
+            // Ask for Manager PIN before deleting an employee
+            const pin = prompt(`🔒 SECURITY CHECK: Enter a Manager PIN to delete ${staffName}:`);
+            if (!pin) return;
+
+            try {
+                const staffQuery = await db.collection("staff").where("pinCode", "==", pin).where("role", "==", "Manager").get();
+                if (staffQuery.empty) {
+                    return alert("❌ ACCESS DENIED: Invalid PIN or you do not have Manager privileges.");
+                }
+                
+                if (confirm(`Manager verified.\n\nAre you sure you want to permanently remove ${staffName} from the system?`)) {
+                    await db.collection("staff").doc(staffId).delete();
+                    alert(`${staffName} has been removed.`);
+                }
+            } catch (e) {
+                console.error("Error deleting staff:", e);
             }
         }
         // --- 30-DAY GANTT CALENDAR LOGIC ---
