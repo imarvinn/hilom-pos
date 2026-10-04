@@ -43,7 +43,12 @@
         <h2 style="font-size: 28px; margin-bottom: 20px;">HILOM POS</h2>
         <input type="email" id="email" placeholder="Email Address" required style="width:100%; box-sizing:border-box;">
         <input type="password" id="password" placeholder="Password" required style="width:100%; box-sizing:border-box;">
+        
         <button class="add-btn" onclick="login()" style="width: 100%; margin-top: 10px; padding: 12px; font-size: 16px;">Sign In</button>
+        
+        <!-- NEW: Hidden registration button for owners -->
+        <button onclick="registerNewAdmin()" style="width: 100%; margin-top: 10px; padding: 12px; font-size: 14px; background: transparent; color: #557a46; border: 1px solid #557a46; border-radius: 8px; cursor: pointer;">+ Create New Admin Account</button>
+        
         <p id="errorMessage" style="color: #bd4b4b; font-size: 14px; margin-top: 15px;"></p>
     </div>
 
@@ -1500,6 +1505,34 @@
             document.getElementById("menuFormTitle").style.color = "#333";
             document.getElementById("saveMenuBtn").innerText = "Save Menu Recipe";
             document.getElementById("cancelEditBtn").classList.add("hidden");
+        }
+
+        // --- CREATE NEW EMAIL ADMIN ---
+        function registerNewAdmin() {
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value.trim();
+            const errorMsg = document.getElementById("errorMessage");
+
+            if (!email || !password) {
+                return errorMsg.innerText = "Please type an email and password in the boxes above to register.";
+            }
+            if (password.length < 6) {
+                return errorMsg.innerText = "Password must be at least 6 characters long.";
+            }
+
+            // Ask for confirmation to prevent accidental account creation
+            const securityCheck = prompt("SECURITY CHECK: Type 'CONFIRM' to create a new Master Admin account.");
+            if (securityCheck !== "CONFIRM") return;
+
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    alert(`Success! Admin account created for ${email}. You can now log in.`);
+                    errorMsg.innerText = "";
+                })
+                .catch((error) => {
+                    console.error("Error registering:", error);
+                    errorMsg.innerText = error.message;
+                });
         }
   </script>
 
