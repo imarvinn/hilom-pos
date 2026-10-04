@@ -177,14 +177,18 @@ function renderExpensePage(page) {
 }
 
 function printSales() { 
-    // 1. Render all sales and expense data
+    // 1. Render all sales and expense data without pagination
     renderSalesPage('ALL'); 
     renderExpensePage('ALL');
     
-    // 2. Explicitly remove the 'hidden' class so the DOM physically displays the card
     const expensesCard = document.getElementById("expensesCard");
     const salesCard = document.getElementById("salesCard");
     
+    // NEW: Save the current visibility state before doing anything
+    const isExpensesHidden = expensesCard ? expensesCard.classList.contains("hidden") : true;
+    const isSalesHidden = salesCard ? salesCard.classList.contains("hidden") : true;
+
+    // 2. Explicitly remove the 'hidden' class so the DOM physically displays both for the PDF
     if (expensesCard) expensesCard.classList.remove("hidden");
     if (salesCard) salesCard.classList.remove("hidden");
 
@@ -195,12 +199,13 @@ function printSales() {
     setTimeout(() => {
         window.print();
         
-        // 5. Cleanup: restore normal UI state, re-hide cards, and reset pagination
+        // 5. Cleanup: RESTORE the exact UI state based on what you saved in Step 1
         document.body.classList.remove("print-sales"); 
         
-        if (expensesCard) expensesCard.classList.add("hidden");
-        if (salesCard) salesCard.classList.add("hidden");
+        if (isExpensesHidden && expensesCard) expensesCard.classList.add("hidden");
+        if (isSalesHidden && salesCard) salesCard.classList.add("hidden");
         
+        // Turn pagination back on
         renderSalesPage(currentSalesPage); 
         renderExpensePage(currentExpPage);
     }, 300);
