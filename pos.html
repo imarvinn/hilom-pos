@@ -46,7 +46,7 @@
         
         <button class="add-btn" onclick="login()" style="width: 100%; margin-top: 10px; padding: 12px; font-size: 16px;">Sign In</button>
         
-        <!-- NEW: Hidden registration button for owners -->
+        <!-- Hidden registration button for owners -->
         <button onclick="registerNewAdmin()" style="width: 100%; margin-top: 10px; padding: 12px; font-size: 14px; background: transparent; color: #557a46; border: 1px solid #557a46; border-radius: 8px; cursor: pointer;">+ Create New Admin Account</button>
         
         <p id="errorMessage" style="color: #bd4b4b; font-size: 14px; margin-top: 15px;"></p>
@@ -159,7 +159,7 @@
            <!-- ================= VIEW 3: MENU BUILDER ================= -->
             <div id="menuManageView" class="view-section hidden">
                 
-                <!-- NEW: DYNAMIC CATEGORY MANAGER -->
+                <!-- DYNAMIC CATEGORY MANAGER -->
                 <div class="card" id="categoryManageCard" style="margin-bottom: 20px;">
                     <h2 style="color: #8c5d3a; border-bottom: 1px dashed #ccc;">Manage Menu Categories</h2>
                     <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
@@ -191,7 +191,8 @@
                         <button class="delete-btn hidden" id="cancelEditBtn" onclick="resetMenuForm()">Cancel Edit</button>
                     </div>
                 </div>
-                <!-- NEW: ADMIN MENU VIEWER -->
+
+                <!-- ADMIN MENU VIEWER -->
                 <div class="card" style="margin-top: 20px;">
                     <h2 style="color: #bd4b4b; border-bottom: 1px dashed #ccc;">Manage Existing Menu Items</h2>
                     <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Edit or delete your menu items here. (Changes instantly sync to the Cashier POS).</p>
@@ -321,7 +322,7 @@
                         <span style="color: #666; font-weight: bold;">to</span>
                         <input type="date" id="dtrEndDate" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;" title="End Date">
                         <button onclick="generateDTR()" style="background: #4a6fa5; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">View Payroll</button>
-<button onclick="printDTR()" style="background: #8c5d3a; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">🖨️ Print Payroll</button>                    </div>
+                        <button onclick="printDTR()" style="background: #8c5d3a; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">🖨️ Print Payroll</button>                    </div>
                     
                     <div id="dtrResults" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
                         Select a date and click "View DTR" to load logs.
@@ -374,7 +375,10 @@
             <tbody id="staffDirectoryBody">
                 <tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">Loading staff data...</td></tr>
             </tbody>
-            <!-- NEW: ADMIN APPROVALS PANEL -->
+        </table>
+    </div>
+
+    <!-- ADMIN APPROVALS PANEL -->
     <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 20px;">
         <h3 style="color: #8c5d3a; margin-top: 0; margin-bottom: 10px;">Pending Master Admin Requests</h3>
         <p style="color: #666; font-size: 13px; margin-top: 0;">Approve or decline requests for full POS login access.</p>
@@ -382,8 +386,6 @@
         <div id="pendingAdminsList">
             <p style="color: #888; font-size: 13px; margin: 0;">Loading requests...</p>
         </div>
-    </div>
-        </table>
     </div>
 </div>
 
@@ -586,7 +588,7 @@
                 <input type="text" id="seniorIdInput" placeholder="ID Number" style="width:100%; margin:0; box-sizing:border-box; padding:6px;">
             </div>
 
-            <!-- NEW: BUYER DETAILS (B2B) -->
+            <!-- BUYER DETAILS (B2B) -->
             <div id="buyerDetailsRow" style="margin-bottom: 10px; background:#e9ece9; padding:10px; border-radius:6px; border: 1px solid #c8dac8;">
                 <p style="margin: 0 0 5px 0; font-size: 12px; font-weight: bold; color: #2b4227;">Buyer Details (Optional B2B)</p>
                 <input type="text" id="buyerNameInput" placeholder="Buyer Name / Company" style="width:100%; margin-bottom:5px; box-sizing:border-box; padding:6px;">
@@ -627,11 +629,8 @@
            <!-- BUTTON LAYOUT -->
 <div style="display: flex; gap: 5px; margin-top: 20px;">
     <button class="warn-btn" style="flex:0.8; font-size:14px; padding:10px 2px;" onclick="openSplitModal()">✂️ Split</button>
-    <button class="save-btn" style="flex:1; background:#d4a373; font-size:14px; padding:10px 2px;" onclick="printPreBill()">🖨️ Bill</button>
-    
-    <!-- NEW PRINT INVOICE BUTTON -->
+    <button class="save-btn" style="flex:1; background:#d4a373; font-size:14px; padding:10px 2px;" onclick="printPreBill()">🖨️️ Bill</button>
     <button class="save-btn" style="flex:1; background:#4a6fa5; font-size:14px; padding:10px 2px;" onclick="printFolioInvoice()">🖨️ Invoice</button>
-    
     <button class="add-btn" style="flex:1.5; font-size:14px; padding:10px 2px;" onclick="processPayment()">✔️ Pay</button>
     <button class="delete-btn" style="flex:0.7; font-size:14px; padding:10px 2px;" onclick="closeBillingModal()">Cancel</button>
 </div>
@@ -641,7 +640,7 @@
         </div>
     </div>
 
-    <!-- NEW: SPLIT BILL MODAL -->
+    <!-- SPLIT BILL MODAL -->
 <div id="splitModal" class="modal-overlay hidden" style="z-index: 1500;">
     <div class="modal-content">
         <h2 style="border-bottom:none; color: #2b4227; margin-bottom: 5px;">Split Bill (By Item)</h2>
@@ -688,12 +687,11 @@
             </div>
             <div style="width: 300px; max-height: 60vh; overflow: hidden; margin-top: -18px; z-index: 5;">
                 <div id="animatedReceiptPaper" style="background: white; padding: 40px 20px 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); font-family: monospace; color: black; font-size: 14px; transform: translateY(-100%);">
-                    <!-- HTML Content will be injected here automatically -->
                 </div>
             </div>
             <div id="animatedReceiptActions" style="margin-top: 25px; display: flex; gap: 10px; opacity: 0; transition: opacity 0.5s ease; z-index: 10;">
                 <button class="save-btn" onclick="triggerPhysicalPrint()" style="padding: 12px 20px;">🖨️ Print Hardware</button>
-                <button class="delete-btn" onclick="tearReceipt()" style="padding: 12px 20px;">✂️ Tear & Close</button>
+                <button class="delete-btn" onclick="tearReceipt()" style="padding: 12px 20px;">✂️️ Tear & Close</button>
             </div>
         </div>
     </div>
@@ -737,7 +735,7 @@
     <div class="receipt-footer">--- END OF ORDER ---</div>
 </div>
 
-<!-- UPDATED: BIR SALES INVOICE AREA -->
+<!-- SALES INVOICE AREA -->
     <div id="customerReceiptArea" class="hidden thermal-print-area">
         <div class="receipt-header">
             <img src="hilom.png" class="receipt-logo" alt="Hilom Logo" onerror="this.style.display='none'">
@@ -748,7 +746,6 @@
             <span style="font-size: 12px; font-weight: normal;" id="receiptTime"></span>
         </div>
 
-        <!-- NEW: BUYER INFO SECTION -->
         <div id="receiptBuyerInfo" class="hidden" style="border-bottom: 1px dashed black; padding-bottom: 5px; margin-bottom: 10px; font-size: 12px; text-align: left;">
             <div>Buyer: <span id="receiptBuyerName"></span></div>
             <div>TIN: <span id="receiptBuyerTin"></span></div>
@@ -768,7 +765,7 @@
             <div class="receipt-item hidden" id="receiptChangeRow"><span>Change:</span><span id="receiptChangeAmount"></span></div>
         </div>
 
-        <!-- NEW: BIR TAX BREAKDOWN -->
+        <!-- BIR TAX BREAKDOWN -->
         <div id="receiptTaxSection" style="border-top: 1px dashed black; padding-top: 5px; font-size: 11px; color: #555;">
             <div style="display:flex; justify-content:space-between;"><span>VATable Sales:</span><span id="receiptVatSales">₱0.00</span></div>
             <div style="display:flex; justify-content:space-between;"><span>VAT Amount (12%):</span><span id="receiptVatAmount">₱0.00</span></div>
@@ -781,7 +778,6 @@
 
         <div class="receipt-footer">
             This document is not valid for claiming input taxes.<br>Thank you for dining with us!<br><br>
-            <!-- BIR CREDENTIALS -->
             <div style="font-size: 10px; line-height: 1.2; text-align: center; color: #000; font-family: monospace;">
                 Developer: HILOM Solutions Inc.<br>
                 Address: Bacolod City, Negros Occidental<br>
@@ -795,7 +791,7 @@
         </div>
     </div>
 
-<!-- NEW: Z-READING PRINT AREA -->
+<!-- Z-READING PRINT AREA -->
     <div id="zReadingArea" class="hidden thermal-print-area">
         <div class="receipt-header">
             <img src="hilom.png" class="receipt-logo" alt="Hilom Logo" onerror="this.style.display='none'">
@@ -814,7 +810,6 @@
             <div class="receipt-item"><span>Less Discounts:</span><span id="zDiscounts"></span></div>
             <div class="receipt-item" style="font-weight: bold; font-size: 16px; margin-top:5px;"><span>Net Sales:</span><span id="zNet"></span></div>
         </div>
-        <!-- NEW: CASH DRAWER MATH -->
         <div style="border-top: 1px dashed black; padding-top: 5px; font-size: 14px;">
             <div class="receipt-item"><span>Starting Float:</span><span id="zFloat"></span></div>
             <div class="receipt-item"><span>Cash Sales:</span><span id="zCashSales"></span></div>
@@ -827,7 +822,7 @@
         <div class="receipt-footer">END OF Z-READ</div>
     </div>
 
-    <!-- NEW: X-READING PRINT AREA -->
+    <!-- X-READING PRINT AREA -->
     <div id="xReadingArea" class="hidden thermal-print-area">
         <div class="receipt-header">
             <img src="hilom.png" class="receipt-logo" alt="Hilom Logo" onerror="this.style.display='none'">
@@ -845,7 +840,6 @@
             <div class="receipt-item"><span>Less Discounts:</span><span id="xDiscounts"></span></div>
             <div class="receipt-item" style="font-weight: bold; font-size: 16px; margin-top:5px;"><span>Net Sales:</span><span id="xNet"></span></div>
         </div>
-        <!-- NEW: CASH DRAWER MATH -->
         <div style="border-top: 1px dashed black; padding-top: 5px; font-size: 14px;">
             <div class="receipt-item"><span>Starting Float:</span><span id="xFloat"></span></div>
             <div class="receipt-item"><span>Cash Sales:</span><span id="xCashSales"></span></div>
@@ -874,9 +868,7 @@
 
         <div style="display: flex; gap: 10px; margin-top: 20px;">
             <button class="save-btn" style="flex:1; background: #4a6fa5;" onclick="printFolioInvoice()">🖨️ Invoice</button>
-            <button onclick="initiateFolioCheckout()" style="background: #385b2d; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">
-    Pay & Checkout
-</button>
+            <button onclick="initiateFolioCheckout()" style="background: #385b2d; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">Pay & Checkout</button>
             <button class="delete-btn" style="flex:1;" onclick="closeFolioModal()">Cancel</button>
         </div>
     </div>
@@ -885,8 +877,6 @@
     <!-- PRINTABLE GUEST FOLIO INVOICE -->
     <div id="folioInvoiceArea" class="hidden">
         <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; background: white; color: #333;">
-            
-            <!-- HEADER -->
             <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2b4227; padding-bottom: 20px;">
                 <img src="hilom.png" alt="Hilom Logo" style="height: 90px; object-fit: contain; margin-bottom: 10px;">
                 <div style="font-size: 14px; color: #555; line-height: 1.5;">
@@ -895,8 +885,6 @@
                 </div>
                 <h2 style="margin: 20px 0 0 0; color: #2b4227; font-size: 24px; letter-spacing: 2px;">GUEST FOLIO INVOICE</h2>
             </div>
-
-            <!-- GUEST & STAY DETAILS -->
             <div style="display: flex; justify-content: space-between; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #e0e5e0;">
                 <div style="line-height: 1.8;">
                     <p style="margin: 0;"><strong>Guest Name:</strong> <span id="invGuestName" style="font-size: 16px;"></span></p>
@@ -907,8 +895,6 @@
                     <p style="margin: 0;"><strong>Check-Out:</strong> <span id="invCheckOut"></span></p>
                 </div>
             </div>
-
-            <!-- CHARGES TABLE -->
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 15px;">
                 <thead>
                     <tr style="background-color: #2b4227; color: white; text-align: left;">
@@ -917,7 +903,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Room Charges -->
                     <tr>
                         <td style="padding: 15px; border: 1px solid #ccc; border-bottom: 2px solid #ccc;">
                             <strong id="invRoomTitle" style="color: #2b4227; font-size: 16px;">Room Stay</strong><br>
@@ -926,10 +911,7 @@
                         <td style="padding: 15px; border: 1px solid #ccc; border-bottom: 2px solid #ccc; text-align: right; font-weight: bold; font-size: 16px;" id="invRoomTotal"></td>
                     </tr>
                 </tbody>
-                <!-- POS Charges -->
-                <tbody id="invPosList">
-                    <!-- Dynamically populated POS orders go here -->
-                </tbody>
+                <tbody id="invPosList"></tbody>
                 <tfoot>
                     <tr style="background-color: #e8f5e9;">
                         <td style="padding: 15px; border: 1px solid #2b4227; text-align: right; font-size: 18px; font-weight: bold; color: #2b4227;">GRAND TOTAL:</td>
@@ -937,8 +919,6 @@
                     </tr>
                 </tfoot>
             </table>
-
-            <!-- FOOTER / SIGNATURE -->
             <div style="margin-top: 50px; text-align: center; color: #666; font-size: 14px;">
                 <p style="font-weight: bold; font-size: 16px; color: #2b4227; margin-bottom: 5px;">Thank you for staying with us!</p>
                 <p style="margin: 0;">We hope to welcome you back to Hilom Resort soon.</p>
@@ -946,8 +926,6 @@
             </div>
         </div>
     </div>
-
-    
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -961,16 +939,15 @@
     <script src="pos-billing.js"></script>
     <script src="inventory.js"></script>
     <script src="reports.js"></script>
+    
     <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('Service Worker Registered Successfully'))
-      .catch((error) => console.log('Service Worker Registration Failed:', error));
-  }
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+            .then(() => console.log('Service Worker Registered Successfully'))
+            .catch((error) => console.log('Service Worker Registration Failed:', error));
+        }
 
-  // --- TIME CLOCK LOGIC ---
-        
-       // --- LOAD RECENT SHIFTS (With Memory Leak Fix) ---
+        // --- TIME CLOCK LOGIC ---
         let dtrListener = null;
 
         function loadAttendanceLogs() {
@@ -978,54 +955,48 @@
             const tableBody = document.getElementById("dtrTableBody");
             if(!tableBody) return;
 
-            // KILL SWITCH: If a live feed is already running, shut it down before starting a new one.
-            if (dtrListener !== null) {
-                dtrListener(); 
-            }
+            if (dtrListener !== null) { dtrListener(); }
 
-            // Save the new live feed to the variable so it can be managed
             dtrListener = db.collection("dtr_logs").orderBy("timeIn", "desc").limit(30).onSnapshot((snapshot) => {
-                  tableBody.innerHTML = ""; 
-                  
-                  if(snapshot.empty) {
-                      tableBody.innerHTML = "<tr><td colspan='5' style='padding: 12px; color: #888;'>No recent shifts found.</td></tr>";
-                      return;
-                  }
+                tableBody.innerHTML = ""; 
+                if(snapshot.empty) {
+                    tableBody.innerHTML = "<tr><td colspan='5' style='padding: 12px; color: #888;'>No recent shifts found.</td></tr>";
+                    return;
+                }
 
-                  snapshot.forEach((doc) => {
-                      const data = doc.data();
-                      
-                      let timeInStr = "Just now"; 
-                      if (data.timeIn && typeof data.timeIn.toDate === 'function') {
-                          timeInStr = data.timeIn.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                      }
-                      
-                      let timeOutStr = "<span style='color: #557a46; font-weight: bold; background: #e8f5e9; padding: 4px 8px; border-radius: 4px;'>ACTIVE SHIFT</span>";
-                      let hoursStr = "-";
-                      
-                      if (data.timeOut) {
-                          if (typeof data.timeOut.toDate === 'function') {
-                              timeOutStr = data.timeOut.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                          } else {
-                              timeOutStr = "Just now"; 
-                          }
-                          hoursStr = data.totalHours ? data.totalHours.toFixed(2) + " hrs" : "0 hrs";
-                      } else if (data.breakStart && !data.breakEnd) {
-                          timeOutStr = "<span style='color: #8c5d3a; font-weight: bold; background: #fff3cd; padding: 4px 8px; border-radius: 4px;'>☕ ON BREAK</span>";
-                      }
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    let timeInStr = "Just now"; 
+                    if (data.timeIn && typeof data.timeIn.toDate === 'function') {
+                        timeInStr = data.timeIn.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    }
+                    
+                    let timeOutStr = "<span style='color: #557a46; font-weight: bold; background: #e8f5e9; padding: 4px 8px; border-radius: 4px;'>ACTIVE SHIFT</span>";
+                    let hoursStr = "-";
+                    
+                    if (data.timeOut) {
+                        if (typeof data.timeOut.toDate === 'function') {
+                            timeOutStr = data.timeOut.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        } else {
+                            timeOutStr = "Just now"; 
+                        }
+                        hoursStr = data.totalHours ? data.totalHours.toFixed(2) + " hrs" : "0 hrs";
+                    } else if (data.breakStart && !data.breakEnd) {
+                        timeOutStr = "<span style='color: #8c5d3a; font-weight: bold; background: #fff3cd; padding: 4px 8px; border-radius: 4px;'>☕ ON BREAK</span>";
+                    }
 
-                      const tr = document.createElement("tr");
-                      tr.style.borderBottom = "1px solid #eee";
-                      tr.innerHTML = `
-                          <td style="padding: 12px;"><strong>${data.staffName}</strong></td>
-                          <td style="padding: 12px; color: #666;">${data.shiftDate || "N/A"}</td>
-                          <td style="padding: 12px;">${timeInStr}</td>
-                          <td style="padding: 12px;">${timeOutStr}</td>
-                          <td style="padding: 12px; font-weight: bold; color: var(--accent);">${hoursStr}</td>
-                      `;
-                      tableBody.appendChild(tr);
-                  });
-              });
+                    const tr = document.createElement("tr");
+                    tr.style.borderBottom = "1px solid #eee";
+                    tr.innerHTML = `
+                        <td style="padding: 12px;"><strong>${data.staffName}</strong></td>
+                        <td style="padding: 12px; color: #666;">${data.shiftDate || "N/A"}</td>
+                        <td style="padding: 12px;">${timeInStr}</td>
+                        <td style="padding: 12px;">${timeOutStr}</td>
+                        <td style="padding: 12px; font-weight: bold; color: var(--accent);">${hoursStr}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            });
         }
 
         // --- GENERATE FULL DTR & PAYROLL REPORT ---
@@ -1040,7 +1011,6 @@
             resultsDiv.innerHTML = "<p style='color: #666;'>Loading Payroll Data...</p>";
             
             try {
-                // Fetch all logs within the date range
                 const snapshot = await db.collection("dtr_logs")
                     .where("shiftDate", ">=", startDate)
                     .where("shiftDate", "<=", endDate)
@@ -1050,13 +1020,11 @@
 
                 let logs = [];
                 let totalOverallHours = 0;
-                let staffTotals = {}; // This object does the heavy lifting for per-staff math
+                let staffTotals = {};
 
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     logs.push(data);
-                    
-                    // Automatically group and sum the total hours per staff member
                     if (data.totalHours) {
                         totalOverallHours += data.totalHours;
                         if (!staffTotals[data.staffName]) staffTotals[data.staffName] = 0;
@@ -1064,78 +1032,44 @@
                     }
                 });
                 
-                // Sort the detailed logs chronologically
                 logs.sort((a, b) => (a.timeIn?.seconds || 0) - (b.timeIn?.seconds || 0));
                 
-                // --- 1. BUILD THE PAYROLL SUMMARY UI ---
                 let html = `
                     <div class="print-only" style="text-align: center; margin-bottom: 20px;">
                         <h2>HILOM POS - Payroll Summary</h2>
                         <p>Period: <b>${startDate} to ${endDate}</b></p>
                     </div>
-                    
                     <div style="margin-bottom: 30px; background: #e8f5e9; padding: 15px; border-radius: 8px; border: 1px solid #c8dac8;">
                         <h3 style="color: #2b4227; margin-top: 0; border-bottom: 2px solid #557a46; padding-bottom: 5px;">Staff Payroll Totals</h3>
                         <table style="width: 100%; border-collapse: collapse; font-size: 15px; text-align: left;">
-                            <tr>
-                                <th style="padding: 8px;">Staff Name</th>
-                                <th style="padding: 8px; text-align: right;">Total Billable Hours</th>
-                            </tr>`;
+                            <tr><th style="padding: 8px;">Staff Name</th><th style="padding: 8px; text-align: right;">Total Billable Hours</th></tr>`;
                 
-                // Inject the mathematically summed totals for each staff member
                 for (const [staffName, hours] of Object.entries(staffTotals)) {
-                    html += `
-                        <tr style="border-top: 1px dashed #557a46;">
-                            <td style="padding: 8px; font-weight: bold; color: #333;">${staffName}</td>
-                            <td style="padding: 8px; text-align: right; color: #bd4b4b; font-weight: bold; font-size: 16px;">${hours.toFixed(2)} hrs</td>
-                        </tr>`;
+                    html += `<tr style="border-top: 1px dashed #557a46;"><td style="padding: 8px; font-weight: bold; color: #333;">${staffName}</td><td style="padding: 8px; text-align: right; color: #bd4b4b; font-weight: bold; font-size: 16px;">${hours.toFixed(2)} hrs</td></tr>`;
                 }
                 
                 html += `</table></div>`;
-
-                // --- 2. BUILD THE DETAILED BREAKDOWN UI ---
                 html += `
                     <h4 style="color: #666; margin-bottom: 10px;">Detailed Shift Logs (For Reference)</h4>
                     <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
                         <tr style="border-bottom: 2px solid #333; background: #f9f9f9;">
-                            <th style="padding: 10px;">Date</th>
-                            <th style="padding: 10px;">Staff Name</th>
-                            <th style="padding: 10px;">Time In</th>
-                            <th style="padding: 10px;">Time Out</th>
-                            <th style="padding: 10px;">Break (Mins)</th>
-                            <th style="padding: 10px;">Net Hours</th>
+                            <th style="padding: 10px;">Date</th><th style="padding: 10px;">Staff Name</th><th style="padding: 10px;">Time In</th><th style="padding: 10px;">Time Out</th><th style="padding: 10px;">Break (Mins)</th><th style="padding: 10px;">Net Hours</th>
                         </tr>`;
                 
                 logs.forEach(data => {
                     let timeInStr = data.timeIn ? data.timeIn.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "N/A";
                     let timeOutStr = data.timeOut ? data.timeOut.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (data.breakStart && !data.breakEnd ? "<span style='color:#8c5d3a; font-weight:bold;'>ON BREAK</span>" : "<span style='color:#557a46; font-weight:bold;'>ACTIVE</span>");
                     let hoursStr = data.totalHours ? data.totalHours.toFixed(2) : "-";
-                    
                     let breakMinsDisplay = "-";
                     if (data.breakStart && data.breakEnd) {
                         const startMs = data.breakStart.toDate().getTime();
                         const endMs = data.breakEnd.toDate().getTime();
                         breakMinsDisplay = `${Math.round((endMs - startMs) / (1000 * 60))}`;
                     }
-
-                    html += `
-                        <tr style="border-bottom: 1px solid #eee;">
-                            <td style="padding: 8px; color: #666;">${data.shiftDate}</td>
-                            <td style="padding: 8px; font-weight: bold; color: #333;">${data.staffName}</td>
-                            <td style="padding: 8px; color: #557a46;">${timeInStr}</td>
-                            <td style="padding: 8px; color: #bd4b4b;">${timeOutStr}</td>
-                            <td style="padding: 8px; color: #8c5d3a;">${breakMinsDisplay}</td>
-                            <td style="padding: 8px; font-weight: bold;">${hoursStr}</td>
-                        </tr>`;
+                    html += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 8px; color: #666;">${data.shiftDate}</td><td style="padding: 8px; font-weight: bold; color: #333;">${data.staffName}</td><td style="padding: 8px; color: #557a46;">${timeInStr}</td><td style="padding: 8px; color: #bd4b4b;">${timeOutStr}</td><td style="padding: 8px; color: #8c5d3a;">${breakMinsDisplay}</td><td style="padding: 8px; font-weight: bold;">${hoursStr}</td></tr>`;
                 });
                 
-                html += `
-                    <tr style="background: #f4f6f4; font-weight: bold; font-size: 14px;">
-                        <td colspan="5" style="padding: 15px; text-align: right;">Total Hours (All Staff Combined):</td>
-                        <td style="padding: 15px; color: var(--accent);">${totalOverallHours.toFixed(2)} hrs</td>
-                    </tr>
-                </table>`;
-                
+                html += `<tr style="background: #f4f6f4; font-weight: bold; font-size: 14px;"><td colspan="5" style="padding: 15px; text-align: right;">Total Hours (All Staff Combined):</td><td style="padding: 15px; color: var(--accent);">${totalOverallHours.toFixed(2)} hrs</td></tr></table>`;
                 resultsDiv.innerHTML = html;
             } catch (error) {
                 console.error("Error fetching DTR:", error);
@@ -1143,120 +1077,53 @@
             }
         }
 
-        // --- DEDICATED PAYROLL PRINTER ---
         function printDTR() {
             const resultsHtml = document.getElementById("dtrResults").innerHTML;
-            
-            // Prevent printing if they haven't generated a report yet
-            if (!resultsHtml || resultsHtml.includes("Select a date") || resultsHtml.includes("Loading")) {
-                return alert("Please generate a payroll report first before printing.");
-            }
-
-            // Create a clean, hidden virtual window just for printing
+            if (!resultsHtml || resultsHtml.includes("Select a date") || resultsHtml.includes("Loading")) return alert("Please generate a payroll report first before printing.");
             const printWindow = window.open('', '_blank', 'width=800,height=600');
-            
-            // Inject perfect printer-friendly CSS and the payroll data
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>Payroll Report</title>
-                    <style>
-                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; }
-                        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; }
-                        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-                        th { background-color: #e8f5e9; color: #2b4227; }
-                        h2, h3 { color: #2b4227; margin-bottom: 5px; }
-                        .print-only { display: block !important; text-align: center; margin-bottom: 20px; }
-                        
-                        /* Hide things that shouldn't be printed */
-                        button { display: none !important; }
-                    </style>
-                </head>
-                <body>
-                    ${resultsHtml}
-                </body>
-                </html>
-            `);
-            
-            printWindow.document.close();
-            printWindow.focus();
-            
-            // Give the browser a split second to render the layout, then trigger the print dialogue
-            setTimeout(() => {
-                printWindow.print();
-                printWindow.close(); // Automatically close the virtual window after printing
-            }, 250);
+            printWindow.document.write(`<html><head><title>Payroll Report</title><style>body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; } table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; } th, td { border: 1px solid #ccc; padding: 10px; text-align: left; } th { background-color: #e8f5e9; color: #2b4227; } h2, h3 { color: #2b4227; margin-bottom: 5px; } .print-only { display: block !important; text-align: center; margin-bottom: 20px; } button { display: none !important; }</style></head><body>${resultsHtml}</body></html>`);
+            printWindow.document.close(); printWindow.focus();
+            setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
         }
 
-        // --- 1. EXPANDED: ADD NEW STAFF MEMBER ---
         async function addStaffMember() {
             const name = document.getElementById("newStaffName").value.trim();
             const role = document.getElementById("newStaffRole").value;
             const pin = document.getElementById("newStaffPin").value.trim();
-            
             const contact = document.getElementById("newStaffContact").value.trim() || "N/A";
             const address = document.getElementById("newStaffAddress").value.trim() || "N/A";
             const emergency = document.getElementById("newStaffEmergency").value.trim() || "N/A";
 
-            if (!name || pin.length !== 4 || isNaN(pin)) {
-                return alert("Please enter a valid name and a 4-digit numeric PIN.");
-            }
+            if (!name || pin.length !== 4 || isNaN(pin)) return alert("Please enter a valid name and a 4-digit numeric PIN.");
 
             try {
                 const pinCheck = await db.collection("staff").where("pinCode", "==", pin).get();
-                if (!pinCheck.empty) {
-                    return alert("This PIN is already being used. Please choose a different 4-digit PIN for security.");
-                }
+                if (!pinCheck.empty) return alert("This PIN is already being used. Please choose a different 4-digit PIN for security.");
 
                 await db.collection("staff").add({
-                    name: name,
-                    role: role,
-                    pinCode: pin,
-                    contact: contact,
-                    address: address,
-                    emergencyContact: emergency,
-                    status: "CLOCKED_OUT",
-                    dateHired: firebase.firestore.FieldValue.serverTimestamp()
+                    name: name, role: role, pinCode: pin, contact: contact, address: address, emergencyContact: emergency, status: "CLOCKED_OUT", dateHired: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
                 alert(`Success! ${name} has been added to the system.`);
-                
-                // Clear the form
-                document.getElementById("newStaffName").value = "";
-                document.getElementById("newStaffPin").value = "";
-                document.getElementById("newStaffContact").value = "";
-                document.getElementById("newStaffAddress").value = "";
-                document.getElementById("newStaffEmergency").value = "";
-
+                document.getElementById("newStaffName").value = ""; document.getElementById("newStaffPin").value = ""; document.getElementById("newStaffContact").value = ""; document.getElementById("newStaffAddress").value = ""; document.getElementById("newStaffEmergency").value = "";
             } catch (error) {
-                console.error("Error adding staff:", error);
-                alert("Failed to add staff member.");
+                console.error("Error adding staff:", error); alert("Failed to add staff member.");
             }
         }
 
-        // --- 2. NEW: LOAD STAFF DIRECTORY TABLE ---
         let staffDirectoryListener = null;
 
         function loadStaffDirectory() {
             const tableBody = document.getElementById("staffDirectoryBody");
             if(!tableBody) return;
-
-            if (staffDirectoryListener !== null) {
-                staffDirectoryListener(); 
-            }
+            if (staffDirectoryListener !== null) { staffDirectoryListener(); }
 
             staffDirectoryListener = db.collection("staff").orderBy("name").onSnapshot((snapshot) => {
                 tableBody.innerHTML = ""; 
-                
-                if(snapshot.empty) {
-                    tableBody.innerHTML = "<tr><td colspan='6' style='padding: 15px; text-align: center; color: #888;'>No staff members registered yet.</td></tr>";
-                    return;
-                }
+                if(snapshot.empty) return tableBody.innerHTML = "<tr><td colspan='6' style='padding: 15px; text-align: center; color: #888;'>No staff members registered yet.</td></tr>";
 
                 snapshot.forEach((doc) => {
                     const data = doc.data();
-                    
-                    // Color code the roles for easy reading
                     let roleColor = "#557a46";
                     if (data.role === "Manager") roleColor = "#bd4b4b";
                     else if (data.role === "Kitchen") roleColor = "#d4a373";
@@ -1269,112 +1136,69 @@
                         <td style="padding: 12px; color: #555;">${data.contact || "N/A"}</td>
                         <td style="padding: 12px; color: #555;">${data.address || "N/A"}</td>
                         <td style="padding: 12px; color: #bd4b4b; font-weight: bold; font-size: 12px;">${data.emergencyContact || "N/A"}</td>
-                        <td style="padding: 12px; text-align: center;">
-                            <button onclick="deleteStaffMember('${doc.id}', '${data.name}')" style="background: transparent; color: #bd4b4b; border: 1px solid #bd4b4b; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer;">Remove</button>
-                        </td>
+                        <td style="padding: 12px; text-align: center;"><button onclick="deleteStaffMember('${doc.id}', '${data.name}')" style="background: transparent; color: #bd4b4b; border: 1px solid #bd4b4b; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer;">Remove</button></td>
                     `;
                     tableBody.appendChild(tr);
                 });
             });
         }
 
-        // --- 3. SECURE STAFF DELETION ---
         async function deleteStaffMember(staffId, staffName) {
-            // Ask for Manager PIN before deleting an employee
             const pin = prompt(`🔒 SECURITY CHECK: Enter a Manager PIN to delete ${staffName}:`);
             if (!pin) return;
-
             try {
                 const staffQuery = await db.collection("staff").where("pinCode", "==", pin).where("role", "==", "Manager").get();
-                if (staffQuery.empty) {
-                    return alert("❌ ACCESS DENIED: Invalid PIN or you do not have Manager privileges.");
-                }
-                
+                if (staffQuery.empty) return alert("❌ ACCESS DENIED: Invalid PIN or you do not have Manager privileges.");
                 if (confirm(`Manager verified.\n\nAre you sure you want to permanently remove ${staffName} from the system?`)) {
                     await db.collection("staff").doc(staffId).delete();
                     alert(`${staffName} has been removed.`);
                 }
-            } catch (e) {
-                console.error("Error deleting staff:", e);
-            }
+            } catch (e) { console.error("Error deleting staff:", e); }
         }
-        // --- 30-DAY GANTT CALENDAR LOGIC ---
+
         async function loadBookingCalendar() {
             const headerRow = document.getElementById("calendarHeaders");
             const body = document.getElementById("calendarBody");
             if (!headerRow || !body) return;
 
-            // Setup Sticky First Column (Room Names)
             headerRow.innerHTML = `<th style="padding: 15px 10px; border-right: 2px solid #557a46; min-width: 120px; position: sticky; left: 0; background: #e8f5e9; z-index: 10; text-align: left; color: #2b4227; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">Room Name</th>`;
             body.innerHTML = `<tr><td colspan="31" style="padding: 20px;">Loading calendar data...</td></tr>`;
 
-            // 1. Generate the next 30 days dynamically
             const today = new Date();
             const days = [];
             for (let i = 0; i < 30; i++) {
-                let d = new Date();
-                d.setDate(today.getDate() + i);
-                days.push(d);
-                
-                const dayNum = d.getDate();
-                const month = d.toLocaleDateString('en-US', { month: 'short' });
-                const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-                
+                let d = new Date(); d.setDate(today.getDate() + i); days.push(d);
+                const dayNum = d.getDate(); const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
                 const isWeekend = (d.getDay() === 0 || d.getDay() === 6);
                 const bg = isWeekend ? "#f4f6f4" : "#ffffff";
-                
-                headerRow.innerHTML += `<th style="padding: 8px 4px; border-right: 1px solid #eee; border-bottom: 1px solid #ccc; min-width: 45px; background: ${bg}; font-weight: normal;">
-                    <strong style="color: #2b4227; font-size: 14px;">${dayNum}</strong><br><span style="font-size: 10px; color: #888;">${dayName}</span>
-                </th>`;
+                headerRow.innerHTML += `<th style="padding: 8px 4px; border-right: 1px solid #eee; border-bottom: 1px solid #ccc; min-width: 45px; background: ${bg}; font-weight: normal;"><strong style="color: #2b4227; font-size: 14px;">${dayNum}</strong><br><span style="font-size: 10px; color: #888;">${dayName}</span></th>`;
             }
 
             try {
-                // Fetch Rooms and Reservations
                 const roomsSnap = await db.collection("rooms").orderBy("roomNumber").get();
                 const resSnap = await db.collection("reservations").where("status", "in", ["CONFIRMED", "CHECKED_IN"]).get();
                 
                 const reservations = [];
-                resSnap.forEach(doc => {
-                    const data = doc.data();
-                    if(data.checkIn && data.checkOut) {
-                        data.id = doc.id; // SAVE THE DOCUMENT ID
-                        reservations.push(data);
-                    }
-                });
-
-                // Save globally so our modal can access it
+                resSnap.forEach(doc => { const data = doc.data(); if(data.checkIn && data.checkOut) { data.id = doc.id; reservations.push(data); } });
                 window.currentCalendarReservations = reservations;
-
                 body.innerHTML = "";
 
-                if(roomsSnap.empty) {
-                     return body.innerHTML = `<tr><td colspan="31" style="padding: 20px;">No rooms configured yet.</td></tr>`;
-                }
+                if(roomsSnap.empty) return body.innerHTML = `<tr><td colspan="31" style="padding: 20px;">No rooms configured yet.</td></tr>`;
 
-                // Build the Grid
                 roomsSnap.forEach(roomDoc => {
                     const room = roomDoc.data();
                     const currentRoomNo = room.roomNumber || roomDoc.id; 
-                    
-                    let rowHtml = `<tr>
-                        <td style="padding: 10px; border-right: 2px solid #557a46; border-bottom: 1px solid #eee; position: sticky; left: 0; background: white; font-weight: bold; z-index: 5; text-align: left; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">
-                            Room ${currentRoomNo} <span style="font-size: 10px; color: #888; display: block; font-weight: normal;">${room.roomType || ''}</span>
-                        </td>`;
+                    let rowHtml = `<tr><td style="padding: 10px; border-right: 2px solid #557a46; border-bottom: 1px solid #eee; position: sticky; left: 0; background: white; font-weight: bold; z-index: 5; text-align: left; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">Room ${currentRoomNo} <span style="font-size: 10px; color: #888; display: block; font-weight: normal;">${room.roomType || ''}</span></td>`;
                         
                     days.forEach(day => {
                         const offset = day.getTimezoneOffset();
                         const dateStr = new Date(day.getTime() - (offset*60*1000)).toISOString().split('T')[0];
-                        
-                        let isBooked = false;
-                        let guestNameDisplay = "";
-                        let hoverTooltip = "";
-                        let activeResId = ""; // Track the ID for this block
+                        let isBooked = false; let guestNameDisplay = ""; let hoverTooltip = ""; let activeResId = "";
                         
                         for(let res of reservations) {
                             if (String(res.roomNumber) === String(currentRoomNo)) { 
                                 if (dateStr >= res.checkIn && dateStr < res.checkOut) {
-                                    isBooked = true;
-                                    activeResId = res.id;
+                                    isBooked = true; activeResId = res.id;
                                     guestNameDisplay = (res.guestName || "RSV").split(' ')[0].substring(0, 6);
                                     hoverTooltip = `Guest: ${res.guestName}\nIn: ${res.checkIn}\nOut: ${res.checkOut}`;
                                     break;
@@ -1386,166 +1210,86 @@
                         const bg = isWeekend ? "#f9f9f9" : "#ffffff";
 
                         if (isBooked) {
-                            // ADDED ONCLICK EVENT HERE
-                            rowHtml += `<td style="padding: 3px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; background: ${bg};">
-                                <div onclick="openBookingDetails('${activeResId}')" style="background: #557a46; color: white; font-size: 13px; font-weight: bold; padding: 6px 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; letter-spacing: 0.5px;" title="${hoverTooltip}">
-                                    ${guestNameDisplay}
-                                </div>
-                            </td>`;
+                            rowHtml += `<td style="padding: 3px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; background: ${bg};"><div onclick="openBookingDetails('${activeResId}')" style="background: #557a46; color: white; font-size: 13px; font-weight: bold; padding: 6px 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; letter-spacing: 0.5px;" title="${hoverTooltip}">${guestNameDisplay}</div></td>`;
                         } else {
                             rowHtml += `<td style="padding: 10px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; background: ${bg};"></td>`;
                         }
                     });
-                    
-                    rowHtml += `</tr>`;
-                    body.innerHTML += rowHtml;
+                    rowHtml += `</tr>`; body.innerHTML += rowHtml;
                 });
-
-            } catch(e) {
-                console.error("Error loading calendar", e);
-                body.innerHTML = `<tr><td colspan="31" style="padding: 20px; color: #bd4b4b;">Error generating timeline.</td></tr>`;
-            } 
+            } catch(e) { console.error("Error loading calendar", e); body.innerHTML = `<tr><td colspan="31" style="padding: 20px; color: #bd4b4b;">Error generating timeline.</td></tr>`; } 
         }
 
-        // --- LOAD ADMIN MENU BOARD ---
         function loadAdminMenuBoard() {
             const adminGrid = document.getElementById("adminMenuGridContainer");
             if(!adminGrid) return;
             
-            // Listen to the same "menu" database used by the POS
             db.collection("menu").onSnapshot(snapshot => {
                 adminGrid.innerHTML = "";
-                if(snapshot.empty) {
-                    adminGrid.innerHTML = "<p style='color:#888;'>No menu items found. Create one above!</p>";
-                    return;
-                }
+                if(snapshot.empty) return adminGrid.innerHTML = "<p style='color:#888;'>No menu items found. Create one above!</p>";
                 
                 let categories = {};
                 snapshot.forEach(doc => {
-                    const item = doc.data();
-                    const cat = item.category || "Uncategorized";
+                    const item = doc.data(); const cat = item.category || "Uncategorized";
                     if (!categories[cat]) categories[cat] = [];
                     categories[cat].push({ id: doc.id, ...item });
                 });
                 
                 for (const [category, items] of Object.entries(categories)) {
                     let catHTML = `<h4 style="width: 100%; border-bottom: 2px solid #e0e5e0; padding-bottom: 5px; margin-top: 15px; margin-bottom: 15px; color: #2b4227; text-transform: uppercase;">${category}</h4><div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">`;
-                    
                     items.forEach(item => {
-                        // NOTE: If the buttons don't work, change 'editMenuItem' and 'deleteMenuItem' 
-                        // to match whatever the exact function names are in your pos-billing.js file!
                         catHTML += `
                             <div style="position: relative; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; padding: 15px; width: 140px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
                                 <div style="font-weight: bold; color: #333; margin-bottom: 5px; font-size: 14px; line-height: 1.2;">${item.name}</div>
                                 <div style="color: #557a46; font-size: 13px; font-weight: bold;">₱${parseFloat(item.price).toFixed(2)}</div>
-                                
                                 <button onclick="editMenuItem('${item.id}')" style="position: absolute; top: -10px; right: 25px; background: #d4a373; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Edit">✏️</button>
-                                
                                 <button onclick="deleteMenuItem('${item.id}')" style="position: absolute; top: -10px; right: -10px; background: #bd4b4b; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Delete">❌</button>
                             </div>
                         `;
                     });
-                    catHTML += `</div>`;
-                    adminGrid.innerHTML += catHTML;
+                    catHTML += `</div>`; adminGrid.innerHTML += catHTML;
                 }
             });
         }
-// --- MASTER AUTHENTICATION & STARTUP LISTENER ---
+
+        // =====================================================================
+        // --- FINAL CLEAN AUTHENTICATION & ADMIN SCRIPT BLOCK ---
+        // =====================================================================
+
+        // 1. MASTER STARTUP & SECURITY LISTENER
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
                 try {
-                    // 1. GATEKEEPER CHECK: Ensure they are fully approved
+                    // GATEKEEPER CHECK: Ensure they are fully approved
                     const adminDoc = await db.collection("admin_users").doc(user.uid).get();
                     if (adminDoc.exists && adminDoc.data().status !== "APPROVED") {
                         await firebase.auth().signOut();
-                        return; // Kick them out if PENDING or DECLINED
+                        return; // Kick them out instantly if PENDING or DECLINED
                     }
 
-                    // 2. UI STATE: Hide Login Screen, Show Dashboard securely
+                    // UI FIX: Hide Login Screen, Show Dashboard securely
                     document.getElementById("loginScreen").classList.add("hidden");
                     document.getElementById("appScreen").classList.remove("hidden");
 
-                    // 3. SAFE STARTUP: Fire all data scripts ONLY now that we are 100% secure
+                    // SAFE STARTUP: Fire all data scripts ONLY now that we are 100% secure
                     if (typeof listenForWebReservations === "function") listenForWebReservations(); 
                     if (typeof loadAdminMenuBoard === "function") loadAdminMenuBoard();
-                    
-                    // Safely load the POS items from pos-billing.js
                     if (typeof loadMenu === "function") loadMenu();
                     if (typeof loadCategories === "function") loadCategories();
                     if (typeof loadActiveTables === "function") loadActiveTables();
+                    if (typeof loadPendingAdmins === "function") loadPendingAdmins();
 
                 } catch (error) {
                     console.error("Auth check error:", error);
                 }
             } else {
-                // If logged out, aggressively lock the UI down
+                // If logged out, lock the UI down
                 document.getElementById("loginScreen").classList.remove("hidden");
                 document.getElementById("appScreen").classList.add("hidden");
             }
         });
-// --- DELETE MENU ITEM ---
-        function deleteMenuItem(itemId) {
-            // Ask for confirmation to prevent accidental clicks
-            if (confirm("Are you sure you want to permanently delete this menu item?")) {
-                db.collection("menu").doc(itemId).delete()
-                  .then(() => {
-                      // It will automatically disappear from the grid because of onSnapshot!
-                      console.log("Item deleted successfully.");
-                  })
-                  .catch(err => {
-                      console.error("Error deleting item:", err);
-                      alert("Error deleting item. Check console.");
-                  });
-            }
-        }
 
-        // --- EDIT MENU ITEM ---
-        // Global variable to let the system know we are updating an existing item
-        let currentEditItemId = null;
-
-        function editMenuItem(itemId) {
-            // Smoothly scroll the screen up to the form
-            document.getElementById("menuFormCard").scrollIntoView({ behavior: 'smooth' });
-
-            // Fetch the item's current data from Firebase
-            db.collection("menu").doc(itemId).get().then(doc => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    
-                    // Populate the inputs with the existing data
-                    document.getElementById("newMenuName").value = data.name || "";
-                    document.getElementById("menuPrice").value = data.price || "";
-                    
-                    const catSelect = document.getElementById("menuCategory");
-                    if (catSelect) catSelect.value = data.category || "";
-
-                    // Set the system to "Edit Mode"
-                    currentEditItemId = itemId; 
-                    
-                    // Change the form visuals so you know you are editing
-                    document.getElementById("menuFormTitle").innerText = "Editing: " + data.name;
-                    document.getElementById("menuFormTitle").style.color = "#d4a373";
-                    document.getElementById("saveMenuBtn").innerText = "Update Menu Item";
-                    document.getElementById("cancelEditBtn").classList.remove("hidden");
-                }
-            }).catch(err => console.error("Error fetching item:", err));
-        }
-
-        // --- OVERRIDE RESET FORM ---
-        // Ensure the form goes back to normal when you cancel an edit
-        function resetMenuForm() {
-            currentEditItemId = null;
-            document.getElementById("newMenuName").value = "";
-            document.getElementById("menuPrice").value = "";
-            
-            document.getElementById("menuFormTitle").innerText = "Create New Menu Item";
-            document.getElementById("menuFormTitle").style.color = "#333";
-            document.getElementById("saveMenuBtn").innerText = "Save Menu Recipe";
-            document.getElementById("cancelEditBtn").classList.add("hidden");
-        }
-
-
-// --- 1. SECURE LOGIN WITH APPROVAL CHECK ---
+        // 2. SECURE LOGIN
         async function login() {
             const email = document.getElementById("email").value.trim();
             const password = document.getElementById("password").value.trim();
@@ -1554,83 +1298,73 @@
             if (!email || !password) return errorMsg.innerText = "Please enter both email and password.";
             
             try {
-                // Attempt to log in to Firebase
                 const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
                 const uid = userCredential.user.uid;
                 
-                // SECURITY CHECK: Look up their approval status in the database
                 const adminDoc = await db.collection("admin_users").doc(uid).get();
-                
                 if (adminDoc.exists) {
                     if (adminDoc.data().status === "PENDING") {
                         await firebase.auth().signOut();
-                        return errorMsg.innerText = "ACCESS DENIED: Your account is still pending approval from an existing Admin.";
+                        return errorMsg.innerText = "ACCESS DENIED: Your account is pending approval.";
                     }
                     if (adminDoc.data().status === "DECLINED") {
                         await firebase.auth().signOut();
-                        return errorMsg.innerText = "ACCESS DENIED: Your request for an admin account was declined.";
+                        return errorMsg.innerText = "ACCESS DENIED: Your request was declined.";
                     }
                 }
                 
-                // If APPROVED (or original owner), allow access!
                 document.getElementById("loginScreen").classList.add("hidden");
                 document.getElementById("appScreen").classList.remove("hidden");
                 errorMsg.innerText = "";
-                
             } catch (error) {
                 errorMsg.innerText = "Invalid email or password.";
             }
         }
 
-        // --- 2. CREATE NEW EMAIL ADMIN (WITH GHOST LISTENER FIX) ---
+        // 3. LOGOUT OVERRIDE (Kills ghost listeners instantly)
+        function logout() {
+            firebase.auth().signOut().then(() => {
+                window.location.reload(); // Force page refresh to wipe memory
+            }).catch((err) => {
+                window.location.reload(); 
+            });
+        }
+
+        // 4. CREATE NEW ADMIN
         async function registerNewAdmin() {
             const email = document.getElementById("email").value.trim();
             const password = document.getElementById("password").value.trim();
             const errorMsg = document.getElementById("errorMessage");
 
-            if (!email || !password) return errorMsg.innerText = "Please type an email and password in the boxes above to register.";
+            if (!email || !password) return errorMsg.innerText = "Please type an email and password to register.";
             if (password.length < 6) return errorMsg.innerText = "Password must be at least 6 characters long.";
 
-            const securityCheck = prompt("SECURITY CHECK: Type 'CONFIRM' to request a new Master Admin account.");
+            const securityCheck = prompt("SECURITY CHECK: Type 'CONFIRM' to request a Master Admin account.");
             if (securityCheck !== "CONFIRM") return;
 
             try {
-                // Create the account in the background
                 const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-                
-                // Immediately create a "PENDING" request ticket in the database
                 await db.collection("admin_users").doc(userCredential.user.uid).set({
-                    email: email,
-                    status: "PENDING",
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    email: email, status: "PENDING", createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                // Instantly force them to log out so they cannot access the dashboard
                 await firebase.auth().signOut();
-                
-                alert(`Registration successful! \n\n${email} is now PENDING APPROVAL. An existing admin must approve it from the dashboard before you can log in.`);
-                errorMsg.innerText = "";
-                
-                // ADDED: Instantly wipe the memory to kill ghost listeners and prevent permission errors
+                alert(`Registration successful!\n\n${email} is now PENDING APPROVAL.`);
                 window.location.reload(); 
-
             } catch (error) {
                 console.error("Error registering:", error);
                 errorMsg.innerText = error.message;
             }
         }
 
-        // --- 3. LOAD PENDING ADMIN REQUESTS ---
+        // 5. PENDING ADMIN APPROVALS
         function loadPendingAdmins() {
             const list = document.getElementById("pendingAdminsList");
             if (!list) return;
 
             db.collection("admin_users").where("status", "==", "PENDING").onSnapshot(snapshot => {
                 list.innerHTML = "";
-                if (snapshot.empty) {
-                    list.innerHTML = "<p style='color: #888; font-size: 13px; margin: 0;'>No pending requests.</p>";
-                    return;
-                }
+                if (snapshot.empty) return list.innerHTML = "<p style='color: #888; font-size: 13px; margin: 0;'>No pending requests.</p>";
                 
                 snapshot.forEach(doc => {
                     const data = doc.data();
@@ -1650,20 +1384,55 @@
             });
         }
 
-        // --- 4. APPROVE OR DECLINE FUNCTIONS ---
         async function approveAdmin(uid, email) {
-            if(confirm(`Security Check: Approve ${email} as a Master Admin?\n\nThey will have full access to the POS, financial reports, and inventory.`)) {
+            if(confirm(`Approve ${email} as a Master Admin?`)) {
                 await db.collection("admin_users").doc(uid).update({ status: "APPROVED" });
-                alert(`${email} is now approved and can log in.`);
+                alert(`${email} is now approved.`);
             }
         }
         
         async function declineAdmin(uid, email) {
-            if(confirm(`Decline ${email}? They will be permanently blocked from logging in.`)) {
+            if(confirm(`Decline ${email}? They will be blocked from logging in.`)) {
                 await db.collection("admin_users").doc(uid).update({ status: "DECLINED" });
             }
         }
 
+        // 6. MENU BUILDER CONTROLS
+        let currentEditItemId = null;
+
+        function deleteMenuItem(itemId) {
+            if (confirm("Permanently delete this menu item?")) {
+                db.collection("menu").doc(itemId).delete().catch(err => alert("Error deleting item."));
+            }
+        }
+
+        function editMenuItem(itemId) {
+            document.getElementById("menuFormCard").scrollIntoView({ behavior: 'smooth' });
+            db.collection("menu").doc(itemId).get().then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    document.getElementById("newMenuName").value = data.name || "";
+                    document.getElementById("menuPrice").value = data.price || "";
+                    const catSelect = document.getElementById("menuCategory");
+                    if (catSelect) catSelect.value = data.category || "";
+                    currentEditItemId = itemId; 
+                    document.getElementById("menuFormTitle").innerText = "Editing: " + data.name;
+                    document.getElementById("menuFormTitle").style.color = "#d4a373";
+                    document.getElementById("saveMenuBtn").innerText = "Update Menu Item";
+                    document.getElementById("cancelEditBtn").classList.remove("hidden");
+                }
+            });
+        }
+
+        function resetMenuForm() {
+            currentEditItemId = null;
+            document.getElementById("newMenuName").value = "";
+            document.getElementById("menuPrice").value = "";
+            document.getElementById("menuFormTitle").innerText = "Create New Menu Item";
+            document.getElementById("menuFormTitle").style.color = "#333";
+            document.getElementById("saveMenuBtn").innerText = "Save Menu Recipe";
+            document.getElementById("cancelEditBtn").classList.add("hidden");
+        }
 
   </script>
 
@@ -1724,7 +1493,5 @@
     </div>
 </div>
 
-
-</script>
 </body>
 </html>
