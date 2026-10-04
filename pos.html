@@ -447,6 +447,22 @@
         </div>
     </div>
 
+    <!-- BOOKING DETAILS & CANCEL MODAL -->
+    <div id="bookingDetailsModal" class="modal-overlay hidden" style="z-index: 2600;">
+        <div class="modal-content" style="max-width: 400px; text-align: left;">
+            <h2 style="border-bottom: none; color: #2b4227; margin-top: 0; margin-bottom: 5px;">Booking Details</h2>
+            
+            <!-- Details will be injected here by JavaScript -->
+            <div id="bookingDetailsContent" style="margin-top: 15px; font-size: 15px; color: #333; line-height: 1.8; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #e0e5e0;">
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="delete-btn" style="flex: 2; padding: 12px; font-size: 15px;" id="cancelBookingBtn">❌ Cancel Booking</button>
+                <button class="save-btn" style="flex: 1; padding: 12px; font-size: 15px; background: #888;" onclick="closeBookingDetailsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ADMIN PIN MODAL -->
     <div id="pinModal" class="modal-overlay hidden">
         <div class="modal-content" style="text-align:center;">
@@ -1074,16 +1090,21 @@
             }
 
             try {
-                // 2. Fetch Rooms and Reservations
-                // Ensure we order by roomNumber so the rack looks organized
+                // Fetch Rooms and Reservations
                 const roomsSnap = await db.collection("rooms").orderBy("roomNumber").get();
                 const resSnap = await db.collection("reservations").where("status", "in", ["CONFIRMED", "CHECKED_IN"]).get();
                 
                 const reservations = [];
                 resSnap.forEach(doc => {
                     const data = doc.data();
-                    if(data.checkIn && data.checkOut) reservations.push(data);
+                    if(data.checkIn && data.checkOut) {
+                        data.id = doc.id; // SAVE THE DOCUMENT ID
+                        reservations.push(data);
+                    }
                 });
+
+                // Save globally so our modal can access it
+                window.currentCalendarReservations = reservations;
 
                 body.innerHTML = "";
 
@@ -1091,10 +1112,9 @@
                      return body.innerHTML = `<tr><td colspan="31" style="padding: 20px;">No rooms configured yet.</td></tr>`;
                 }
 
-                // 3. Build the Grid
+                // Build the Grid
                 roomsSnap.forEach(roomDoc => {
                     const room = roomDoc.data();
-                    // BUG FIX: Ensure we are reading the correct 'roomNumber' field, with a fallback to the document ID
                     const currentRoomNo = room.roomNumber || roomDoc.id; 
                     
                     let rowHtml = `<tr>
@@ -1102,22 +1122,21 @@
                             Room ${currentRoomNo} <span style="font-size: 10px; color: #888; display: block; font-weight: normal;">${room.roomType || ''}</span>
                         </td>`;
                         
-                  days.forEach(day => {
-                        // Format JS Date to "YYYY-MM-DD"
+                    days.forEach(day => {
                         const offset = day.getTimezoneOffset();
                         const dateStr = new Date(day.getTime() - (offset*60*1000)).toISOString().split('T')[0];
                         
                         let isBooked = false;
                         let guestNameDisplay = "";
                         let hoverTooltip = "";
+                        let activeResId = ""; // Track the ID for this block
                         
                         for(let res of reservations) {
                             if (String(res.roomNumber) === String(currentRoomNo)) { 
                                 if (dateStr >= res.checkIn && dateStr < res.checkOut) {
                                     isBooked = true;
-                                    // Grab the first name (up to 6 letters) instead of just 3 initials
+                                    activeResId = res.id;
                                     guestNameDisplay = (res.guestName || "RSV").split(' ')[0].substring(0, 6);
-                                    // Build the hover tooltip with full details
                                     hoverTooltip = `Guest: ${res.guestName}\nIn: ${res.checkIn}\nOut: ${res.checkOut}`;
                                     break;
                                 }
@@ -1128,8 +1147,9 @@
                         const bg = isWeekend ? "#f9f9f9" : "#ffffff";
 
                         if (isBooked) {
+                            // ADDED ONCLICK EVENT HERE
                             rowHtml += `<td style="padding: 3px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; background: ${bg};">
-                                <div style="background: #557a46; color: white; font-size: 13px; font-weight: bold; padding: 6px 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; letter-spacing: 0.5px;" title="${hoverTooltip}">
+                                <div onclick="openBookingDetails('${activeResId}')" style="background: #557a46; color: white; font-size: 13px; font-weight: bold; padding: 6px 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; letter-spacing: 0.5px;" title="${hoverTooltip}">
                                     ${guestNameDisplay}
                                 </div>
                             </td>`;
@@ -1145,7 +1165,7 @@
             } catch(e) {
                 console.error("Error loading calendar", e);
                 body.innerHTML = `<tr><td colspan="31" style="padding: 20px; color: #bd4b4b;">Error generating timeline.</td></tr>`;
-            }
+            } 
         }
 
   </script>

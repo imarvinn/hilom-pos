@@ -759,6 +759,77 @@ function finishRoomMaintenance(roomId) {
     }
 }
 
+// --- CALENDAR BOOKING DETAILS & CANCELLATION ---
+
+function openBookingDetails(resId) {
+    // Find the clicked reservation from the global array we saved earlier
+    const res = window.currentCalendarReservations.find(r => r.id === resId);
+    if (!res) return;
+
+    // Build the details text
+    const content = `
+        <p style="margin: 5px 0;"><strong>Guest Name:</strong> <span style="color:#2b4227;">${res.guestName}</span></p>
+        <p style="margin: 5px 0;"><strong>Contact No:</strong> ${res.contact || 'N/A'}</p>
+        <p style="margin: 5px 0;"><strong>Assigned Room:</strong> Room ${res.roomNumber}</p>
+        <div style="border-top: 1px dashed #ccc; margin: 10px 0; padding-top: 10px;">
+            <p style="margin: 5px 0;"><strong>Check-In:</strong> ${res.checkIn}</p>
+            <p style="margin: 5px 0;"><strong>Check-Out:</strong> ${res.checkOut}</p>
+        </div>
+        <p style="margin: 5px 0;"><strong>Status:</strong> <span style="background: #e8f5e9; color: #557a46; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${res.status}</span></p>
+    `;
+    
+    document.getElementById("bookingDetailsContent").innerHTML = content;
+    
+    // Attach the ID to the cancel button
+    document.getElementById("cancelBookingBtn").onclick = () => confirmCancelBooking(res.id);
+    
+    document.getElementById("bookingDetailsModal").classList.remove("hidden");
+}
+
+function closeBookingDetailsModal() {
+    document.getElementById("bookingDetailsModal").classList.add("hidden");
+}
+
+async function confirmCancelBooking(resId) {
+    // 1. Prompt for Security PIN
+    const pin = prompt("🔒 SECURITY CHECK: Enter a Manager PIN to cancel this reservation:");
+    if (!pin) return;
+
+    try {
+        // 2. Verify PIN and Role in the database
+        const staffQuery = await db.collection("staff").where("pinCode", "==", pin).where("role", "==", "Manager").get();
+        
+        if (staffQuery.empty) {
+            return alert("❌ ACCESS DENIED: Invalid PIN or you do not have Manager privileges.");
+        }
+        
+        const managerName = staffQuery.docs[0].data().name;
+
+        // 3. Final Confirmation
+        if (!confirm(`Manager ${managerName} verified.\n\nAre you absolutely sure you want to cancel this booking? The room will immediately become available for these dates.`)) {
+            return;
+        }
+
+        // 4. Update the database to remove it from the calendar
+        await db.collection("reservations").doc(resId).update({
+            status: "CANCELLED",
+            cancelledAt: firebase.firestore.FieldValue.serverTimestamp(),
+            cancelledBy: managerName
+        });
+
+        alert("✅ Booking cancelled successfully.");
+        closeBookingDetailsModal();
+        
+        // Refresh the calendar to clear the green blocks
+        if (typeof loadBookingCalendar === "function") {
+            loadBookingCalendar();
+        }
+
+    } catch (error) {
+        console.error("Error cancelling booking:", error);
+        alert("Database error while cancelling the booking. Please check your connection.");
+    }
+}
 
 
 // ==========================================
