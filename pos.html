@@ -896,15 +896,12 @@
 
   // --- TIME CLOCK LOGIC ---
         
-        // Loads the recent logs table automatically
+       // --- LOAD RECENT SHIFTS ---
         function loadAttendanceLogs() {
             const tableBody = document.getElementById("dtrTableBody");
             if(!tableBody) return;
 
-            db.collection("dtr_logs")
-              .orderBy("timeIn", "desc")
-              .limit(30)
-              .onSnapshot((snapshot) => {
+            db.collection("dtr_logs").orderBy("timeIn", "desc").limit(30).onSnapshot((snapshot) => {
                   tableBody.innerHTML = ""; 
                   
                   if(snapshot.empty) {
@@ -915,7 +912,6 @@
                   snapshot.forEach((doc) => {
                       const data = doc.data();
                       
-                      // Safeguard for timestamps that are currently syncing
                       let timeInStr = "Just now"; 
                       if (data.timeIn && typeof data.timeIn.toDate === 'function') {
                           timeInStr = data.timeIn.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -924,13 +920,16 @@
                       let timeOutStr = "<span style='color: #557a46; font-weight: bold; background: #e8f5e9; padding: 4px 8px; border-radius: 4px;'>ACTIVE SHIFT</span>";
                       let hoursStr = "-";
                       
+                      // LOGIC: If TimeOut exists = Shift Over. If BreakStart exists but no BreakEnd = On Break.
                       if (data.timeOut) {
                           if (typeof data.timeOut.toDate === 'function') {
                               timeOutStr = data.timeOut.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                           } else {
-                              timeOutStr = "Just now"; // Failsafe for pending syncs
+                              timeOutStr = "Just now"; 
                           }
                           hoursStr = data.totalHours ? data.totalHours.toFixed(2) + " hrs" : "0 hrs";
+                      } else if (data.breakStart && !data.breakEnd) {
+                          timeOutStr = "<span style='color: #8c5d3a; font-weight: bold; background: #fff3cd; padding: 4px 8px; border-radius: 4px;'>☕ ON BREAK</span>";
                       }
 
                       const tr = document.createElement("tr");
