@@ -142,11 +142,13 @@ async function confirmAdvanceBooking() {
         return alert("Check-out date must be after check-in date.");
     }
 
+    // --- GENERATE UNIQUE BOOKING REFERENCE ---
+    // Creates a random string like 'HLM-8X4KF9'
+    const uniqueRef = "HLM-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+
     try {
-        // We save this directly to the "reservations" collection so the 30-Day Calendar can read it,
-        // WITHOUT locking the physical room to "Occupied" today.
         await db.collection("reservations").add({
-            roomNumber: pendingAdvRoomId, // Room number matches the ID
+            roomNumber: pendingAdvRoomId, 
             roomType: pendingAdvRoomType,
             guestName: guestName,
             contact: contact,
@@ -154,13 +156,14 @@ async function confirmAdvanceBooking() {
             checkOut: checkOut,
             status: "CONFIRMED", 
             source: "Front Desk Walk-in Booking",
+            bookingRef: uniqueRef, // SAVE TO DATABASE
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        alert(`Success! Advance booking saved for ${guestName} in Room ${pendingAdvRoomId}.`);
+        // Show the reference number to the front desk staff
+        alert(`Success! Booking saved for ${guestName}.\n\nBooking Reference: ${uniqueRef}`);
         closeAdvanceBookingModal();
         
-        // Refresh the Gantt calendar immediately so the block appears
         if (typeof loadBookingCalendar === "function") {
             loadBookingCalendar();
         }
@@ -762,12 +765,17 @@ function finishRoomMaintenance(roomId) {
 // --- CALENDAR BOOKING DETAILS & CANCELLATION ---
 
 function openBookingDetails(resId) {
-    // Find the clicked reservation from the global array we saved earlier
     const res = window.currentCalendarReservations.find(r => r.id === resId);
     if (!res) return;
 
-    // Build the details text
+    // Handle older bookings that might not have a reference number yet
+    const refDisplay = res.bookingRef ? res.bookingRef : "N/A";
+
     const content = `
+        <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; border: 1px dashed #557a46; margin-bottom: 15px; text-align: center;">
+            <span style="font-size: 11px; color: #557a46; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Booking Reference</span><br>
+            <span style="font-size: 20px; color: #2b4227; font-weight: bold; letter-spacing: 2px;">${refDisplay}</span>
+        </div>
         <p style="margin: 5px 0;"><strong>Guest Name:</strong> <span style="color:#2b4227;">${res.guestName}</span></p>
         <p style="margin: 5px 0;"><strong>Contact No:</strong> ${res.contact || 'N/A'}</p>
         <p style="margin: 5px 0;"><strong>Assigned Room:</strong> Room ${res.roomNumber}</p>
@@ -780,7 +788,6 @@ function openBookingDetails(resId) {
     
     document.getElementById("bookingDetailsContent").innerHTML = content;
     
-    // Attach the ID to the cancel button
     document.getElementById("cancelBookingBtn").onclick = () => confirmCancelBooking(res.id);
     
     document.getElementById("bookingDetailsModal").classList.remove("hidden");
