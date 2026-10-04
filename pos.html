@@ -281,10 +281,12 @@
                     <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Generate Daily Time Record (DTR)</h3>
                     <p style="color: #666; font-size: 14px; margin-bottom: 15px; margin-top: 0;">Select a date to view total hours for payroll.</p>
                     
-                    <div class="no-print" style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
-                        <input type="date" id="dtrDate" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                        <button onclick="generateDTR()" style="background: #4a6fa5; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">View DTR</button>
-                        <button onclick="window.print()" style="background: #8c5d3a; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">🖨️ Print DTR</button>
+                    <div class="no-print" style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px; flex-wrap: wrap;">
+                        <input type="date" id="dtrStartDate" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;" title="Start Date">
+                        <span style="color: #666; font-weight: bold;">to</span>
+                        <input type="date" id="dtrEndDate" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;" title="End Date">
+                        <button onclick="generateDTR()" style="background: #4a6fa5; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">View Payroll</button>
+                        <button onclick="window.print()" style="background: #8c5d3a; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">🖨️ Print</button>
                     </div>
                     
                     <div id="dtrResults" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
@@ -983,39 +985,81 @@
               });
         }
 
-        // --- GENERATE FULL DTR REPORT ---
+        // --- GENERATE FULL DTR & PAYROLL REPORT ---
         async function generateDTR() {
-            const dateVal = document.getElementById("dtrDate").value.trim();
+            const startDate = document.getElementById("dtrStartDate").value.trim();
+            const endDate = document.getElementById("dtrEndDate").value.trim();
             const resultsDiv = document.getElementById("dtrResults");
             
-            if (!dateVal) return alert("Please select a date to generate the DTR.");
-            resultsDiv.innerHTML = "<p style='color: #666;'>Loading DTR...</p>";
+            if (!startDate || !endDate) return alert("Please select both a Start Date and an End Date.");
+            if (new Date(endDate) < new Date(startDate)) return alert("End date must be after start date.");
+            
+            resultsDiv.innerHTML = "<p style='color: #666;'>Loading Payroll Data...</p>";
             
             try {
-                const snapshot = await db.collection("dtr_logs").where("shiftDate", "==", dateVal).get();
-                if (snapshot.empty) return resultsDiv.innerHTML = `<p style="color: #bd4b4b; font-weight: bold;">No attendance records found for ${dateVal}.</p>`;
+                // Fetch all logs within the date range
+                const snapshot = await db.collection("dtr_logs")
+                    .where("shiftDate", ">=", startDate)
+                    .where("shiftDate", "<=", endDate)
+                    .get();
+                    
+                if (snapshot.empty) return resultsDiv.innerHTML = `<p style="color: #bd4b4b; font-weight: bold;">No attendance records found between ${startDate} and ${endDate}.</p>`;
 
                 let logs = [];
-                let totalDailyHours = 0;
+                let totalOverallHours = 0;
+                let staffTotals = {}; // This object does the heavy lifting for per-staff math
+
                 snapshot.forEach(doc => {
-                    logs.push(doc.data());
-                    if (doc.data().totalHours) totalDailyHours += doc.data().totalHours;
+                    const data = doc.data();
+                    logs.push(data);
+                    
+                    // Automatically group and sum the total hours per staff member
+                    if (data.totalHours) {
+                        totalOverallHours += data.totalHours;
+                        if (!staffTotals[data.staffName]) staffTotals[data.staffName] = 0;
+                        staffTotals[data.staffName] += data.totalHours;
+                    }
                 });
                 
+                // Sort the detailed logs chronologically
                 logs.sort((a, b) => (a.timeIn?.seconds || 0) - (b.timeIn?.seconds || 0));
                 
+                // --- 1. BUILD THE PAYROLL SUMMARY UI ---
                 let html = `
                     <div class="print-only" style="text-align: center; margin-bottom: 20px;">
-                        <h2>HILOM POS - Daily Time Record</h2>
-                        <p>Date: <b>${dateVal}</b></p>
+                        <h2>HILOM POS - Payroll Summary</h2>
+                        <p>Period: <b>${startDate} to ${endDate}</b></p>
                     </div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 14px; text-align: left;">
-                        <tr style="border-bottom: 2px solid #333;">
+                    
+                    <div style="margin-bottom: 30px; background: #e8f5e9; padding: 15px; border-radius: 8px; border: 1px solid #c8dac8;">
+                        <h3 style="color: #2b4227; margin-top: 0; border-bottom: 2px solid #557a46; padding-bottom: 5px;">Staff Payroll Totals</h3>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 15px; text-align: left;">
+                            <tr>
+                                <th style="padding: 8px;">Staff Name</th>
+                                <th style="padding: 8px; text-align: right;">Total Billable Hours</th>
+                            </tr>`;
+                
+                // Inject the mathematically summed totals for each staff member
+                for (const [staffName, hours] of Object.entries(staffTotals)) {
+                    html += `
+                        <tr style="border-top: 1px dashed #557a46;">
+                            <td style="padding: 8px; font-weight: bold; color: #333;">${staffName}</td>
+                            <td style="padding: 8px; text-align: right; color: #bd4b4b; font-weight: bold; font-size: 16px;">${hours.toFixed(2)} hrs</td>
+                        </tr>`;
+                }
+                
+                html += `</table></div>`;
+
+                // --- 2. BUILD THE DETAILED BREAKDOWN UI ---
+                html += `
+                    <h4 style="color: #666; margin-bottom: 10px;">Detailed Shift Logs (For Reference)</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                        <tr style="border-bottom: 2px solid #333; background: #f9f9f9;">
+                            <th style="padding: 10px;">Date</th>
                             <th style="padding: 10px;">Staff Name</th>
                             <th style="padding: 10px;">Time In</th>
                             <th style="padding: 10px;">Time Out</th>
-                            <th style="padding: 10px; color: #8c5d3a;">Break Mins</th>
-                            <th style="padding: 10px;">Remarks</th>
+                            <th style="padding: 10px;">Break (Mins)</th>
                             <th style="padding: 10px;">Net Hours</th>
                         </tr>`;
                 
@@ -1024,34 +1068,28 @@
                     let timeOutStr = data.timeOut ? data.timeOut.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (data.breakStart && !data.breakEnd ? "<span style='color:#8c5d3a; font-weight:bold;'>ON BREAK</span>" : "<span style='color:#557a46; font-weight:bold;'>ACTIVE</span>");
                     let hoursStr = data.totalHours ? data.totalHours.toFixed(2) : "-";
                     
-                    // --- CALCULATE BREAK MINUTES ---
                     let breakMinsDisplay = "-";
                     if (data.breakStart && data.breakEnd) {
                         const startMs = data.breakStart.toDate().getTime();
                         const endMs = data.breakEnd.toDate().getTime();
-                        const mins = Math.round((endMs - startMs) / (1000 * 60));
-                        breakMinsDisplay = `<strong>${mins} mins</strong>`;
-                    } else if (data.breakStart && !data.breakEnd) {
-                        breakMinsDisplay = "<span style='color:#8c5d3a; font-style:italic;'>Ongoing</span>";
+                        breakMinsDisplay = `${Math.round((endMs - startMs) / (1000 * 60))}`;
                     }
 
-                    let remarks = data.lateFromBreak ? "<span style='color: white; background: #bd4b4b; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;'>⚠️ LATE</span>" : (data.breakStart ? "Completed" : "");
-                    
                     html += `
                         <tr style="border-bottom: 1px solid #eee;">
-                            <td style="padding: 10px; font-weight: bold; color: #333;">${data.staffName}</td>
-                            <td style="padding: 10px; color: #557a46;">${timeInStr}</td>
-                            <td style="padding: 10px; color: #bd4b4b;">${timeOutStr}</td>
-                            <td style="padding: 10px; color: #8c5d3a;">${breakMinsDisplay}</td>
-                            <td style="padding: 10px;">${remarks}</td>
-                            <td style="padding: 10px; font-weight: bold;">${hoursStr}</td>
+                            <td style="padding: 8px; color: #666;">${data.shiftDate}</td>
+                            <td style="padding: 8px; font-weight: bold; color: #333;">${data.staffName}</td>
+                            <td style="padding: 8px; color: #557a46;">${timeInStr}</td>
+                            <td style="padding: 8px; color: #bd4b4b;">${timeOutStr}</td>
+                            <td style="padding: 8px; color: #8c5d3a;">${breakMinsDisplay}</td>
+                            <td style="padding: 8px; font-weight: bold;">${hoursStr}</td>
                         </tr>`;
                 });
                 
                 html += `
-                    <tr style="background: #f9f9f9; font-weight: bold; font-size: 16px;">
-                        <td colspan="5" style="padding: 15px; text-align: right;">Total Net Payroll Hours:</td>
-                        <td style="padding: 15px; color: var(--accent);">${totalDailyHours.toFixed(2)} hrs</td>
+                    <tr style="background: #f4f6f4; font-weight: bold; font-size: 14px;">
+                        <td colspan="5" style="padding: 15px; text-align: right;">Total Hours (All Staff Combined):</td>
+                        <td style="padding: 15px; color: var(--accent);">${totalOverallHours.toFixed(2)} hrs</td>
                     </tr>
                 </table>`;
                 
