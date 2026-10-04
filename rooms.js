@@ -853,13 +853,4 @@ async function confirmCancelBooking(resId) {
 }
 
 
-// ==========================================
-// --- INITIALIZE LISTENERS ON PAGE LOAD ---
-// ==========================================
-document.addEventListener("DOMContentLoaded", () => {
-    // Start listening for online bookings as soon as the POS loads
-    if (typeof listenForWebReservations === "function") {
-        listenForWebReservations(); 
-    }
-});
 
