@@ -944,9 +944,8 @@
         }
 
         // --- GENERATE FULL DTR REPORT ---
-        // --- GENERATE FULL DTR REPORT ---
         async function generateDTR() {
-            const dateVal = document.getElementById("dtrDate").value;
+            const dateVal = document.getElementById("dtrDate").value.trim();
             const resultsDiv = document.getElementById("dtrResults");
             
             if (!dateVal) return alert("Please select a date to generate the DTR.");

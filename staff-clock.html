@@ -189,10 +189,12 @@
                 const staffId = staffDoc.id;
                 const staffData = staffDoc.data();
                 
-                // TIMEZONE FIX: Calculate the exact local date
+                // FOOLPROOF LOCAL DATE: Bypasses timezone math completely
                 const now = new Date();
-                const offset = now.getTimezoneOffset();
-                const shiftDateStr = new Date(now.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const shiftDateStr = `${year}-${month}-${day}`;
                 
                 const batch = db.batch();
                 // --- 2. TIME IN (Restored await to guarantee save) ---
