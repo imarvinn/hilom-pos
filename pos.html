@@ -1102,20 +1102,23 @@
                             Room ${currentRoomNo} <span style="font-size: 10px; color: #888; display: block; font-weight: normal;">${room.roomType || ''}</span>
                         </td>`;
                         
-                    days.forEach(day => {
+                  days.forEach(day => {
                         // Format JS Date to "YYYY-MM-DD"
-                        const offset = day.getTimezoneOffset()
-                        const dateStr = new Date(day.getTime() - (offset*60*1000)).toISOString().split('T')[0]
+                        const offset = day.getTimezoneOffset();
+                        const dateStr = new Date(day.getTime() - (offset*60*1000)).toISOString().split('T')[0];
                         
                         let isBooked = false;
-                        let guestInitials = "";
+                        let guestNameDisplay = "";
+                        let hoverTooltip = "";
                         
                         for(let res of reservations) {
-                            // BUG FIX: Match the reservation's roomNumber against the corrected currentRoomNo
                             if (String(res.roomNumber) === String(currentRoomNo)) { 
                                 if (dateStr >= res.checkIn && dateStr < res.checkOut) {
                                     isBooked = true;
-                                    guestInitials = (res.guestName || "RSV").substring(0,3).toUpperCase();
+                                    // Grab the first name (up to 6 letters) instead of just 3 initials
+                                    guestNameDisplay = (res.guestName || "RSV").split(' ')[0].substring(0, 6);
+                                    // Build the hover tooltip with full details
+                                    hoverTooltip = `Guest: ${res.guestName}\nIn: ${res.checkIn}\nOut: ${res.checkOut}`;
                                     break;
                                 }
                             }
@@ -1125,9 +1128,9 @@
                         const bg = isWeekend ? "#f9f9f9" : "#ffffff";
 
                         if (isBooked) {
-                            rowHtml += `<td style="padding: 2px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; background: ${bg};">
-                                <div style="background: #557a46; color: white; font-size: 10px; font-weight: bold; padding: 6px 2px; border-radius: 4px; white-space: nowrap; overflow: hidden;" title="Reserved">
-                                    ${guestInitials}
+                            rowHtml += `<td style="padding: 3px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; background: ${bg};">
+                                <div style="background: #557a46; color: white; font-size: 13px; font-weight: bold; padding: 6px 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; letter-spacing: 0.5px;" title="${hoverTooltip}">
+                                    ${guestNameDisplay}
                                 </div>
                             </td>`;
                         } else {
