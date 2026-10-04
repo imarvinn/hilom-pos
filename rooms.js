@@ -19,22 +19,28 @@ function loadRoomRack() {
         snapshot.forEach((doc) => {
             const room = doc.data();
             
-            // --- NEW MAINTENANCE COLORS ---
             let borderColor = "#2e7d32"; let bgColor = "#f1f8e9";
             if (room.status === "OCCUPIED") { borderColor = "#c62828"; bgColor = "#ffebee"; }
             else if (room.status === "MAINTENANCE") { borderColor = "#d4a373"; bgColor = "#fff3cd"; }
             
-            // --- DYNAMIC ACTION BUTTONS ---
+            // --- DYNAMIC ACTION BUTTONS (NOW WITH ADVANCE BOOKING) ---
             let actionBtn = "";
             if (room.status === "AVAILABLE") {
                 actionBtn = `
                     <button class="add-btn" style="width: 100%; padding: 10px; font-size: 14px; margin-bottom: 5px;" onclick="checkInRoom('${doc.id}', ${room.dailyRate}, '${room.roomType}')">Check-In Guest</button>
+                    <button class="save-btn" style="width: 100%; padding: 10px; font-size: 14px; margin-bottom: 5px; background: #4a6fa5;" onclick="openAdvanceBookingModal('${doc.id}', ${room.dailyRate}, '${room.roomType}')">📅 Advance Booking</button>
                     <button class="warn-btn" style="width: 100%; padding: 6px; font-size: 12px; background: #d4a373; border: none; color: white;" onclick="setRoomMaintenance('${doc.id}')">🛠️ Set Maintenance</button>
                 `;
             } else if (room.status === "OCCUPIED") {
-                actionBtn = `<button class="warn-btn" style="width: 100%; padding: 10px; font-size: 14px; background:#4a6fa5; color:white;" onclick="openFolioModal('${doc.id}', '${room.currentFolioId}')">View Room Folio</button>`;
+                actionBtn = `
+                    <button class="warn-btn" style="width: 100%; padding: 10px; font-size: 14px; margin-bottom: 5px; background:#4a6fa5; color:white;" onclick="openFolioModal('${doc.id}', '${room.currentFolioId}')">View Room Folio</button>
+                    <button class="save-btn" style="width: 100%; padding: 10px; font-size: 14px; margin-bottom: 5px; background: #4a6fa5;" onclick="openAdvanceBookingModal('${doc.id}', ${room.dailyRate}, '${room.roomType}')">📅 Advance Booking</button>
+                `;
             } else if (room.status === "MAINTENANCE") {
-                actionBtn = `<button class="save-btn" style="width: 100%; padding: 10px; font-size: 14px; background: #557a46;" onclick="finishRoomMaintenance('${doc.id}')">✔️️ Ready / Available</button>`;
+                actionBtn = `
+                    <button class="save-btn" style="width: 100%; padding: 10px; font-size: 14px; margin-bottom: 5px; background: #557a46;" onclick="finishRoomMaintenance('${doc.id}')">✔ Ready / Available</button>
+                    <button class="save-btn" style="width: 100%; padding: 10px; font-size: 14px; margin-bottom: 5px; background: #4a6fa5;" onclick="openAdvanceBookingModal('${doc.id}', ${room.dailyRate}, '${room.roomType}')">📅 Advance Booking</button>
+                `;
             }
 
             container.innerHTML += `
@@ -48,9 +54,9 @@ function loadRoomRack() {
                         <div style="font-size: 14px; font-weight: bold; color: #557a46; margin-top: 5px;">₱${room.dailyRate.toFixed(2)} / night</div>
                         ${room.currentGuestName ? `<div style="font-size: 12px; font-weight: bold; color: #333; margin-top: 8px;">👤 ${room.currentGuestName}</div>` : ''}
                     </div>
-                    <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 4px;">
                         ${actionBtn}
-                        <button class="delete-btn" style="background: transparent; color: #bd4b4b; border: 1px solid #bd4b4b; padding: 5px; font-size: 11px;" onclick="deleteRoom('${doc.id}')">Delete Room</button>
+                        <button class="delete-btn" style="background: transparent; color: #bd4b4b; border: 1px solid #bd4b4b; padding: 5px; font-size: 11px; margin-top: 5px;" onclick="deleteRoom('${doc.id}')">Delete Room</button>
                     </div>
                 </div>
             `;
@@ -92,6 +98,77 @@ function checkInRoom(roomId, roomRate, roomType) {
 function closeWalkInModal() {
     document.getElementById("walkInModal").classList.add("hidden");
     pendingWalkInRoomId = null;
+}
+
+
+// --- ADVANCE BOOKING LOGIC ---
+let pendingAdvRoomId = null;
+let pendingAdvRoomType = null;
+
+function openAdvanceBookingModal(roomId, rate, type) {
+    pendingAdvRoomId = roomId;
+    pendingAdvRoomType = type;
+    
+    document.getElementById("advRoomDisplay").innerText = `Room ${roomId} (${type})`;
+    document.getElementById("advGuestName").value = "";
+    document.getElementById("advContact").value = "";
+    document.getElementById("advCheckIn").value = "";
+    document.getElementById("advCheckOut").value = "";
+    
+    // Prevent booking in the past
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("advCheckIn").setAttribute('min', today);
+    document.getElementById("advCheckOut").setAttribute('min', today);
+
+    document.getElementById("advanceBookingModal").classList.remove("hidden");
+}
+
+function closeAdvanceBookingModal() {
+    document.getElementById("advanceBookingModal").classList.add("hidden");
+    pendingAdvRoomId = null;
+}
+
+async function confirmAdvanceBooking() {
+    const guestName = document.getElementById("advGuestName").value.trim();
+    const contact = document.getElementById("advContact").value.trim();
+    const checkIn = document.getElementById("advCheckIn").value;
+    const checkOut = document.getElementById("advCheckOut").value;
+
+    if (!guestName || !checkIn || !checkOut) {
+        return alert("Please fill in the guest name and dates.");
+    }
+    
+    if (new Date(checkOut) <= new Date(checkIn)) {
+        return alert("Check-out date must be after check-in date.");
+    }
+
+    try {
+        // We save this directly to the "reservations" collection so the 30-Day Calendar can read it,
+        // WITHOUT locking the physical room to "Occupied" today.
+        await db.collection("reservations").add({
+            roomNumber: pendingAdvRoomId, // Room number matches the ID
+            roomType: pendingAdvRoomType,
+            guestName: guestName,
+            contact: contact,
+            checkIn: checkIn,
+            checkOut: checkOut,
+            status: "CONFIRMED", 
+            source: "Front Desk Walk-in Booking",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        alert(`Success! Advance booking saved for ${guestName} in Room ${pendingAdvRoomId}.`);
+        closeAdvanceBookingModal();
+        
+        // Refresh the Gantt calendar immediately so the block appears
+        if (typeof loadBookingCalendar === "function") {
+            loadBookingCalendar();
+        }
+
+    } catch (error) {
+        console.error("Error saving booking:", error);
+        alert("Failed to save advance booking. Check permissions.");
+    }
 }
 
 // Handles the database save when they click "Confirm Check-In"
