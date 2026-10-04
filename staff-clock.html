@@ -163,14 +163,31 @@
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
 
-        // --- LIVE CLOCK LOGIC ---
+        // --- LIVE CLOCK & KIOSK WAKE-UP LOGIC ---
+        let lastTime = Date.now();
+
         function updateClock() {
             const now = new Date();
+            
+            // KIOSK WAKE-UP DETECTOR:
+            // If the browser was closed, frozen, or put to sleep, the internal clock pauses.
+            // If it detects a gap larger than 3 seconds, it forces an instant background refresh 
+            // to re-establish the Firebase database connection before the staff member can even type.
+            if (Date.now() - lastTime > 3000) {
+                window.location.reload();
+            }
+            lastTime = Date.now();
+
             document.getElementById('liveTime').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             document.getElementById('liveDate').innerText = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         }
         setInterval(updateClock, 1000);
         updateClock();
+
+        // Failsafe for browsers that use aggressive Back/Forward caching
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) window.location.reload();
+        });
 
         // --- NUMPAD LOGIC ---
         let currentPin = "";
