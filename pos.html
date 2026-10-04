@@ -763,60 +763,69 @@
 </div>
 
     <!-- PRINTABLE GUEST FOLIO INVOICE -->
-<div id="folioInvoiceArea" class="hidden">
-    <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="margin: 0; color: #2b4227;">HILOM</h1>
-            <p style="margin: 5px 0;">Property Management System</p>
-            <h2 style="border-bottom: 2px solid #333; padding-bottom: 10px;">GUEST FOLIO INVOICE</h2>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-            <div>
-                <p><strong>Guest Name:</strong> <span id="invGuestName"></span></p>
-                <p><strong>Room Number:</strong> <span id="invRoom"></span></p>
+    <div id="folioInvoiceArea" class="hidden">
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; background: white; color: #333;">
+            
+            <!-- HEADER -->
+            <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2b4227; padding-bottom: 20px;">
+                <img src="hilom.png" alt="Hilom Logo" style="height: 90px; object-fit: contain; margin-bottom: 10px;">
+                <div style="font-size: 14px; color: #555; line-height: 1.5;">
+                    Brgy. Dumanhog, Siquijor Island, Siquijor, 6225<br>
+                    Email: hilomresort@gmail.com | Phone: +63 928 402 7378
+                </div>
+                <h2 style="margin: 20px 0 0 0; color: #2b4227; font-size: 24px; letter-spacing: 2px;">GUEST FOLIO INVOICE</h2>
             </div>
-            <div style="text-align: right;">
-                <p><strong>Check-In:</strong> <span id="invCheckIn"></span></p>
-                <p><strong>Check-Out:</strong> <span id="invCheckOut"></span></p>
+
+            <!-- GUEST & STAY DETAILS -->
+            <div style="display: flex; justify-content: space-between; margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #e0e5e0;">
+                <div style="line-height: 1.8;">
+                    <p style="margin: 0;"><strong>Guest Name:</strong> <span id="invGuestName" style="font-size: 16px;"></span></p>
+                    <p style="margin: 0;"><strong>Room Assigned:</strong> <span id="invRoom"></span></p>
+                </div>
+                <div style="line-height: 1.8; text-align: right;">
+                    <p style="margin: 0;"><strong>Check-In:</strong> <span id="invCheckIn"></span></p>
+                    <p style="margin: 0;"><strong>Check-Out:</strong> <span id="invCheckOut"></span></p>
+                </div>
             </div>
-        </div>
 
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-            <thead>
-                <tr style="background-color: #e9ece9; text-align: left;">
-                    <th style="padding: 10px; border: 1px solid #ccc;">Description</th>
-                    <th style="padding: 10px; border: 1px solid #ccc; text-align: right;">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Room Charges -->
-                <tr>
-                    <td style="padding: 10px; border: 1px solid #ccc;">
-                        <!-- ADD THE ID HERE -->
-                        <strong id="invRoomTitle">Room Stay</strong><br>
-                        <small id="invRoomRate"></small>
-                    </td>
-                    <td style="padding: 10px; border: 1px solid #ccc; text-align: right; font-weight: bold;" id="invRoomTotal"></td>
-                </tr>
-            </tbody>
-            <!-- POS Charges -->
-            <tbody id="invPosList">
-                <!-- Dynamically populated POS orders go here -->
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td style="padding: 10px; border: 1px solid #ccc; text-align: right; font-size: 18px; font-weight: bold;">GRAND TOTAL:</td>
-                    <td style="padding: 10px; border: 1px solid #ccc; text-align: right; font-size: 18px; font-weight: bold; color: #2b4227;" id="invGrandTotal"></td>
-                </tr>
-            </tfoot>
-        </table>
+            <!-- CHARGES TABLE -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 15px;">
+                <thead>
+                    <tr style="background-color: #2b4227; color: white; text-align: left;">
+                        <th style="padding: 12px 15px; border: 1px solid #2b4227;">Description of Charges</th>
+                        <th style="padding: 12px 15px; border: 1px solid #2b4227; text-align: right; width: 160px;">Amount (PHP)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Room Charges -->
+                    <tr>
+                        <td style="padding: 15px; border: 1px solid #ccc; border-bottom: 2px solid #ccc;">
+                            <strong id="invRoomTitle" style="color: #2b4227; font-size: 16px;">Room Stay</strong><br>
+                            <span id="invRoomRate" style="color: #666; font-size: 13px;"></span>
+                        </td>
+                        <td style="padding: 15px; border: 1px solid #ccc; border-bottom: 2px solid #ccc; text-align: right; font-weight: bold; font-size: 16px;" id="invRoomTotal"></td>
+                    </tr>
+                </tbody>
+                <!-- POS Charges -->
+                <tbody id="invPosList">
+                    <!-- Dynamically populated POS orders go here -->
+                </tbody>
+                <tfoot>
+                    <tr style="background-color: #e8f5e9;">
+                        <td style="padding: 15px; border: 1px solid #2b4227; text-align: right; font-size: 18px; font-weight: bold; color: #2b4227;">GRAND TOTAL:</td>
+                        <td style="padding: 15px; border: 1px solid #2b4227; text-align: right; font-size: 18px; font-weight: bold; color: #2b4227;" id="invGrandTotal"></td>
+                    </tr>
+                </tfoot>
+            </table>
 
-        <div style="text-align: center; margin-top: 40px; color: #666;">
-            <p>Thank you for staying with us!</p>
+            <!-- FOOTER / SIGNATURE -->
+            <div style="margin-top: 50px; text-align: center; color: #666; font-size: 14px;">
+                <p style="font-weight: bold; font-size: 16px; color: #2b4227; margin-bottom: 5px;">Thank you for staying with us!</p>
+                <p style="margin: 0;">We hope to welcome you back to Hilom Resort soon.</p>
+                <p style="margin: 20px 0 0 0; font-size: 12px; color: #999;">This document serves as your official billing statement. Please retain for your records.</p>
+            </div>
         </div>
     </div>
-</div>
 
     
 
