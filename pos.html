@@ -286,8 +286,7 @@
                         <span style="color: #666; font-weight: bold;">to</span>
                         <input type="date" id="dtrEndDate" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;" title="End Date">
                         <button onclick="generateDTR()" style="background: #4a6fa5; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">View Payroll</button>
-                        <button onclick="window.print()" style="background: #8c5d3a; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">🖨️ Print</button>
-                    </div>
+<button onclick="printDTR()" style="background: #8c5d3a; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">🖨️ Print Payroll</button>                    </div>
                     
                     <div id="dtrResults" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);">
                         Select a date and click "View DTR" to load logs.
@@ -1098,6 +1097,51 @@
                 console.error("Error fetching DTR:", error);
                 resultsDiv.innerHTML = "<p style='color: #bd4b4b;'>Error loading DTR. Check your internet connection.</p>";
             }
+        }
+
+        // --- DEDICATED PAYROLL PRINTER ---
+        function printDTR() {
+            const resultsHtml = document.getElementById("dtrResults").innerHTML;
+            
+            // Prevent printing if they haven't generated a report yet
+            if (!resultsHtml || resultsHtml.includes("Select a date") || resultsHtml.includes("Loading")) {
+                return alert("Please generate a payroll report first before printing.");
+            }
+
+            // Create a clean, hidden virtual window just for printing
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            
+            // Inject perfect printer-friendly CSS and the payroll data
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Payroll Report</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; }
+                        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+                        th { background-color: #e8f5e9; color: #2b4227; }
+                        h2, h3 { color: #2b4227; margin-bottom: 5px; }
+                        .print-only { display: block !important; text-align: center; margin-bottom: 20px; }
+                        
+                        /* Hide things that shouldn't be printed */
+                        button { display: none !important; }
+                    </style>
+                </head>
+                <body>
+                    ${resultsHtml}
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            printWindow.focus();
+            
+            // Give the browser a split second to render the layout, then trigger the print dialogue
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close(); // Automatically close the virtual window after printing
+            }, 250);
         }
 
         // --- 1. EXPANDED: ADD NEW STAFF MEMBER ---
