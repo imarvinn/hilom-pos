@@ -8,10 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="./manifest.json">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        /* Existing Print Style */
-        body.print-zread #zReadingArea { display: block !important; position: absolute; top: 0; left: 0; width: 100%; max-width: 300px; font-family: monospace; color: black; font-size: 14px; }
-
+  <style>
         /* 1. HIDE ADMIN CONTROLS ON POS SCREEN */
         #posView #menuGridContainer button[onclick*="edit"], 
         #posView #menuGridContainer button[onclick*="delete"],
@@ -31,6 +28,63 @@
             min-width: 160px !important;
             max-width: 160px !important;
             flex: 0 0 auto !important;
+        }
+
+        /* =======================================================
+           3. BULLETPROOF PRINTING ENGINE
+           ======================================================= */
+        @media print {
+            /* A. Hide all UI buttons, sidebars, and modals globally during ANY print */
+            .no-print, .sidebar, .modal-overlay { 
+                display: none !important; 
+            }
+
+            /* B. THERMAL RECEIPT PRINTING */
+            .thermal-print-area { display: none; }
+            
+            body.print-zread #zReadingArea,
+            body.print-xread #xReadingArea,
+            body.print-receipt #customerReceiptArea,
+            body.print-ticket #kitchenTicketArea {
+                display: block !important; 
+                position: absolute; 
+                top: 0; left: 0; 
+                width: 100%; max-width: 300px; 
+                font-family: monospace; color: black; font-size: 14px;
+            }
+            
+            /* If printing a thermal receipt, completely nuke the main dashboard from the print */
+            body.print-zread .dashboard-layout, 
+            body.print-xread .dashboard-layout, 
+            body.print-receipt .dashboard-layout, 
+            body.print-ticket .dashboard-layout { 
+                display: none !important; 
+            }
+
+            /* C. PDF SALES REPORT PRINTING */
+            /* Hide every other tab when printing the sales report */
+            body.print-sales #kitchenView, 
+            body.print-sales #posView, 
+            body.print-sales #inventoryView, 
+            body.print-sales #menuManageView, 
+            body.print-sales #timeClockView, 
+            body.print-sales #roomsView,
+            body.print-sales .thermal-print-area { 
+                display: none !important; 
+            }
+
+            /* Expand the sales table to take up the whole white page cleanly */
+            body.print-sales .main-content { 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                width: 100% !important; 
+            }
+            body.print-sales .card { 
+                box-shadow: none !important; 
+                border: none !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+            }
         }
     </style>
 </head>
