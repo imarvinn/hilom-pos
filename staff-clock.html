@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hilom | Staff DTR</title>
+    
     <!-- BLOCK ALL OFFLINE CACHING -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- UPGRADED FIREBASE ENGINE (Matches your POS Dashboard exactly) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
     <style>
         :root {
@@ -60,6 +62,10 @@
             margin-bottom: 20px;
             min-height: 38px;
             color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
         .numpad {
             display: grid;
@@ -140,16 +146,18 @@
     </div>
 
     <script>
-
         // --- ZOMBIE CACHE KILLER ---
-        // This forces the browser to delete any stuck background scripts immediately
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for (let registration of registrations) {
-                    registration.unregister();
-                }
+                for (let registration of registrations) registration.unregister();
             });
         }
+        
+        // Prevent Back/Forward Cache freezing
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) window.location.reload();
+        });
+
         const firebaseConfig = {
             apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
             authDomain: "dbr-pos.firebaseapp.com",
@@ -163,37 +171,26 @@
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
 
-        // --- LIVE CLOCK & KIOSK WAKE-UP LOGIC ---
-        let lastTime = Date.now();
-
+        // --- LIVE CLOCK LOGIC ---
         function updateClock() {
             const now = new Date();
-            
-            // KIOSK WAKE-UP DETECTOR:
-            // If the browser was closed, frozen, or put to sleep, the internal clock pauses.
-            // If it detects a gap larger than 3 seconds, it forces an instant background refresh 
-            // to re-establish the Firebase database connection before the staff member can even type.
-            if (Date.now() - lastTime > 3000) {
-                window.location.reload();
-            }
-            lastTime = Date.now();
-
             document.getElementById('liveTime').innerText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             document.getElementById('liveDate').innerText = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         }
         setInterval(updateClock, 1000);
         updateClock();
 
-        // Failsafe for browsers that use aggressive Back/Forward caching
-        window.addEventListener('pageshow', function(event) {
-            if (event.persisted) window.location.reload();
-        });
-
         // --- NUMPAD LOGIC ---
         let currentPin = "";
         const pinDisplay = document.getElementById("pinDisplay");
         function pressKey(num) { if (currentPin.length < 4) { currentPin += num; updatePinDisplay(); } }
-        function clearPin() { currentPin = ""; updatePinDisplay(); }
+        function clearPin() { 
+            currentPin = ""; 
+            pinDisplay.style.color = "#333";
+            pinDisplay.style.fontSize = "32px";
+            pinDisplay.style.letterSpacing = "8px";
+            updatePinDisplay(); 
+        }
         function backspace() { currentPin = currentPin.slice(0, -1); updatePinDisplay(); }
         function updatePinDisplay() { pinDisplay.innerText = "*".repeat(currentPin.length); }
 
@@ -201,7 +198,16 @@
         async function processPunch(type) {
             if (currentPin.length !== 4) return alert("Please enter your 4-digit PIN.");
             
+            // Visual feedback so you know it's not frozen
+            pinDisplay.innerText = "SYNCING...";
+            pinDisplay.style.color = "#557a46";
+            pinDisplay.style.fontSize = "16px";
+            pinDisplay.style.letterSpacing = "2px";
+            
             try {
+                // THE DEFIBRILLATOR: Jolt the connection awake in case the browser froze it
+                await db.enableNetwork();
+
                 // 1. Verify PIN
                 const staffQuery = await db.collection("staff").where("pinCode", "==", currentPin).get();
                 if (staffQuery.empty) {
@@ -262,7 +268,7 @@
                     batch.update(db.collection("dtr_logs").doc(openLogs[0].id), { breakStart: firebase.firestore.FieldValue.serverTimestamp() });
                     batch.update(db.collection("staff").doc(staffId), { status: "ON_BREAK" });
                     
-                    await batch.commit(); // STRICT AWAIT
+                    await batch.commit(); 
                     alert(`☕ BREAK STARTED\nEnjoy your lunch, ${staffData.name}!\nReturn within 1 hour.`);
                     
                 // 6. END BREAK
@@ -271,7 +277,7 @@
                         clearPin(); return alert(`You are not currently on a break.`);
                     }
 
-                    let breakStartMs = now.getTime(); // Safe fallback
+                    let breakStartMs = now.getTime(); 
                     if (openLogs[0].data().breakStart && typeof openLogs[0].data().breakStart.toDate === 'function') {
                         breakStartMs = openLogs[0].data().breakStart.toDate().getTime();
                     }
@@ -285,7 +291,7 @@
                     });
                     batch.update(db.collection("staff").doc(staffId), { status: "CLOCKED_IN" });
                     
-                    await batch.commit(); // STRICT AWAIT
+                    await batch.commit(); 
                     
                     if (isLate) alert(`⚠️ LATE RETURN\nYou exceeded the 60-minute limit (${Math.round(breakDurationMinutes)} mins).`);
                     else alert(`▶️ BREAK ENDED\nWelcome back, ${staffData.name}!`);
@@ -316,7 +322,7 @@
                         
                         const netWorkedMs = (now.getTime() - timeInMs) - breakDeductionMs;
                         let hoursWorked = netWorkedMs / (1000 * 60 * 60);
-                        if (isNaN(hoursWorked) || hoursWorked < 0) hoursWorked = 0; // Prevent NaN database crashes
+                        if (isNaN(hoursWorked) || hoursWorked < 0) hoursWorked = 0; 
 
                         batch.update(db.collection("dtr_logs").doc(openLogDoc.id), {
                             timeOut: firebase.firestore.FieldValue.serverTimestamp(),
@@ -326,7 +332,7 @@
 
                     batch.update(db.collection("staff").doc(staffId), { status: "CLOCKED_OUT" });
                     
-                    await batch.commit(); // STRICT AWAIT
+                    await batch.commit(); 
                     alert(`👋 TIME OUT SUCCESS\nGoodbye, ${staffData.name}!`);
                 }
 
@@ -334,7 +340,7 @@
 
             } catch (error) {
                 console.error("Firebase Error:", error);
-                alert("An error occurred connecting to the database. Your punch was NOT saved.");
+                alert("An error occurred connecting to the database. Your punch was NOT saved. Check your internet connection.");
                 clearPin();
             }
         }
