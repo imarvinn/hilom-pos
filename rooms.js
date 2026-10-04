@@ -23,23 +23,33 @@ function loadRoomRack() {
             if (room.status === "OCCUPIED") { borderColor = "#c62828"; bgColor = "#ffebee"; }
             else if (room.status === "MAINTENANCE") { borderColor = "#d4a373"; bgColor = "#fff3cd"; }
             
-            // --- DYNAMIC ACTION BUTTONS (NOW WITH ADVANCE BOOKING) ---
-            let actionBtn = "";
+          // --- DYNAMIC ACTION BUTTONS & VISUAL HIERARCHY ---
+            let primaryActions = "";
+            let secondaryActions = "";
+
             if (room.status === "AVAILABLE") {
-                actionBtn = `
-                    <button class="add-btn" style="width: 100%; padding: 10px; font-size: 14px; margin-bottom: 5px;" onclick="checkInRoom('${doc.id}', ${room.dailyRate}, '${room.roomType}')">Check-In Guest</button>
-                    <button class="save-btn" style="width: 100%; padding: 10px; font-size: 14px; margin-bottom: 5px; background: #4a6fa5;" onclick="openAdvanceBookingModal('${doc.id}', ${room.dailyRate}, '${room.roomType}')">📅 Advance Booking</button>
-                    <button class="warn-btn" style="width: 100%; padding: 6px; font-size: 12px; background: #d4a373; border: none; color: white;" onclick="setRoomMaintenance('${doc.id}')">🛠️ Set Maintenance</button>
+                primaryActions = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                        <button onclick="checkInRoom('${doc.id}', ${room.dailyRate}, '${room.roomType}')" style="background: #557a46; color: white; border: none; padding: 10px 5px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;">Check-In</button>
+                        <button onclick="openAdvanceBookingModal('${doc.id}', ${room.dailyRate}, '${room.roomType}')" style="background: #4a6fa5; color: white; border: none; padding: 10px 5px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;">Advance</button>
+                    </div>
+                `;
+                secondaryActions = `
+                    <button onclick="setRoomMaintenance('${doc.id}')" style="background: transparent; color: #d4a373; border: none; font-size: 12px; cursor: pointer; font-weight: bold; padding: 0;">🔧 Maintenance</button>
                 `;
             } else if (room.status === "OCCUPIED") {
-                actionBtn = `
-                    <button class="warn-btn" style="width: 100%; padding: 10px; font-size: 14px; margin-bottom: 5px; background:#4a6fa5; color:white;" onclick="openFolioModal('${doc.id}', '${room.currentFolioId}')">View Room Folio</button>
-                    <button class="save-btn" style="width: 100%; padding: 10px; font-size: 14px; margin-bottom: 5px; background: #4a6fa5;" onclick="openAdvanceBookingModal('${doc.id}', ${room.dailyRate}, '${room.roomType}')">📅 Advance Booking</button>
+                primaryActions = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                        <button onclick="openFolioModal('${doc.id}', '${room.currentFolioId}')" style="background: #2b4227; color: white; border: none; padding: 10px 5px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;">View Folio</button>
+                        <button onclick="openAdvanceBookingModal('${doc.id}', ${room.dailyRate}, '${room.roomType}')" style="background: #4a6fa5; color: white; border: none; padding: 10px 5px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;">Advance</button>
+                    </div>
                 `;
             } else if (room.status === "MAINTENANCE") {
-                actionBtn = `
-                    <button class="save-btn" style="width: 100%; padding: 10px; font-size: 14px; margin-bottom: 5px; background: #557a46;" onclick="finishRoomMaintenance('${doc.id}')">✔ Ready / Available</button>
-                    <button class="save-btn" style="width: 100%; padding: 10px; font-size: 14px; margin-bottom: 5px; background: #4a6fa5;" onclick="openAdvanceBookingModal('${doc.id}', ${room.dailyRate}, '${room.roomType}')">📅 Advance Booking</button>
+                primaryActions = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                        <button onclick="finishRoomMaintenance('${doc.id}')" style="background: #557a46; color: white; border: none; padding: 10px 5px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;">✔ Ready</button>
+                        <button onclick="openAdvanceBookingModal('${doc.id}', ${room.dailyRate}, '${room.roomType}')" style="background: #4a6fa5; color: white; border: none; padding: 10px 5px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;">Advance</button>
+                    </div>
                 `;
             }
 
@@ -54,9 +64,13 @@ function loadRoomRack() {
                         <div style="font-size: 14px; font-weight: bold; color: #557a46; margin-top: 5px;">₱${room.dailyRate.toFixed(2)} / night</div>
                         ${room.currentGuestName ? `<div style="font-size: 12px; font-weight: bold; color: #333; margin-top: 8px;">👤 ${room.currentGuestName}</div>` : ''}
                     </div>
-                    <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 4px;">
-                        ${actionBtn}
-                        <button class="delete-btn" style="background: transparent; color: #bd4b4b; border: 1px solid #bd4b4b; padding: 5px; font-size: 11px; margin-top: 5px;" onclick="deleteRoom('${doc.id}')">Delete Room</button>
+                    
+                    <div style="margin-top: 15px;">
+                        ${primaryActions}
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #ccc; padding-top: 8px;">
+                            <div>${secondaryActions}</div>
+                            <button onclick="deleteRoom('${doc.id}')" style="background: transparent; color: #bd4b4b; border: none; font-size: 12px; cursor: pointer; font-weight: bold; padding: 0;">🗑️ Delete</button>
+                        </div>
                     </div>
                 </div>
             `;
