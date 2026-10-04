@@ -639,7 +639,7 @@ function loadMenu() {
             let catHTML = `<h3>${cat}</h3><div class="menu-grid">`;
             categories[cat].forEach(doc => {
                 const item = doc.data();
-                catHTML += `<div class="menu-item-container"><button class="order-btn" onclick="addToCart('${item.name}', ${item.price || 0})">🍽️ ${item.name}<br><small>₱${(item.price||0).toFixed(2)}</small></button><div class="menu-actions no-print"><button class="action-circle" style="background:#d4a373;" onclick="editMenu('${doc.id}')">✎</button><button class="action-circle" style="background:#bd4b4b;" onclick="deleteMenu('${doc.id}')">✕</button></div></div>`;
+                catHTML += `<div class="menu-item-container"><button class="order-btn" onclick="addToCart('${item.name}', ${item.price || 0})"> ${item.name}<br><small>₱${(item.price||0).toFixed(2)}</small></button><div class="menu-actions no-print"><button class="action-circle" style="background:#d4a373;" onclick="editMenu('${doc.id}')">✎</button><button class="action-circle" style="background:#bd4b4b;" onclick="deleteMenu('${doc.id}')">✕</button></div></div>`;
             });
             catHTML += `</div>`; container.innerHTML += catHTML;
         }
