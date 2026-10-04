@@ -896,12 +896,20 @@
 
   // --- TIME CLOCK LOGIC ---
         
-       // --- LOAD RECENT SHIFTS ---
+       // --- LOAD RECENT SHIFTS (With Memory Leak Fix) ---
+        let dtrListener = null;
+
         function loadAttendanceLogs() {
             const tableBody = document.getElementById("dtrTableBody");
             if(!tableBody) return;
 
-            db.collection("dtr_logs").orderBy("timeIn", "desc").limit(30).onSnapshot((snapshot) => {
+            // KILL SWITCH: If a live feed is already running, shut it down before starting a new one.
+            if (dtrListener !== null) {
+                dtrListener(); 
+            }
+
+            // Save the new live feed to the variable so it can be managed
+            dtrListener = db.collection("dtr_logs").orderBy("timeIn", "desc").limit(30).onSnapshot((snapshot) => {
                   tableBody.innerHTML = ""; 
                   
                   if(snapshot.empty) {
@@ -920,7 +928,6 @@
                       let timeOutStr = "<span style='color: #557a46; font-weight: bold; background: #e8f5e9; padding: 4px 8px; border-radius: 4px;'>ACTIVE SHIFT</span>";
                       let hoursStr = "-";
                       
-                      // LOGIC: If TimeOut exists = Shift Over. If BreakStart exists but no BreakEnd = On Break.
                       if (data.timeOut) {
                           if (typeof data.timeOut.toDate === 'function') {
                               timeOutStr = data.timeOut.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
