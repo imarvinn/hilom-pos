@@ -1450,10 +1450,17 @@
                 }
             });
         }
-
-        // Run it automatically on page load
-        document.addEventListener("DOMContentLoaded", () => {
-            loadAdminMenuBoard();
+// --- ONLY LOAD DATA AFTER A SECURE LOGIN ---
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                // The user is securely logged in, it is now safe to fetch protected data
+                if (typeof listenForWebReservations === "function") {
+                    listenForWebReservations(); 
+                }
+                if (typeof loadAdminMenuBoard === "function") {
+                    loadAdminMenuBoard();
+                }
+            }
         });
 // --- DELETE MENU ITEM ---
         function deleteMenuItem(itemId) {
