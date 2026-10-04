@@ -924,8 +924,12 @@
                       let timeOutStr = "<span style='color: #557a46; font-weight: bold; background: #e8f5e9; padding: 4px 8px; border-radius: 4px;'>ACTIVE SHIFT</span>";
                       let hoursStr = "-";
                       
-                      if (data.timeOut && typeof data.timeOut.toDate === 'function') {
-                          timeOutStr = data.timeOut.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                      if (data.timeOut) {
+                          if (typeof data.timeOut.toDate === 'function') {
+                              timeOutStr = data.timeOut.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                          } else {
+                              timeOutStr = "Just now"; // Failsafe for pending syncs
+                          }
                           hoursStr = data.totalHours ? data.totalHours.toFixed(2) + " hrs" : "0 hrs";
                       }
 

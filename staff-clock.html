@@ -227,19 +227,18 @@
                     return; 
                 }
 
-                // --- 3. FETCH OPEN LOG FOR OUT / BREAK ACTIONS ---
-                // We only run this heavy search if they are NOT timing in, saving massive loading time!
-                let openLogDoc = null;
+                // --- 3. FETCH ALL OPEN LOGS (To clean up stuck ghost shifts) ---
+                const openLogs = [];
                 const allStaffLogs = await db.collection("dtr_logs").where("staffId", "==", staffId).get();
                 allStaffLogs.forEach(doc => {
                     if (doc.data().timeOut === null) {
-                        openLogDoc = doc;
+                        openLogs.push(doc);
                     }
                 });
 
-                if (!openLogDoc) {
+                if (openLogs.length === 0) {
                     clearPin();
-                    return alert("Error: Could not find your active time-in record.");
+                    return alert("Error: Could not find any active time-in records to update.");
                 }
 
                 // --- 4. PROCESS OTHER ACTIONS ---
@@ -249,7 +248,7 @@
                         return alert(`You must be actively clocked in to start a break.`);
                     }
 
-                    batch.update(db.collection("dtr_logs").doc(openLogDoc.id), { breakStart: firebase.firestore.FieldValue.serverTimestamp() });
+                    batch.update(db.collection("dtr_logs").doc(openLogs[0].id), { breakStart: firebase.firestore.FieldValue.serverTimestamp() });
                     batch.update(db.collection("staff").doc(staffId), { status: "ON_BREAK" });
                     
                     batch.commit().catch(e => console.error(e));
@@ -261,11 +260,11 @@
                         return alert(`You are not currently on a break.`);
                     }
 
-                    const breakStartMs = openLogDoc.data().breakStart.toDate().getTime();
+                    const breakStartMs = openLogs[0].data().breakStart.toDate().getTime();
                     const breakDurationMinutes = (now.getTime() - breakStartMs) / (1000 * 60);
                     const isLate = breakDurationMinutes > 60; 
                     
-                    batch.update(db.collection("dtr_logs").doc(openLogDoc.id), { 
+                    batch.update(db.collection("dtr_logs").doc(openLogs[0].id), { 
                         breakEnd: firebase.firestore.FieldValue.serverTimestamp(),
                         lateFromBreak: isLate
                     });
@@ -276,7 +275,7 @@
                     if (isLate) {
                         alert(`⚠️ LATE RETURN\nYou exceeded the 60-minute limit (${Math.round(breakDurationMinutes)} mins). This has been logged.`);
                     } else {
-                        alert(`▶️ BREAK ENDED\nWelcome back, ${staffData.name}!`);
+                        alert(`▶️️ BREAK ENDED\nWelcome back, ${staffData.name}!`);
                     }
 
                 } else if (type === 'OUT') {
@@ -289,23 +288,32 @@
                         return alert(`Please END BREAK before Clocking Out for the day.`);
                     }
 
-                    const timeInMs = openLogDoc.data().timeIn.toDate().getTime();
-                    
-                    let breakDeductionMs = 0;
-                    if (openLogDoc.data().breakStart && openLogDoc.data().breakEnd) {
-                        breakDeductionMs = openLogDoc.data().breakEnd.toDate().getTime() - openLogDoc.data().breakStart.toDate().getTime();
-                    }
-                    
-                    const netWorkedMs = (now.getTime() - timeInMs) - breakDeductionMs;
-                    const hoursWorked = netWorkedMs / (1000 * 60 * 60);
+                    // FORCE CLOSE ALL STUCK SHIFTS
+                    openLogs.forEach(openLogDoc => {
+                        let timeInMs = now.getTime(); // Failsafe
+                        if (openLogDoc.data().timeIn && typeof openLogDoc.data().timeIn.toDate === 'function') {
+                            timeInMs = openLogDoc.data().timeIn.toDate().getTime();
+                        }
+                        
+                        let breakDeductionMs = 0;
+                        if (openLogDoc.data().breakStart && openLogDoc.data().breakEnd) {
+                            breakDeductionMs = openLogDoc.data().breakEnd.toDate().getTime() - openLogDoc.data().breakStart.toDate().getTime();
+                        }
+                        
+                        const netWorkedMs = (now.getTime() - timeInMs) - breakDeductionMs;
+                        let hoursWorked = netWorkedMs / (1000 * 60 * 60);
+                        if (hoursWorked < 0) hoursWorked = 0;
 
-                    batch.update(db.collection("dtr_logs").doc(openLogDoc.id), {
-                        timeOut: firebase.firestore.FieldValue.serverTimestamp(),
-                        totalHours: parseFloat(hoursWorked.toFixed(2))
+                        batch.update(db.collection("dtr_logs").doc(openLogDoc.id), {
+                            timeOut: firebase.firestore.FieldValue.serverTimestamp(),
+                            totalHours: parseFloat(hoursWorked.toFixed(2))
+                        });
                     });
+
                     batch.update(db.collection("staff").doc(staffId), { status: "CLOCKED_OUT" });
                     
-                    batch.commit().catch(e => console.error(e));
+                    // Await the commit to guarantee it clears out all the bugs
+                    await batch.commit();
                     alert(`👋 TIME OUT SUCCESS\nGoodbye, ${staffData.name}!`);
                 }
 
