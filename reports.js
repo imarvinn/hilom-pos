@@ -177,35 +177,79 @@ function renderExpensePage(page) {
 }
 
 function printSales() { 
-    // 1. Render all sales and expense data without pagination
-    renderSalesPage('ALL'); 
-    renderExpensePage('ALL');
-    
     const expensesCard = document.getElementById("expensesCard");
     const salesCard = document.getElementById("salesCard");
     
-    // NEW: Save the current visibility state before doing anything
+    // Save current visibility state
     const isExpensesHidden = expensesCard ? expensesCard.classList.contains("hidden") : true;
     const isSalesHidden = salesCard ? salesCard.classList.contains("hidden") : true;
 
-    // 2. Explicitly remove the 'hidden' class so the DOM physically displays both for the PDF
+    // Show cards temporarily for printing
     if (expensesCard) expensesCard.classList.remove("hidden");
     if (salesCard) salesCard.classList.remove("hidden");
 
-    // 3. Add print class for CSS formatting
+    // --- NEW: DUAL-TABLE PRINT LOGIC ---
+    const list = document.getElementById("salesList");
+    const paginationDiv = document.getElementById("salesPagination");
+    if (paginationDiv) paginationDiv.style.display = 'none';
+
+    // Separate the data mathematically
+    const posItems = currentSalesData.filter(sale => !(sale.itemName === "Room Folio Checkout" || (sale.tableNo && String(sale.tableNo).includes("Room"))));
+    const roomItems = currentSalesData.filter(sale => sale.itemName === "Room Folio Checkout" || (sale.tableNo && String(sale.tableNo).includes("Room")));
+
+    // Helper to generate sectioned rows
+    const generatePrintRows = (items, title) => {
+        if (items.length === 0) return "";
+        
+        // The dark green separator bar
+        let html = `<tr class="print-only" style="background-color: #2b4227 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: white !important;"><td colspan="6" style="padding: 10px; font-weight: bold; font-size: 14px; text-transform: uppercase;">${title}</td></tr>`;
+        
+        items.forEach(sale => {
+            let time = sale.timestamp ? sale.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Just now";
+            const gross = sale.grossAmount !== undefined ? sale.grossAmount : (sale.price || 0);
+            const net = sale.netAmount !== undefined ? sale.netAmount : (sale.price || 0);
+            const method = sale.paymentMethod || "Cash";
+            const invNo = sale.invoiceNo || "Old Record";
+            let isVoid = sale.status === 'VOID';
+            
+            let trStyle = isVoid ? "text-decoration: line-through; color: #888;" : "";
+            let displayLocation = sale.tableNo || "N/A";
+            if (!String(displayLocation).includes("Room") && displayLocation !== "N/A") {
+                displayLocation = "Table " + displayLocation; 
+            }
+            
+            html += `<tr style="${trStyle}">
+                <td>${time}<br><small style="color:#8c5d3a; font-weight:bold;">${invNo}</small></td>
+                <td>${displayLocation}</td>
+                <td><strong>${method}</strong></td>
+                <td>₱${gross.toFixed(2)}</td>
+                <td style="color:#557a46; font-weight:bold;">₱${net.toFixed(2)}</td>
+                <td class="no-print"></td>
+            </tr>`;
+        });
+        return html;
+    };
+
+    // Inject the separated lists into the table
+    list.innerHTML = "";
+    list.innerHTML += generatePrintRows(posItems, "🍽️ Restaurant / POS Sales");
+    list.innerHTML += generatePrintRows(roomItems, "🛏️ Front Desk & Room Accommodations");
+
+    renderExpensePage('ALL');
+    // ------------------------------------
+
     document.body.classList.add("print-sales"); 
     
-    // 4. Use a slight delay so the browser finishes painting the data before printing
+    // Give the browser a split second to paint the new UI before snapping the PDF
     setTimeout(() => {
         window.print();
         
-        // 5. Cleanup: RESTORE the exact UI state based on what you saved in Step 1
+        // Cleanup & Restore
         document.body.classList.remove("print-sales"); 
-        
         if (isExpensesHidden && expensesCard) expensesCard.classList.add("hidden");
         if (isSalesHidden && salesCard) salesCard.classList.add("hidden");
         
-        // Turn pagination back on
+        // Restore standard dashboard view to whatever tab you were previously looking at
         renderSalesPage(currentSalesPage); 
         renderExpensePage(currentExpPage);
     }, 300);
