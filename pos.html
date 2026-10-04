@@ -1450,16 +1450,37 @@
                 }
             });
         }
-// --- ONLY LOAD DATA AFTER A SECURE LOGIN ---
-        firebase.auth().onAuthStateChanged((user) => {
+// --- MASTER AUTHENTICATION & STARTUP LISTENER ---
+        firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
-                // The user is securely logged in, it is now safe to fetch protected data
-                if (typeof listenForWebReservations === "function") {
-                    listenForWebReservations(); 
+                try {
+                    // 1. GATEKEEPER CHECK: Ensure they are fully approved
+                    const adminDoc = await db.collection("admin_users").doc(user.uid).get();
+                    if (adminDoc.exists && adminDoc.data().status !== "APPROVED") {
+                        await firebase.auth().signOut();
+                        return; // Kick them out if PENDING or DECLINED
+                    }
+
+                    // 2. UI STATE: Hide Login Screen, Show Dashboard securely
+                    document.getElementById("loginScreen").classList.add("hidden");
+                    document.getElementById("appScreen").classList.remove("hidden");
+
+                    // 3. SAFE STARTUP: Fire all data scripts ONLY now that we are 100% secure
+                    if (typeof listenForWebReservations === "function") listenForWebReservations(); 
+                    if (typeof loadAdminMenuBoard === "function") loadAdminMenuBoard();
+                    
+                    // Safely load the POS items from pos-billing.js
+                    if (typeof loadMenu === "function") loadMenu();
+                    if (typeof loadCategories === "function") loadCategories();
+                    if (typeof loadActiveTables === "function") loadActiveTables();
+
+                } catch (error) {
+                    console.error("Auth check error:", error);
                 }
-                if (typeof loadAdminMenuBoard === "function") {
-                    loadAdminMenuBoard();
-                }
+            } else {
+                // If logged out, aggressively lock the UI down
+                document.getElementById("loginScreen").classList.remove("hidden");
+                document.getElementById("appScreen").classList.add("hidden");
             }
         });
 // --- DELETE MENU ITEM ---
