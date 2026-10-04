@@ -374,6 +374,15 @@
             <tbody id="staffDirectoryBody">
                 <tr><td colspan="6" style="padding: 15px; text-align: center; color: #888;">Loading staff data...</td></tr>
             </tbody>
+            <!-- NEW: ADMIN APPROVALS PANEL -->
+    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 20px;">
+        <h3 style="color: #8c5d3a; margin-top: 0; margin-bottom: 10px;">Pending Master Admin Requests</h3>
+        <p style="color: #666; font-size: 13px; margin-top: 0;">Approve or decline requests for full POS login access.</p>
+        
+        <div id="pendingAdminsList">
+            <p style="color: #888; font-size: 13px; margin: 0;">Loading requests...</p>
+        </div>
+    </div>
         </table>
     </div>
 </div>
@@ -1534,6 +1543,125 @@
                     errorMsg.innerText = error.message;
                 });
         }
+
+        // --- 1. OVERRIDE: SECURE LOGIN WITH APPROVAL CHECK ---
+        async function login() {
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value.trim();
+            const errorMsg = document.getElementById("errorMessage");
+            
+            if (!email || !password) return errorMsg.innerText = "Please enter both email and password.";
+            
+            try {
+                // Attempt to log in to Firebase
+                const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+                const uid = userCredential.user.uid;
+                
+                // SECURITY CHECK: Look up their approval status in the database
+                const adminDoc = await db.collection("admin_users").doc(uid).get();
+                
+                // If they have a record, check the status (Older, original accounts bypass this)
+                if (adminDoc.exists) {
+                    if (adminDoc.data().status === "PENDING") {
+                        await firebase.auth().signOut();
+                        return errorMsg.innerText = "ACCESS DENIED: Your account is still pending approval from an existing Admin.";
+                    }
+                    if (adminDoc.data().status === "DECLINED") {
+                        await firebase.auth().signOut();
+                        return errorMsg.innerText = "ACCESS DENIED: Your request for an admin account was declined.";
+                    }
+                }
+                
+                // If APPROVED (or original owner), allow access!
+                document.getElementById("loginScreen").classList.add("hidden");
+                document.getElementById("appScreen").classList.remove("hidden");
+                errorMsg.innerText = "";
+                
+            } catch (error) {
+                errorMsg.innerText = "Invalid email or password.";
+            }
+        }
+
+        // --- 2. OVERRIDE: CREATE NEW EMAIL ADMIN ---
+        async function registerNewAdmin() {
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value.trim();
+            const errorMsg = document.getElementById("errorMessage");
+
+            if (!email || !password) return errorMsg.innerText = "Please type an email and password in the boxes above to register.";
+            if (password.length < 6) return errorMsg.innerText = "Password must be at least 6 characters long.";
+
+            const securityCheck = prompt("SECURITY CHECK: Type 'CONFIRM' to request a new Master Admin account.");
+            if (securityCheck !== "CONFIRM") return;
+
+            try {
+                // Create the account in the background
+                const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                
+                // Immediately create a "PENDING" request ticket in the database
+                await db.collection("admin_users").doc(userCredential.user.uid).set({
+                    email: email,
+                    status: "PENDING",
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Instantly force them to log out so they cannot access the dashboard
+                await firebase.auth().signOut();
+                
+                alert(`Registration successful! \n\n${email} is now PENDING APPROVAL. An existing admin must approve it from the dashboard before you can log in.`);
+                errorMsg.innerText = "";
+                document.getElementById("email").value = "";
+                document.getElementById("password").value = "";
+            } catch (error) {
+                console.error("Error registering:", error);
+                errorMsg.innerText = error.message;
+            }
+        }
+        // --- 3. LOAD PENDING ADMIN REQUESTS ---
+        function loadPendingAdmins() {
+            const list = document.getElementById("pendingAdminsList");
+            if (!list) return;
+
+            db.collection("admin_users").where("status", "==", "PENDING").onSnapshot(snapshot => {
+                list.innerHTML = "";
+                if (snapshot.empty) {
+                    list.innerHTML = "<p style='color: #888; font-size: 13px; margin: 0;'>No pending requests.</p>";
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    list.innerHTML += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 8px;">
+                            <div>
+                                <strong style="color: #333;">${data.email}</strong>
+                                <span style="font-size: 11px; color: #888; display: block;">Requested Master Admin Access</span>
+                            </div>
+                            <div style="display: flex; gap: 5px;">
+                                <button onclick="approveAdmin('${doc.id}', '${data.email}')" style="background: #557a46; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Approve</button>
+                                <button onclick="declineAdmin('${doc.id}', '${data.email}')" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Decline</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        // --- 4. APPROVE OR DECLINE FUNCTIONS ---
+        async function approveAdmin(uid, email) {
+            if(confirm(`Security Check: Approve ${email} as a Master Admin?\n\nThey will have full access to the POS, financial reports, and inventory.`)) {
+                await db.collection("admin_users").doc(uid).update({ status: "APPROVED" });
+                alert(`${email} is now approved and can log in.`);
+            }
+        }
+        
+        async function declineAdmin(uid, email) {
+            if(confirm(`Decline ${email}? They will be permanently blocked from logging in.`)) {
+                await db.collection("admin_users").doc(uid).update({ status: "DECLINED" });
+            }
+        }
+
+
   </script>
 
   <!-- Document Preview Modal -->
