@@ -12,31 +12,25 @@
         /* Existing Print Style */
         body.print-zread #zReadingArea { display: block !important; position: absolute; top: 0; left: 0; width: 100%; max-width: 300px; font-family: monospace; color: black; font-size: 14px; }
 
-        /* --- BULLETPROOF MENU GRID FIXES --- */
-        
-        /* 1. HIDE ADMIN CONTROLS ON POS (Targets the click action, not the class name) */
+        /* 1. HIDE ADMIN CONTROLS ON POS SCREEN */
         #posView #menuGridContainer button[onclick*="edit"], 
         #posView #menuGridContainer button[onclick*="delete"],
         #posView #menuGridContainer button[onclick*="remove"] { 
             display: none !important; 
         }
 
-        /* 2. PREVENT SINGLE BUTTONS FROM STRETCHING FULL-WIDTH */
+        /* 2. LOCK POS MENU BUTTONS FROM STRETCHING */
         #menuGridContainer > div {
             display: flex !important;
             flex-wrap: wrap !important;
             gap: 12px !important;
-            justify-content: flex-start !important;
         }
-
-        /* 3. LOCK THE SIZE OF THE MENU CARD WRAPPERS */
         #menuGridContainer > div > div, 
         #menuGridContainer > div > button:not([onclick*="edit"]):not([onclick*="delete"]) {
             width: 160px !important;
             min-width: 160px !important;
             max-width: 160px !important;
             flex: 0 0 auto !important;
-            box-sizing: border-box !important;
         }
     </style>
 </head>
@@ -190,6 +184,15 @@
                         <button class="add-btn" onclick="addIngredientRow()">+ Add Ingredient</button>
                         <button class="save-btn" id="saveMenuBtn" onclick="saveMenuItem()">Save Menu Recipe</button>
                         <button class="delete-btn hidden" id="cancelEditBtn" onclick="resetMenuForm()">Cancel Edit</button>
+                    </div>
+                </div>
+                <!-- NEW: ADMIN MENU VIEWER -->
+                <div class="card" style="margin-top: 20px;">
+                    <h2 style="color: #bd4b4b; border-bottom: 1px dashed #ccc;">Manage Existing Menu Items</h2>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Edit or delete your menu items here. (Changes instantly sync to the Cashier POS).</p>
+                    
+                    <div id="adminMenuGridContainer">
+                        <p style="color:#888; font-size:14px;">Loading menu items...</p>
                     </div>
                 </div>
             </div>
@@ -1389,6 +1392,55 @@
                 body.innerHTML = `<tr><td colspan="31" style="padding: 20px; color: #bd4b4b;">Error generating timeline.</td></tr>`;
             } 
         }
+
+        // --- LOAD ADMIN MENU BOARD ---
+        function loadAdminMenuBoard() {
+            const adminGrid = document.getElementById("adminMenuGridContainer");
+            if(!adminGrid) return;
+            
+            // Listen to the same "menu" database used by the POS
+            db.collection("menu").onSnapshot(snapshot => {
+                adminGrid.innerHTML = "";
+                if(snapshot.empty) {
+                    adminGrid.innerHTML = "<p style='color:#888;'>No menu items found. Create one above!</p>";
+                    return;
+                }
+                
+                let categories = {};
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    const cat = item.category || "Uncategorized";
+                    if (!categories[cat]) categories[cat] = [];
+                    categories[cat].push({ id: doc.id, ...item });
+                });
+                
+                for (const [category, items] of Object.entries(categories)) {
+                    let catHTML = `<h4 style="width: 100%; border-bottom: 2px solid #e0e5e0; padding-bottom: 5px; margin-top: 15px; margin-bottom: 15px; color: #2b4227; text-transform: uppercase;">${category}</h4><div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">`;
+                    
+                    items.forEach(item => {
+                        // NOTE: If the buttons don't work, change 'editMenuItem' and 'deleteMenuItem' 
+                        // to match whatever the exact function names are in your pos-billing.js file!
+                        catHTML += `
+                            <div style="position: relative; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; padding: 15px; width: 140px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <div style="font-weight: bold; color: #333; margin-bottom: 5px; font-size: 14px; line-height: 1.2;">${item.name}</div>
+                                <div style="color: #557a46; font-size: 13px; font-weight: bold;">₱${parseFloat(item.price).toFixed(2)}</div>
+                                
+                                <button onclick="editMenuItem('${item.id}')" style="position: absolute; top: -10px; right: 25px; background: #d4a373; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Edit">✏️</button>
+                                
+                                <button onclick="deleteMenuItem('${item.id}')" style="position: absolute; top: -10px; right: -10px; background: #bd4b4b; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Delete">❌</button>
+                            </div>
+                        `;
+                    });
+                    catHTML += `</div>`;
+                    adminGrid.innerHTML += catHTML;
+                }
+            });
+        }
+
+        // Run it automatically on page load
+        document.addEventListener("DOMContentLoaded", () => {
+            loadAdminMenuBoard();
+        });
 
   </script>
 
