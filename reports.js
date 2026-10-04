@@ -202,7 +202,7 @@ function printSales() {
         if (items.length === 0) return "";
         
         // The dark green separator bar
-        let html = `<tr class="print-only" style="background-color: #6aea2a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: white !important;"><td colspan="6" style="padding: 10px; font-weight: bold; font-size: 14px; text-transform: uppercase;">${title}</td></tr>`;
+        let html = `<tr class="print-only" style="background-color: #174202 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: white !important;"><td colspan="6" style="padding: 10px; font-weight: bold; font-size: 14px; text-transform: uppercase;">${title}</td></tr>`;
         
         items.forEach(sale => {
             let time = sale.timestamp ? sale.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Just now";
