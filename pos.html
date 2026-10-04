@@ -915,15 +915,16 @@
                   snapshot.forEach((doc) => {
                       const data = doc.data();
                       
-                      let timeInStr = "N/A";
-                      if (data.timeIn) {
+                      // Safeguard for timestamps that are currently syncing
+                      let timeInStr = "Just now"; 
+                      if (data.timeIn && typeof data.timeIn.toDate === 'function') {
                           timeInStr = data.timeIn.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                       }
                       
                       let timeOutStr = "<span style='color: #557a46; font-weight: bold; background: #e8f5e9; padding: 4px 8px; border-radius: 4px;'>ACTIVE SHIFT</span>";
                       let hoursStr = "-";
                       
-                      if (data.timeOut) {
+                      if (data.timeOut && typeof data.timeOut.toDate === 'function') {
                           timeOutStr = data.timeOut.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                           hoursStr = data.totalHours ? data.totalHours.toFixed(2) + " hrs" : "0 hrs";
                       }

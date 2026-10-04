@@ -195,7 +195,7 @@
                 const shiftDateStr = new Date(now.getTime() - (offset * 60 * 1000)).toISOString().split('T')[0];
                 
                 const batch = db.batch();
-                // --- 2. TIME IN (Optimized for instant pop-up) ---
+                // --- 2. TIME IN (Restored await to guarantee save) ---
                 if (type === 'IN') {
                     if (staffData.status === "CLOCKED_IN" || staffData.status === "ON_BREAK") {
                         clearPin();
@@ -217,10 +217,9 @@
 
                     batch.update(db.collection("staff").doc(staffId), { status: "CLOCKED_IN" });
                     
-                    // Let Firebase sync in the background without freezing the screen
-                    batch.commit().catch(e => console.error("Background sync error:", e));
+                    // Wait for Firebase to securely save it before showing the pop-up
+                    await batch.commit();
                     
-                    // Trigger pop-up instantly
                     alert(`✅ TIME IN SUCCESS\nWelcome, ${staffData.name}!`);
                     clearPin();
                     return; 
