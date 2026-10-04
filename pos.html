@@ -1544,35 +1544,8 @@
             document.getElementById("cancelEditBtn").classList.add("hidden");
         }
 
-        // --- CREATE NEW EMAIL ADMIN ---
-        function registerNewAdmin() {
-            const email = document.getElementById("email").value.trim();
-            const password = document.getElementById("password").value.trim();
-            const errorMsg = document.getElementById("errorMessage");
 
-            if (!email || !password) {
-                return errorMsg.innerText = "Please type an email and password in the boxes above to register.";
-            }
-            if (password.length < 6) {
-                return errorMsg.innerText = "Password must be at least 6 characters long.";
-            }
-
-            // Ask for confirmation to prevent accidental account creation
-            const securityCheck = prompt("SECURITY CHECK: Type 'CONFIRM' to create a new Master Admin account.");
-            if (securityCheck !== "CONFIRM") return;
-
-            firebase.auth().createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    alert(`Success! Admin account created for ${email}. You can now log in.`);
-                    errorMsg.innerText = "";
-                })
-                .catch((error) => {
-                    console.error("Error registering:", error);
-                    errorMsg.innerText = error.message;
-                });
-        }
-
-        // --- 1. OVERRIDE: SECURE LOGIN WITH APPROVAL CHECK ---
+// --- 1. SECURE LOGIN WITH APPROVAL CHECK ---
         async function login() {
             const email = document.getElementById("email").value.trim();
             const password = document.getElementById("password").value.trim();
@@ -1588,7 +1561,6 @@
                 // SECURITY CHECK: Look up their approval status in the database
                 const adminDoc = await db.collection("admin_users").doc(uid).get();
                 
-                // If they have a record, check the status (Older, original accounts bypass this)
                 if (adminDoc.exists) {
                     if (adminDoc.data().status === "PENDING") {
                         await firebase.auth().signOut();
@@ -1610,7 +1582,7 @@
             }
         }
 
-        // --- 2. OVERRIDE: CREATE NEW EMAIL ADMIN ---
+        // --- 2. CREATE NEW EMAIL ADMIN (WITH GHOST LISTENER FIX) ---
         async function registerNewAdmin() {
             const email = document.getElementById("email").value.trim();
             const password = document.getElementById("password").value.trim();
@@ -1638,13 +1610,16 @@
                 
                 alert(`Registration successful! \n\n${email} is now PENDING APPROVAL. An existing admin must approve it from the dashboard before you can log in.`);
                 errorMsg.innerText = "";
-                document.getElementById("email").value = "";
-                document.getElementById("password").value = "";
+                
+                // ADDED: Instantly wipe the memory to kill ghost listeners and prevent permission errors
+                window.location.reload(); 
+
             } catch (error) {
                 console.error("Error registering:", error);
                 errorMsg.innerText = error.message;
             }
         }
+
         // --- 3. LOAD PENDING ADMIN REQUESTS ---
         function loadPendingAdmins() {
             const list = document.getElementById("pendingAdminsList");
