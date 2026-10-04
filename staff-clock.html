@@ -174,10 +174,12 @@
         function updatePinDisplay() { pinDisplay.innerText = "*".repeat(currentPin.length); }
 
       // --- CLOCK IN, OUT & BREAK LOGIC ---
+       // --- CLOCK IN, OUT & BREAK LOGIC ---
         async function processPunch(type) {
             if (currentPin.length !== 4) return alert("Please enter your 4-digit PIN.");
             
             try {
+                // 1. Find the Staff Member
                 const staffQuery = await db.collection("staff").where("pinCode", "==", currentPin).get();
                 if (staffQuery.empty) {
                     clearPin();
@@ -191,6 +193,16 @@
                 const shiftDateStr = now.toISOString().split('T')[0]; 
                 const batch = db.batch();
 
+                // 2. BYPASS INDEX ERROR: Find the active (open) shift log in Javascript
+                let openLogDoc = null;
+                const allStaffLogs = await db.collection("dtr_logs").where("staffId", "==", staffId).get();
+                allStaffLogs.forEach(doc => {
+                    if (doc.data().timeOut === null) {
+                        openLogDoc = doc;
+                    }
+                });
+
+                // 3. Process the punch request
                 if (type === 'IN') {
                     if (staffData.status === "CLOCKED_IN" || staffData.status === "ON_BREAK") {
                         clearPin();
@@ -220,12 +232,13 @@
                         return alert(`You must be actively clocked in to start a break.`);
                     }
 
-                    const logQuery = await db.collection("dtr_logs").where("staffId", "==", staffId).where("timeOut", "==", null).limit(1).get();
-                    if (!logQuery.empty) {
-                        batch.update(db.collection("dtr_logs").doc(logQuery.docs[0].id), { breakStart: firebase.firestore.FieldValue.serverTimestamp() });
+                    if (openLogDoc) {
+                        batch.update(db.collection("dtr_logs").doc(openLogDoc.id), { breakStart: firebase.firestore.FieldValue.serverTimestamp() });
                         batch.update(db.collection("staff").doc(staffId), { status: "ON_BREAK" });
                         await batch.commit();
                         alert(`☕ BREAK STARTED\nEnjoy your lunch, ${staffData.name}!\nReturn within 1 hour.`);
+                    } else {
+                        alert("Error: Could not find your active time-in record.");
                     }
                     
                 } else if (type === 'END_BREAK') {
@@ -234,14 +247,12 @@
                         return alert(`You are not currently on a break.`);
                     }
 
-                    const logQuery = await db.collection("dtr_logs").where("staffId", "==", staffId).where("timeOut", "==", null).limit(1).get();
-                    if (!logQuery.empty) {
-                        const logDoc = logQuery.docs[0];
-                        const breakStartMs = logDoc.data().breakStart.toDate().getTime();
+                    if (openLogDoc) {
+                        const breakStartMs = openLogDoc.data().breakStart.toDate().getTime();
                         const breakDurationMinutes = (now.getTime() - breakStartMs) / (1000 * 60);
                         const isLate = breakDurationMinutes > 60; // strict 1-hour limit
                         
-                        batch.update(db.collection("dtr_logs").doc(logDoc.id), { 
+                        batch.update(db.collection("dtr_logs").doc(openLogDoc.id), { 
                             breakEnd: firebase.firestore.FieldValue.serverTimestamp(),
                             lateFromBreak: isLate
                         });
@@ -253,6 +264,8 @@
                         } else {
                             alert(`▶️ BREAK ENDED\nWelcome back, ${staffData.name}!`);
                         }
+                    } else {
+                        alert("Error: Could not find your active time-in record.");
                     }
 
                 } else if (type === 'OUT') {
@@ -265,35 +278,35 @@
                         return alert(`Please END BREAK before Clocking Out for the day.`);
                     }
 
-                    const logQuery = await db.collection("dtr_logs").where("staffId", "==", staffId).where("timeOut", "==", null).limit(1).get();
-                    if (!logQuery.empty) {
-                        const logDoc = logQuery.docs[0];
-                        const timeInMs = logDoc.data().timeIn.toDate().getTime();
+                    if (openLogDoc) {
+                        const timeInMs = openLogDoc.data().timeIn.toDate().getTime();
                         
                         // Deduct break duration from total hours if they took one
                         let breakDeductionMs = 0;
-                        if (logDoc.data().breakStart && logDoc.data().breakEnd) {
-                            breakDeductionMs = logDoc.data().breakEnd.toDate().getTime() - logDoc.data().breakStart.toDate().getTime();
+                        if (openLogDoc.data().breakStart && openLogDoc.data().breakEnd) {
+                            breakDeductionMs = openLogDoc.data().breakEnd.toDate().getTime() - openLogDoc.data().breakStart.toDate().getTime();
                         }
                         
                         const netWorkedMs = (now.getTime() - timeInMs) - breakDeductionMs;
                         const hoursWorked = netWorkedMs / (1000 * 60 * 60);
 
-                        batch.update(db.collection("dtr_logs").doc(logDoc.id), {
+                        batch.update(db.collection("dtr_logs").doc(openLogDoc.id), {
                             timeOut: firebase.firestore.FieldValue.serverTimestamp(),
                             totalHours: parseFloat(hoursWorked.toFixed(2))
                         });
                         batch.update(db.collection("staff").doc(staffId), { status: "CLOCKED_OUT" });
                         await batch.commit();
                         alert(`👋 TIME OUT SUCCESS\nGoodbye, ${staffData.name}!`);
+                    } else {
+                        alert("Error: Could not find your active time-in record.");
                     }
                 }
 
                 clearPin();
 
             } catch (error) {
-                console.error(error);
-                alert("An error occurred connecting to the database.");
+                console.error("Firebase Error:", error);
+                alert("An error occurred connecting to the database. Please try again.");
             }
         }
     </script>
