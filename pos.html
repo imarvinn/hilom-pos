@@ -1441,7 +1441,66 @@
         document.addEventListener("DOMContentLoaded", () => {
             loadAdminMenuBoard();
         });
+// --- DELETE MENU ITEM ---
+        function deleteMenuItem(itemId) {
+            // Ask for confirmation to prevent accidental clicks
+            if (confirm("Are you sure you want to permanently delete this menu item?")) {
+                db.collection("menu").doc(itemId).delete()
+                  .then(() => {
+                      // It will automatically disappear from the grid because of onSnapshot!
+                      console.log("Item deleted successfully.");
+                  })
+                  .catch(err => {
+                      console.error("Error deleting item:", err);
+                      alert("Error deleting item. Check console.");
+                  });
+            }
+        }
 
+        // --- EDIT MENU ITEM ---
+        // Global variable to let the system know we are updating an existing item
+        let currentEditItemId = null;
+
+        function editMenuItem(itemId) {
+            // Smoothly scroll the screen up to the form
+            document.getElementById("menuFormCard").scrollIntoView({ behavior: 'smooth' });
+
+            // Fetch the item's current data from Firebase
+            db.collection("menu").doc(itemId).get().then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    
+                    // Populate the inputs with the existing data
+                    document.getElementById("newMenuName").value = data.name || "";
+                    document.getElementById("menuPrice").value = data.price || "";
+                    
+                    const catSelect = document.getElementById("menuCategory");
+                    if (catSelect) catSelect.value = data.category || "";
+
+                    // Set the system to "Edit Mode"
+                    currentEditItemId = itemId; 
+                    
+                    // Change the form visuals so you know you are editing
+                    document.getElementById("menuFormTitle").innerText = "Editing: " + data.name;
+                    document.getElementById("menuFormTitle").style.color = "#d4a373";
+                    document.getElementById("saveMenuBtn").innerText = "Update Menu Item";
+                    document.getElementById("cancelEditBtn").classList.remove("hidden");
+                }
+            }).catch(err => console.error("Error fetching item:", err));
+        }
+
+        // --- OVERRIDE RESET FORM ---
+        // Ensure the form goes back to normal when you cancel an edit
+        function resetMenuForm() {
+            currentEditItemId = null;
+            document.getElementById("newMenuName").value = "";
+            document.getElementById("menuPrice").value = "";
+            
+            document.getElementById("menuFormTitle").innerText = "Create New Menu Item";
+            document.getElementById("menuFormTitle").style.color = "#333";
+            document.getElementById("saveMenuBtn").innerText = "Save Menu Recipe";
+            document.getElementById("cancelEditBtn").classList.add("hidden");
+        }
   </script>
 
   <!-- Document Preview Modal -->
