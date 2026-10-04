@@ -1075,8 +1075,8 @@
 
             try {
                 // 2. Fetch Rooms and Reservations
-                const roomsSnap = await db.collection("rooms").orderBy("number").get();
-                // Assumes your bookings are saved in 'reservations' with a status and checkIn/checkOut dates
+                // Ensure we order by roomNumber so the rack looks organized
+                const roomsSnap = await db.collection("rooms").orderBy("roomNumber").get();
                 const resSnap = await db.collection("reservations").where("status", "in", ["CONFIRMED", "CHECKED_IN"]).get();
                 
                 const reservations = [];
@@ -1094,14 +1094,16 @@
                 // 3. Build the Grid
                 roomsSnap.forEach(roomDoc => {
                     const room = roomDoc.data();
+                    // BUG FIX: Ensure we are reading the correct 'roomNumber' field, with a fallback to the document ID
+                    const currentRoomNo = room.roomNumber || roomDoc.id; 
                     
                     let rowHtml = `<tr>
                         <td style="padding: 10px; border-right: 2px solid #557a46; border-bottom: 1px solid #eee; position: sticky; left: 0; background: white; font-weight: bold; z-index: 5; text-align: left; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">
-                            ${room.number} <span style="font-size: 10px; color: #888; display: block; font-weight: normal;">${room.type || ''}</span>
+                            Room ${currentRoomNo} <span style="font-size: 10px; color: #888; display: block; font-weight: normal;">${room.roomType || ''}</span>
                         </td>`;
                         
                     days.forEach(day => {
-                        // Format JS Date to "YYYY-MM-DD" to match database strings
+                        // Format JS Date to "YYYY-MM-DD"
                         const offset = day.getTimezoneOffset()
                         const dateStr = new Date(day.getTime() - (offset*60*1000)).toISOString().split('T')[0]
                         
@@ -1109,8 +1111,8 @@
                         let guestInitials = "";
                         
                         for(let res of reservations) {
-                            if (res.roomNumber === room.number) {
-                                // Guest is booked if the calendar date is >= check-in AND < check-out (since checkout day is open for next guest)
+                            // BUG FIX: Match the reservation's roomNumber against the corrected currentRoomNo
+                            if (String(res.roomNumber) === String(currentRoomNo)) { 
                                 if (dateStr >= res.checkIn && dateStr < res.checkOut) {
                                     isBooked = true;
                                     guestInitials = (res.guestName || "RSV").substring(0,3).toUpperCase();
@@ -1139,7 +1141,7 @@
 
             } catch(e) {
                 console.error("Error loading calendar", e);
-                body.innerHTML = `<tr><td colspan="31" style="padding: 20px; color: #bd4b4b;">Error generating timeline. Ensure database security rules allow reading reservations.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="31" style="padding: 20px; color: #bd4b4b;">Error generating timeline.</td></tr>`;
             }
         }
 
