@@ -78,6 +78,18 @@ body {
         font-size: 14px !important;
         padding: 10px !important;
     }
+    /* Add this to your style.css */
+/* Hides the edit/delete buttons on the live POS grid */
+#posView .menu-item-edit-btn, 
+#posView .menu-item-delete-btn {
+    display: none !important; 
+}
+
+/* They will only show up inside the Menu Builder tab */
+#menuManageView .menu-item-edit-btn, 
+#menuManageView .menu-item-delete-btn {
+    display: block !important; 
+}
 }
 
 .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; animation: fadeIn 0.3s ease-in-out; }
