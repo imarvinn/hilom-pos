@@ -442,9 +442,8 @@
 
     <!-- ADMIN APPROVALS PANEL -->
     <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 20px;">
-        <h3 style="color: #8c5d3a; margin-top: 0; margin-bottom: 10px;">Pending Master Admin Requests</h3>
-        <p style="color: #666; font-size: 13px; margin-top: 0;">Approve or decline requests for full POS login access.</p>
-        
+        <h3 style="color: #8c5d3a; margin-top: 0; margin-bottom: 10px;">Pending Account Requests</h3>
+        <p style="color: #666; font-size: 13px; margin-top: 0;">Assign roles and approve requests for system access.</p>
         <div id="pendingAdminsList">
             <p style="color: #888; font-size: 13px; margin: 0;">Loading requests...</p>
         </div>
@@ -1332,12 +1331,13 @@
                     document.getElementById("loginScreen").classList.add("hidden");
                     document.getElementById("appScreen").classList.remove("hidden");
 
-                    // ==========================================
+// ==========================================
                     // NEW: ROLE-BASED ACCESS CONTROL (RBAC)
                     // ==========================================
-                    const adminData = adminDoc.data();
-                    const userRole = adminData.role || "Master"; // Older existing accounts default to Master
-
+                    let userRole = "Master"; // Default to Master for the original owner
+                    if (adminDoc.exists && adminDoc.data().role) {
+                        userRole = adminDoc.data().role;
+                    }
                     // First, explicitly show all tabs (resets the view if switching accounts)
                     document.getElementById("navFrontDesk").style.display = "block";
                     document.getElementById("navPos").style.display = "block";
