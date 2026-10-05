@@ -124,13 +124,13 @@
             <img src="hilom.png" alt="Hilom Logo" style="max-width: 180px; display: block; margin: 0 auto 10px auto; border-radius: 8px;">
             HILOM POS
         </div>
-        <button class="nav-btn" onclick="switchView('roomsView', this); loadBookingCalendar();"> Front Desk Rack</button>
-        <button class="nav-btn active" onclick="switchView('posView', this)"> POS / Ordering</button>
-        <button class="nav-btn" onclick="switchView('kitchenView', this)"> Kitchen KDS</button>
-        <button class="nav-btn" onclick="switchView('inventoryView', this)"> Inventory Mgmt</button>
-        <button class="nav-btn" onclick="switchView('menuManageView', this)"> Menu Builder</button>
-        <button class="nav-btn" onclick="switchView('salesView', this)"> Sales & Reports</button>
-        <button class="nav-btn" onclick="switchView('timeClockView', this); loadAttendanceLogs();"> Time Clock</button>
+        <button class="nav-btn" id="navFrontDesk" onclick="switchView('roomsView', this); loadBookingCalendar();"> Front Desk Rack</button>
+        <button class="nav-btn active" id="navPos" onclick="switchView('posView', this)"> POS / Ordering</button>
+        <button class="nav-btn" id="navKitchen" onclick="switchView('kitchenView', this)"> Kitchen KDS</button>
+        <button class="nav-btn" id="navInv" onclick="switchView('inventoryView', this)"> Inventory Mgmt</button>
+        <button class="nav-btn" id="navMenu" onclick="switchView('menuManageView', this)"> Menu Builder</button>
+        <button class="nav-btn" id="navSales" onclick="switchView('salesView', this)"> Sales & Reports</button>
+        <button class="nav-btn" id="navTimeClock" onclick="switchView('timeClockView', this); loadAttendanceLogs();"> Time Clock</button>
         
         <button class="nav-btn logout-nav hidden" id="changePinBtn" onclick="openChangePinModal()" style="margin-top: auto;">🔑 Change PIN</button>
         <button class="nav-btn logout-nav hidden" id="lockBtn" onclick="lockAdmin()" style="margin-top: 5px;">🔒 Lock Admin</button>
@@ -1330,11 +1330,50 @@
                         return; // Kick them out instantly if PENDING or DECLINED
                     }
 
-                    // UI FIX: Hide Login Screen, Show Dashboard securely
                     document.getElementById("loginScreen").classList.add("hidden");
                     document.getElementById("appScreen").classList.remove("hidden");
 
-                    // SAFE STARTUP: Fire all data scripts ONLY now that we are 100% secure
+                    // ==========================================
+                    // NEW: ROLE-BASED ACCESS CONTROL (RBAC)
+                    // ==========================================
+                    const adminData = adminDoc.data();
+                    const userRole = adminData.role || "Master"; // Older existing accounts default to Master
+
+                    // First, explicitly show all tabs (resets the view if switching accounts)
+                    document.getElementById("navFrontDesk").style.display = "block";
+                    document.getElementById("navPos").style.display = "block";
+                    document.getElementById("navKitchen").style.display = "block";
+                    document.getElementById("navInv").style.display = "block";
+                    document.getElementById("navMenu").style.display = "block";
+                    document.getElementById("navSales").style.display = "block";
+
+                    if (userRole === "Front Desk") {
+                        // Hide restricted tabs from Front Desk Staff
+                        document.getElementById("navPos").style.display = "none";
+                        document.getElementById("navKitchen").style.display = "none";
+                        document.getElementById("navInv").style.display = "none";
+                        document.getElementById("navMenu").style.display = "none";
+                        document.getElementById("navSales").style.display = "none";
+                        
+                        // Force the dashboard to open directly to the Rooms View
+                        document.getElementById("navFrontDesk").click();
+
+                    } else if (userRole === "F&B") {
+                        // Hide restricted tabs from Waiter / F&B Staff
+                        document.getElementById("navFrontDesk").style.display = "none";
+                        document.getElementById("navInv").style.display = "none";
+                        document.getElementById("navMenu").style.display = "none";
+                        document.getElementById("navSales").style.display = "none";
+                        
+                        // Force the dashboard to open directly to the POS View
+                        document.getElementById("navPos").click();
+
+                    } else {
+                        // Master Admin (ensure all tabs are visible)
+                        document.getElementById("navPos").click();
+                    }
+
+                    // SAFE STARTUP: Fire data scripts ONLY now that security clearance is verified
                     if (typeof listenForWebReservations === "function") listenForWebReservations(); 
                     if (typeof loadAdminMenuBoard === "function") loadAdminMenuBoard();
                     if (typeof loadMenu === "function") loadMenu();
@@ -1435,9 +1474,15 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 8px;">
                             <div>
                                 <strong style="color: #333;">${data.email}</strong>
-                                <span style="font-size: 11px; color: #888; display: block;">Requested Master Admin Access</span>
+                                <span style="font-size: 11px; color: #888; display: block;">Requested Login Access</span>
                             </div>
-                            <div style="display: flex; gap: 5px;">
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <select id="role-${doc.id}" style="padding: 5px; border-radius: 4px; font-size: 11px; border: 1px solid #ccc;">
+                                    <option value="Master">Master Admin</option>
+                                    <option value="Front Desk">Front Desk Only</option>
+                                    <!-- NEW: Waiter / F&B Role -->
+                                    <option value="F&B">Waiter / F&B</option>
+                                </select>
                                 <button onclick="approveAdmin('${doc.id}', '${data.email}')" style="background: #557a46; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Approve</button>
                                 <button onclick="declineAdmin('${doc.id}', '${data.email}')" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Decline</button>
                             </div>
@@ -1448,9 +1493,13 @@
         }
 
         async function approveAdmin(uid, email) {
-            if(confirm(`Approve ${email} as a Master Admin?`)) {
-                await db.collection("admin_users").doc(uid).update({ status: "APPROVED" });
-                alert(`${email} is now approved.`);
+            const selectedRole = document.getElementById(`role-${uid}`).value;
+            if(confirm(`Approve ${email} as a ${selectedRole}?`)) {
+                await db.collection("admin_users").doc(uid).update({ 
+                    status: "APPROVED",
+                    role: selectedRole 
+                });
+                alert(`${email} is now approved as a ${selectedRole}.`);
             }
         }
         
