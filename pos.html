@@ -182,8 +182,9 @@
             <!-- ================= VIEW 2: INVENTORY ================= -->
         <div id="inventoryView" class="view-section hidden">
             <div class="no-print" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <button id="tabLiveInventory" style="flex: 1; padding: 12px; font-size: 16px; background-color: #557a46; color: white;" onclick="switchInvTab('live')">📋 Live Inventory Tracker</button>
-                <button id="tabShiftAnalysis" style="flex: 1; padding: 12px; font-size: 16px; background-color: #e0e5e0; color: #333;" onclick="switchInvTab('analysis')">📊 Shift Stock Analysis</button>
+                <button id="tabLiveInventory" style="flex: 1; padding: 12px; font-size: 16px; background-color: #557a46; color: white;" onclick="switchInvTab('live')"> Live Inventory Tracker</button>
+                <button id="tabShiftAnalysis" style="flex: 1; padding: 12px; font-size: 16px; background-color: #e0e5e0; color: #333;" onclick="switchInvTab('analysis')"> Shift Stock Analysis</button>
+                <button id="tabFixedAssets" style="flex: 1; padding: 12px; font-size: 16px; background-color: #e0e5e0; color: #333;" onclick="switchInvTab('assets')"> Fixed Assets</button>
             </div>
 
             <!-- LIVE INVENTORY CARD -->
@@ -215,6 +216,39 @@
                     <tbody id="inventoryReportList"></tbody>
                 </table>
                 <div id="reportPagination" class="pagination-controls no-print"></div>
+            </div>
+
+            <!-- FIXED ASSETS CARD -->
+            <div class="card hidden" id="assetsCard">
+                <h2 style="color: #2b4227;">Fixed Assets & Equipment</h2>
+                <p style="color: #666; font-size: 14px; margin-top: 0; margin-bottom: 15px;">Track non-consumable items like tables, chairs, linens, and appliances.</p>
+                
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
+                    <input type="text" id="assetName" placeholder="Item Name (e.g., Pool Towel)" required style="flex: 1; min-width: 150px; margin: 0;">
+                    <select id="assetCategory" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin: 0;">
+                        <option value="Linens">Linens & Towels</option>
+                        <option value="Furniture">Furniture</option>
+                        <option value="Appliances">Appliances</option>
+                        <option value="Decor">Decor & Fixtures</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="number" id="assetQty" placeholder="Total Qty" required style="width: 100px; margin: 0;">
+                    <button class="add-btn no-print" onclick="addAsset()" style="margin: 0;">+ Add Asset</button>
+                </div>
+                
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Total Quantity</th>
+                            <th class="no-print">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assetsList">
+                        <tr><td colspan="4" style="text-align: center; color: #888; padding: 15px;">Loading assets...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -1380,7 +1414,7 @@ if (userRole === "Front Desk") {
     document.getElementById("navInv").style.display = "none";
     document.getElementById("navMenu").style.display = "none";
     document.getElementById("navSales").style.display = "none";
-    document.getElementById("navTimeClock").style.display = "none"; // HIDE TIME CLOCK
+    document.getElementById("navTimeClock").style.display = "none"; 
     
     // Force the dashboard to open directly to the Kitchen KDS
     document.getElementById("navKitchen").click();
