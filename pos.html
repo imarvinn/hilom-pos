@@ -946,6 +946,22 @@
         <div class="receipt-footer">END OF X-READ<br>Not a shift closure.</div>
     </div>
 
+<!-- ADD EXTRA CHARGE MODAL -->
+    <div id="extraChargeModal" class="modal-overlay hidden" style="z-index: 2600;">
+        <div class="modal-content" style="max-width: 350px; text-align: left;">
+            <h2 style="border-bottom: none; color: #2b4227; margin-top: 0; margin-bottom: 5px;">Add Extra Charge</h2>
+            <p style="color: #666; font-size: 13px; margin-top: 0; margin-bottom: 15px;">Enter details for the additional folio charge.</p>
+
+            <input type="text" id="extraChargeDesc" placeholder="Description (e.g., Extra Bedding, Laundry)" style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
+            <input type="number" id="extraChargeAmount" placeholder="Amount (₱)" style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px;">
+
+            <div style="display: flex; gap: 10px;">
+                <button class="add-btn" style="flex: 2; padding: 12px; background: #557a46; font-size: 15px;" onclick="confirmExtraCharge()">✔️ Add Charge</button>
+                <button class="delete-btn" style="flex: 1; padding: 12px; font-size: 15px;" onclick="closeExtraChargeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
 <!-- DEDICATED ROOM FOLIO MODAL -->
 <div id="folioModal" class="modal-overlay hidden" style="z-index: 2500;">
     <div class="modal-content" style="max-width: 450px;">

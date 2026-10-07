@@ -442,17 +442,35 @@ function deleteRoom(roomId) {
 }
 
 // --- ADD EXTRA CUSTOM CHARGE TO FOLIO (e.g., Beddings) ---
-async function addFolioCharge() {
-    if (!activeFolioData || !activeFolioRoomId) return;
 
-    const chargeName = prompt("Enter charge description (e.g., Extra Bedding, Laundry):", "Extra Bedding");
-    if (!chargeName) return;
+// 1. Open the custom modal instead of the browser prompt
+function addFolioCharge() {
+    if (!activeFolioData || !activeFolioRoomId) return;
     
-    const chargeAmtStr = prompt(`Enter amount for ${chargeName} (₱):`, "500");
-    if (!chargeAmtStr) return;
+    // Clear previous inputs
+    document.getElementById("extraChargeDesc").value = "";
+    document.getElementById("extraChargeAmount").value = "";
     
-    const amount = parseFloat(chargeAmtStr);
-    if (isNaN(amount) || amount <= 0) return showToast("Invalid amount entered.");
+    // Show the modal
+    document.getElementById("extraChargeModal").classList.remove("hidden");
+}
+
+// 2. Close the modal
+function closeExtraChargeModal() {
+    document.getElementById("extraChargeModal").classList.add("hidden");
+}
+
+// 3. Process the data when they click "✔️ Add Charge"
+async function confirmExtraCharge() {
+    const chargeName = document.getElementById("extraChargeDesc").value.trim();
+    const amount = parseFloat(document.getElementById("extraChargeAmount").value);
+
+    if (!chargeName || isNaN(amount) || amount <= 0) {
+        return showToast("Please enter a valid description and amount.");
+    }
+
+    // Close the popup window
+    closeExtraChargeModal();
 
     const folioRef = db.collection("folios").doc(activeFolioData.id);
 
