@@ -1333,18 +1333,30 @@
                 });
                 
                 for (const [category, items] of Object.entries(categories)) {
-                    let catHTML = `<h4 style="width: 100%; border-bottom: 2px solid #e0e5e0; padding-bottom: 5px; margin-top: 15px; margin-bottom: 15px; color: #2b4227; text-transform: uppercase;">${category}</h4><div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">`;
+                    // Modernized Category Header and Grid Layout
+                    let catHTML = `
+                        <h4 style="width: 100%; border-bottom: 2px solid #e0e5e0; padding-bottom: 5px; margin-top: 25px; margin-bottom: 15px; color: #2b4227; font-size: 16px; letter-spacing: 0.5px; text-transform: uppercase;">${category}</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    `;
+                    
                     items.forEach(item => {
+                        // Professional Card Design with Integrated Footer Buttons
                         catHTML += `
-                            <div style="position: relative; background: #f9f9f9; border: 1px solid #ccc; border-radius: 8px; padding: 15px; width: 140px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                <div style="font-weight: bold; color: #333; margin-bottom: 5px; font-size: 14px; line-height: 1.2;">${item.name}</div>
-                                <div style="color: #557a46; font-size: 13px; font-weight: bold;">₱${parseFloat(item.price).toFixed(2)}</div>
-                                <button onclick="editMenuItem('${item.id}')" style="position: absolute; top: -10px; right: 25px; background: #d4a373; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Edit">✏️</button>
-                                <button onclick="deleteMenuItem('${item.id}')" style="position: absolute; top: -10px; right: -10px; background: #bd4b4b; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Delete">❌</button>
+                            <div style="background: white; border: 1px solid #e0e5e0; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="padding: 15px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
+                                    <div style="font-weight: 600; color: #333; margin-bottom: 6px; font-size: 14px; line-height: 1.3;">${item.name}</div>
+                                    <div style="color: #557a46; font-size: 15px; font-weight: bold;">₱${parseFloat(item.price).toFixed(2)}</div>
+                                </div>
+                                <div style="display: flex; border-top: 1px solid #eee; background: #fcfbf8;">
+                                    <button onclick="editMenuItem('${item.id}')" style="flex: 1; padding: 10px 0; background: transparent; color: #8c5d3a; border: none; border-right: 1px solid #eee; cursor: pointer; font-size: 13px; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.background='#f4f6f4'" onmouseout="this.style.background='transparent'">Edit</button>
+                                    <button onclick="deleteMenuItem('${item.id}')" style="flex: 1; padding: 10px 0; background: transparent; color: #bd4b4b; border: none; cursor: pointer; font-size: 13px; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.background='#ffebee'" onmouseout="this.style.background='transparent'">Delete</button>
+                                </div>
                             </div>
                         `;
                     });
-                    catHTML += `</div>`; adminGrid.innerHTML += catHTML;
+                    
+                    catHTML += `</div>`; 
+                    adminGrid.innerHTML += catHTML;
                 }
             });
         }
