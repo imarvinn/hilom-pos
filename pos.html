@@ -1333,46 +1333,62 @@
                     document.getElementById("loginScreen").classList.add("hidden");
                     document.getElementById("appScreen").classList.remove("hidden");
 
-// ==========================================
-                    // NEW: ROLE-BASED ACCESS CONTROL (RBAC)
                     // ==========================================
-                    let userRole = "Master"; // Default to Master for the original owner
-                    if (adminDoc.exists && adminDoc.data().role) {
-                        userRole = adminDoc.data().role;
-                    }
-                    // First, explicitly show all tabs (resets the view if switching accounts)
-                    document.getElementById("navFrontDesk").style.display = "block";
-                    document.getElementById("navPos").style.display = "block";
-                    document.getElementById("navKitchen").style.display = "block";
-                    document.getElementById("navInv").style.display = "block";
-                    document.getElementById("navMenu").style.display = "block";
-                    document.getElementById("navSales").style.display = "block";
+// NEW: ROLE-BASED ACCESS CONTROL (RBAC)
+// ==========================================
+let userRole = "Master"; // Default to Master for the original owner
+if (adminDoc.exists && adminDoc.data().role) {
+    userRole = adminDoc.data().role;
+}
 
-                    if (userRole === "Front Desk") {
-                        // Hide restricted tabs from Front Desk Staff
-                        document.getElementById("navPos").style.display = "none";
-                        document.getElementById("navKitchen").style.display = "none";
-                        document.getElementById("navInv").style.display = "none";
-                        document.getElementById("navMenu").style.display = "none";
-                        document.getElementById("navSales").style.display = "none";
-                        
-                        // Force the dashboard to open directly to the Rooms View
-                        document.getElementById("navFrontDesk").click();
+// First, explicitly show all tabs (resets the view if switching accounts)
+document.getElementById("navFrontDesk").style.display = "block";
+document.getElementById("navPos").style.display = "block";
+document.getElementById("navKitchen").style.display = "block";
+document.getElementById("navInv").style.display = "block";
+document.getElementById("navMenu").style.display = "block";
+document.getElementById("navSales").style.display = "block";
+document.getElementById("navTimeClock").style.display = "block"; // Reset Time Clock
 
-                    } else if (userRole === "F&B") {
-                        // Hide restricted tabs from Waiter / F&B Staff
-                        document.getElementById("navFrontDesk").style.display = "none";
-                        document.getElementById("navInv").style.display = "none";
-                        document.getElementById("navMenu").style.display = "none";
-                        document.getElementById("navSales").style.display = "none";
-                        
-                        // Force the dashboard to open directly to the POS View
-                        document.getElementById("navPos").click();
+if (userRole === "Front Desk") {
+    // Hide restricted tabs from Front Desk Staff
+    document.getElementById("navPos").style.display = "none";
+    document.getElementById("navKitchen").style.display = "none";
+    document.getElementById("navInv").style.display = "none";
+    document.getElementById("navMenu").style.display = "none";
+    document.getElementById("navSales").style.display = "none";
+    document.getElementById("navTimeClock").style.display = "none"; // HIDE TIME CLOCK
+    
+    // Force the dashboard to open directly to the Rooms View
+    document.getElementById("navFrontDesk").click();
 
-                    } else {
-                        // Master Admin (ensure all tabs are visible)
-                        document.getElementById("navPos").click();
-                    }
+} else if (userRole === "F&B" || userRole === "Waiter") {
+    // Hide restricted tabs from Waiter / F&B Staff
+    document.getElementById("navFrontDesk").style.display = "none";
+    document.getElementById("navInv").style.display = "none";
+    document.getElementById("navMenu").style.display = "none";
+    document.getElementById("navSales").style.display = "none";
+    document.getElementById("navTimeClock").style.display = "none"; // HIDE TIME CLOCK
+    
+    // Force the dashboard to open directly to the POS View
+    document.getElementById("navPos").click();
+
+} else if (userRole === "Kitchen") {
+    // Hide restricted tabs from Kitchen Staff
+    document.getElementById("navFrontDesk").style.display = "none";
+    document.getElementById("navPos").style.display = "none";
+    document.getElementById("navInv").style.display = "none";
+    document.getElementById("navMenu").style.display = "none";
+    document.getElementById("navSales").style.display = "none";
+    document.getElementById("navTimeClock").style.display = "none"; // HIDE TIME CLOCK
+    
+    // Force the dashboard to open directly to the Kitchen KDS
+    document.getElementById("navKitchen").click();
+
+} else {
+    // Master Admin & Manager (All tabs remain visible)
+    document.getElementById("navPos").click();
+}
 
                     // SAFE STARTUP: Fire data scripts ONLY now that security clearance is verified
                     if (typeof listenForWebReservations === "function") listenForWebReservations(); 
