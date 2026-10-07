@@ -952,8 +952,12 @@
             <h2 style="border-bottom: none; color: #2b4227; margin-top: 0; margin-bottom: 5px;">Add Extra Charge</h2>
             <p style="color: #666; font-size: 13px; margin-top: 0; margin-bottom: 15px;">Enter details for the additional folio charge.</p>
 
-            <input type="text" id="extraChargeDesc" placeholder="Description (e.g., Extra Bedding, Laundry)" style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
-            <input type="number" id="extraChargeAmount" placeholder="Amount (₱)" style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px;">
+            <input type="text" id="extraChargeDesc" placeholder="Description (e.g., Extra Bedding)" style="width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="number" id="extraChargeQty" placeholder="Qty" value="1" min="1" style="flex: 1; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                <input type="number" id="extraChargeAmount" placeholder="Price per item (₱)" style="flex: 2; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
 
             <div style="display: flex; gap: 10px;">
                 <button class="add-btn" style="flex: 2; padding: 12px; background: #557a46; font-size: 15px;" onclick="confirmExtraCharge()">✔️ Add Charge</button>

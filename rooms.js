@@ -443,13 +443,16 @@ function deleteRoom(roomId) {
 
 // --- ADD EXTRA CUSTOM CHARGE TO FOLIO (e.g., Beddings) ---
 
-// 1. Open the custom modal instead of the browser prompt
+// --- ADD EXTRA CUSTOM CHARGE TO FOLIO ---
+
+// 1. Open the custom modal
 function addFolioCharge() {
     if (!activeFolioData || !activeFolioRoomId) return;
     
-    // Clear previous inputs
+    // Clear previous inputs & default Qty to 1
     document.getElementById("extraChargeDesc").value = "";
     document.getElementById("extraChargeAmount").value = "";
+    document.getElementById("extraChargeQty").value = "1";
     
     // Show the modal
     document.getElementById("extraChargeModal").classList.remove("hidden");
@@ -460,14 +463,19 @@ function closeExtraChargeModal() {
     document.getElementById("extraChargeModal").classList.add("hidden");
 }
 
-// 3. Process the data when they click "✔️ Add Charge"
+// 3. Process the data
 async function confirmExtraCharge() {
     const chargeName = document.getElementById("extraChargeDesc").value.trim();
-    const amount = parseFloat(document.getElementById("extraChargeAmount").value);
+    const qty = parseInt(document.getElementById("extraChargeQty").value) || 1;
+    const unitPrice = parseFloat(document.getElementById("extraChargeAmount").value);
 
-    if (!chargeName || isNaN(amount) || amount <= 0) {
-        return showToast("Please enter a valid description and amount.");
+    if (!chargeName || isNaN(unitPrice) || unitPrice <= 0 || qty <= 0) {
+        return showToast("Please enter a valid description, quantity, and price.");
     }
+
+    // Calculate the total cost for this line item
+    const totalAmount = unitPrice * qty;
+    const displaySummary = `Front Desk: ${qty}x ${chargeName}`;
 
     // Close the popup window
     closeExtraChargeModal();
@@ -476,19 +484,18 @@ async function confirmExtraCharge() {
 
     try {
         await folioRef.update({
-            // Reusing the posOrders array to keep the receipt formatting unified
             posOrders: firebase.firestore.FieldValue.arrayUnion({
-                itemsSummary: `Front Desk: ${chargeName}`,
-                amount: amount,
+                itemsSummary: displaySummary,
+                amount: totalAmount,
                 timestamp: new Date().toISOString()
             }),
-            posChargesTotal: firebase.firestore.FieldValue.increment(amount),
-            grandTotal: firebase.firestore.FieldValue.increment(amount)
+            posChargesTotal: firebase.firestore.FieldValue.increment(totalAmount),
+            grandTotal: firebase.firestore.FieldValue.increment(totalAmount)
         });
 
-        showToast(`₱${amount.toFixed(2)} charged to Room ${activeFolioRoomId} for ${chargeName}!`);
+        showToast(`₱${totalAmount.toFixed(2)} charged to Room ${activeFolioRoomId} for ${qty}x ${chargeName}!`);
         
-        // Temporarily store IDs, close, and immediately reopen to refresh the UI
+        // Refresh the UI
         const savedRoomId = activeFolioRoomId;
         const savedFolioId = activeFolioData.id;
         closeFolioModal();
