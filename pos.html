@@ -1409,24 +1409,24 @@
 firebase.auth().onAuthStateChanged(async (user) => {
     if (user) {
         try {
-            // GATEKEEPER CHECK: Ensure they are fully approved
+            // ==========================================
+            // GATEKEEPER CHECK: Ensure document exists AND is approved
+            // ==========================================
             const adminDoc = await db.collection("admin_users").doc(user.uid).get();
             
-            // THE FIX: If the doc doesn't exist yet OR they aren't approved, kick them out instantly
             if (!adminDoc.exists || adminDoc.data().status !== "APPROVED") {
                 await firebase.auth().signOut();
-                // Ensure the UI stays locked during the kick-out
                 document.getElementById("loginScreen").classList.remove("hidden");
                 document.getElementById("appScreen").classList.add("hidden");
-                return; // System secured. Stop all further script execution.
+                return; // System secured. Stop here.
             }
 
-            // --- ALL CODE BELOW THIS LINE ONLY RUNS FOR VERIFIED, APPROVED USERS ---
+            // --- ALL CODE BELOW ONLY RUNS FOR VERIFIED, APPROVED USERS ---
 
             document.getElementById("loginScreen").classList.add("hidden");
             document.getElementById("appScreen").classList.remove("hidden");
 
-            const userData = adminDoc.data(); 
+            const userData = adminDoc.data();
 
             // ==========================================
             // TRIGGER IT AUDIT LOGGER
@@ -1436,10 +1436,11 @@ firebase.auth().onAuthStateChanged(async (user) => {
             }
 
             // ==========================================
-            // ROLE-BASED ACCESS CONTROL (RBAC)
+            // ROLE-BASED ACCESS CONTROL (RBAC) UI ROUTING
             // ==========================================
             let userRole = userData.role ? userData.role : "Front Desk";
             
+            // Explicitly show all tabs to reset view
             document.getElementById("navFrontDesk").style.display = "block";
             document.getElementById("navPos").style.display = "block";
             document.getElementById("navKitchen").style.display = "block";
@@ -1499,12 +1500,15 @@ firebase.auth().onAuthStateChanged(async (user) => {
             // ==========================================
             // SAFE STARTUP: ROLE-RESTRICTED DATA LOADERS
             // ==========================================
+            
+            // 1. Data needed by ALL approved staff
             if (typeof loadSecuritySettings === "function") loadSecuritySettings();
             if (typeof loadMenu === "function") loadMenu();
             if (typeof loadCategories === "function") loadCategories();
             if (typeof loadActiveTables === "function") loadActiveTables();
             if (typeof loadAdminMenuBoard === "function") loadAdminMenuBoard();
 
+            // 2. Data strictly for MANAGEMENT
             if (userRole === "Master" || userRole === "Manager") {
                 if (typeof initializeConfig === "function") initializeConfig();
                 if (typeof loadPendingAdmins === "function") loadPendingAdmins();
@@ -1512,16 +1516,19 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 if (typeof loadPins === "function") loadPins();
             }
 
+            // 3. Data strictly for FRONT DESK and MANAGEMENT
             if (userRole === "Master" || userRole === "Manager" || userRole === "Front Desk") {
                 if (typeof listenForWebReservations === "function") listenForWebReservations(); 
                 if (typeof loadCalendar === "function") loadCalendar();
             }
 
         } catch (error) {
+            // Silently catch registration ghost loads without throwing red text
             console.warn("Awaiting full database approval...");
             await firebase.auth().signOut();
         }
     } else {
+        // If logged out, lock the UI down
         document.getElementById("loginScreen").classList.remove("hidden");
         document.getElementById("appScreen").classList.add("hidden");
     }
