@@ -1633,17 +1633,30 @@ firebase.auth().onAuthStateChanged(async (user) => {
             const list = document.getElementById("pendingAdminsList");
             if (!list) return;
 
-            db.collection("admin_users").where("status", "==", "PENDING").onSnapshot(snapshot => {
-                list.innerHTML = "";
-                if (snapshot.empty) return list.innerHTML = "<p style='color: #888; font-size: 13px; margin: 0;'>No pending requests.</p>";
+            db.collection("admin_users")
+              .where("status", "==", "PENDING")
+              .onSnapshot((snapshot) => {
+                
+                if (snapshot.empty) {
+                    list.innerHTML = "<p style='color: #888; font-size: 13px; margin: 0;'>No pending requests.</p>";
+                    return;
+                }
+                
+                let htmlStr = "";
                 
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    list.innerHTML += `
+                    const displayName = data.name || "Unknown Name";
+                    const displayEmail = data.email || "No Email";
+                    
+                    // Safely remove any quotes/apostrophes so it doesn't break the button's onclick code
+                    const safeName = displayName.replace(/['"]/g, "");
+                    
+                    htmlStr += `
                         <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 8px;">
                             <div>
-                                <strong style="color: #333;">${data.name || "Unknown Name"}</strong>
-                                <span style="font-size: 11px; color: #888; display: block;">${data.email}</span>
+                                <strong style="color: #333;">${displayName}</strong>
+                                <span style="font-size: 11px; color: #888; display: block;">${displayEmail}</span>
                             </div>
                             <div style="display: flex; gap: 5px; align-items: center;">
                                 <select id="role-${doc.id}" style="padding: 5px; border-radius: 4px; font-size: 11px; border: 1px solid #ccc;">
@@ -1653,12 +1666,20 @@ firebase.auth().onAuthStateChanged(async (user) => {
                                     <option value="Front Desk">Front Desk Only</option>
                                     <option value="F&B">Waiter / F&B</option>
                                 </select>
-                                <button onclick="approveAdmin('${doc.id}', '${data.name || data.email}')" style="background: #557a46; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Approve</button>
-                                <button onclick="declineAdmin('${doc.id}', '${data.name || data.email}')" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Decline</button>
+                                <button onclick="approveAdmin('${doc.id}', '${safeName}')" style="background: #557a46; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Approve</button>
+                                <button onclick="declineAdmin('${doc.id}', '${safeName}')" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Decline</button>
                             </div>
                         </div>
                     `;
                 });
+                
+                // Inject the safely built HTML into the container
+                list.innerHTML = htmlStr;
+                
+            }, (error) => {
+                // If Firebase blocks this for ANY reason, print the error directly to the panel
+                console.error("Error loading pending requests:", error);
+                list.innerHTML = `<p style="color: #bd4b4b; font-size: 13px; font-weight: bold; margin: 0;">Error loading requests: ${error.message}</p>`;
             });
         }
 
