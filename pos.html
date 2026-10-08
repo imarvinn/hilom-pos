@@ -1481,11 +1481,11 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 document.getElementById("navTimeClock").style.display = "block";
                 if (navAudit) navAudit.style.display = "block";
                 
-                // IT starts on Audit screen, Master/Manager start on POS
+                // IT starts on Audit screen, Master/Manager start on Front Desk
                 if (userRole === "IT" && navAudit) {
                     navAudit.click(); 
                 } else {
-                    document.getElementById("navPos").click(); 
+                    document.getElementById("navFrontDesk").click(); // Changed from navPos
                 }
 
             } else if (userRole === "Front Desk") {
