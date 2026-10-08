@@ -1405,11 +1405,7 @@
             });
         }
 
-        // =====================================================================
-        // --- FINAL CLEAN AUTHENTICATION & ADMIN SCRIPT BLOCK ---
-        // =====================================================================
-
-        // 1. MASTER STARTUP & SECURITY LISTENER
+// 1. MASTER STARTUP & SECURITY LISTENER
 firebase.auth().onAuthStateChanged(async (user) => {
     if (user) {
         try {
@@ -1509,15 +1505,30 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 document.getElementById("navPos").click();
             }
 
-            // SAFE STARTUP: Fire data scripts ONLY now that security clearance is verified
-            if (typeof listenForWebReservations === "function") listenForWebReservations(); 
-            if (typeof loadAdminMenuBoard === "function") loadAdminMenuBoard();
+            // ==========================================
+            // SAFE STARTUP: ROLE-RESTRICTED DATA LOADERS
+            // ==========================================
+            
+            // 1. Data needed by ALL approved staff
+            if (typeof loadSecuritySettings === "function") loadSecuritySettings();
             if (typeof loadMenu === "function") loadMenu();
             if (typeof loadCategories === "function") loadCategories();
             if (typeof loadActiveTables === "function") loadActiveTables();
-            if (typeof loadPendingAdmins === "function") loadPendingAdmins();
-            if (typeof initializeConfig === "function") initializeConfig();
-            if (typeof loadSecuritySettings === "function") loadSecuritySettings();
+            if (typeof loadAdminMenuBoard === "function") loadAdminMenuBoard();
+
+            // 2. Data strictly for MANAGEMENT
+            if (userRole === "Master" || userRole === "Manager") {
+                if (typeof initializeConfig === "function") initializeConfig();
+                if (typeof loadPendingAdmins === "function") loadPendingAdmins();
+                if (typeof loadInventory === "function") loadInventory();
+                if (typeof loadPins === "function") loadPins();
+            }
+
+            // 3. Data strictly for FRONT DESK and MANAGEMENT
+            if (userRole === "Master" || userRole === "Manager" || userRole === "Front Desk") {
+                if (typeof listenForWebReservations === "function") listenForWebReservations(); 
+                if (typeof loadCalendar === "function") loadCalendar();
+            }
 
         } catch (error) {
             console.error("Auth check error:", error);
