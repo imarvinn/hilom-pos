@@ -1622,8 +1622,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
                             <div style="display: flex; gap: 5px; align-items: center;">
                                 <select id="role-${doc.id}" style="padding: 5px; border-radius: 4px; font-size: 11px; border: 1px solid #ccc;">
                                     <option value="Master">Master Admin</option>
+                                    <option value="Manager">Manager</option>
+                                    <option value="IT">IT Support</option>
                                     <option value="Front Desk">Front Desk Only</option>
-                                    <!-- NEW: Waiter / F&B Role -->
                                     <option value="F&B">Waiter / F&B</option>
                                 </select>
                                 <button onclick="approveAdmin('${doc.id}', '${data.email}')" style="background: #557a46; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Approve</button>
