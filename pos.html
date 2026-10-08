@@ -1412,6 +1412,7 @@
 
 // 1. MASTER STARTUP & SECURITY LISTENER (pos.html)
 firebase.auth().onAuthStateChanged(async (user) => {
+    if (window.isRegistering) return;
     if (user) {
         try {
             // ==========================================
@@ -1592,6 +1593,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
             const securityCheck = prompt("SECURITY CHECK: Type 'CONFIRM' to request an account.");
             if (securityCheck !== "CONFIRM") return;
 
+            // 🚨 TURN ON THE PAUSE FLAG
+            window.isRegistering = true;
+
             try {
                 // 1. Create the Auth Account
                 const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
@@ -1609,10 +1613,16 @@ firebase.auth().onAuthStateChanged(async (user) => {
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
+                // 4. Safely sign them out of the pending account
                 await firebase.auth().signOut();
-                alert(`Registration successful!\n\n${fullName} (${email}) is now PENDING APPROVAL.`);
+                
+                // 5. Show the success popup!
+                alert(`Success! ${fullName} (${email}) has been registered and is PENDING APPROVAL.`);
                 window.location.reload(); 
+                
             } catch (error) {
+                // Turn security back on if it crashes
+                window.isRegistering = false;
                 console.error("Error registering:", error);
                 errorMsg.innerText = error.message;
             }
