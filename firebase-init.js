@@ -24,16 +24,6 @@ let currentSalesData = [];
 let currentExpensesData = [];
 let isAdminUnlocked = false; 
 let ADMIN_PIN = "1234";
-
-// Listen for PIN changes in the database
-db.collection("settings").doc("security").onSnapshot((doc) => {
-    if (doc.exists && doc.data().adminPin) {
-        ADMIN_PIN = doc.data().adminPin;
-    } else {
-        db.collection("settings").doc("security").set({ adminPin: "1234" });
-    }
-});
-
 let pendingViewId = ""; 
 let pendingNavElement = null;
 let currentPrintType = "";
@@ -46,16 +36,33 @@ function showToast(message) {
     setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
 }
 
-// NEW: SYSTEM CONFIG INITIALIZER
+// ========================================================
+// DELAYED LOADERS: Only fire these AFTER user is authorized
+// ========================================================
+
+function loadSecuritySettings() {
+    db.collection("settings").doc("security").onSnapshot((doc) => {
+        if (doc.exists && doc.data().adminPin) {
+            ADMIN_PIN = doc.data().adminPin;
+        } else {
+            // Failsafe if the document gets deleted
+            db.collection("settings").doc("security").set({ adminPin: "1234" }).catch(err => console.error(err));
+        }
+    });
+}
+
 async function initializeConfig() {
-    const configRef = db.collection('config').doc('system');
-    const doc = await configRef.get();
-    if (!doc.exists) {
-        await configRef.set({ invoiceCount: 1, zCount: 1, grandTotal: 0 });
+    try {
+        const configRef = db.collection('config').doc('system');
+        const doc = await configRef.get();
+        if (!doc.exists) {
+            await configRef.set({ invoiceCount: 1, zCount: 1, grandTotal: 0 });
+        }
+    } catch (err) {
+        console.error("Config init error:", err);
     }
 }
 
-// Remove the import statements and use the existing 'db' variable
 async function updatePinInDatabase(newPin) {
   try {
     await db.collection("settings").doc("security").update({

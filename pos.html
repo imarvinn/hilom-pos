@@ -1516,6 +1516,8 @@ firebase.auth().onAuthStateChanged(async (user) => {
             if (typeof loadCategories === "function") loadCategories();
             if (typeof loadActiveTables === "function") loadActiveTables();
             if (typeof loadPendingAdmins === "function") loadPendingAdmins();
+            if (typeof initializeConfig === "function") initializeConfig();
+            if (typeof loadSecuritySettings === "function") loadSecuritySettings();
 
         } catch (error) {
             console.error("Auth check error:", error);
