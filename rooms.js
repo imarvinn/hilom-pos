@@ -639,64 +639,63 @@ async function confirmFolioCheckout() {
     }
 }
 
-// --- 1. REAL-TIME LISTENER FOR WEB BOOKINGS (Index-Safe Version) ---
 function listenForWebReservations() {
-    db.collection("web_reservations")
-        .onSnapshot((snapshot) => {
-            const panel = document.getElementById("webReservationsPanel");
-            const list = document.getElementById("webReservationsList");
-            if (!list || !panel) return;
-            
-            list.innerHTML = "";
-
-            // Filter for PENDING in memory instead of relying on a Firestore index
-            const pendingDocs = [];
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                if (data.status === "PENDING") {
-                    pendingDocs.push({ id: doc.id, ...data });
-                }
-            });
-
-            if (pendingDocs.length === 0) {
-                panel.style.display = "none";
-                return;
+    db.collection("web_reservations").onSnapshot((snapshot) => {
+        const panel = document.getElementById("webReservationsPanel");
+        const list = document.getElementById("webReservationsList");
+        if (!list || !panel) return;
+        
+        list.innerHTML = "";
+        const pendingDocs = [];
+        
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            // Filter locally in memory to avoid any Firestore index blocks
+            if (data.status === "PENDING") {
+                pendingDocs.push({ id: doc.id, ...data });
             }
-
-            panel.style.display = "block"; // Show panel if there are pending bookings
-
-            pendingDocs.forEach((data) => {
-                // Calculate number of nights
-                const checkInDate = new Date(data.checkInDate);
-                const checkOutDate = new Date(data.checkOutDate);
-                const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
-                const nights = Math.ceil(timeDiff / (1000 * 3600 * 24)) || 1;
-
-                const card = document.createElement("div");
-                card.style.cssText = "background: white; padding: 12px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 250px;";
-                card.innerHTML = `
-                    <div style="font-weight: bold; font-size: 15px;">${data.guestName}</div>
-                    <div style="font-size: 12px; color: #555; margin-bottom: 5px;">📞 ${data.contact}</div>
-                    <div style="color: #557a46; font-weight: bold; font-size: 13px;">${data.roomType} Room</div>
-                    
-                    <div style="font-size: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc;">
-                        <strong>In:</strong> ${data.checkInDate} <br>
-                        <strong>Out:</strong> ${data.checkOutDate} (${nights} nights)
-                    </div>
-                    
-                    <div style="font-size: 12px; margin-top: 8px; background: #fff3cd; padding: 5px; border-radius: 4px;">
-                        <strong>Extras:</strong> ${data.addons || 'None'}<br>
-                        <strong>Est. Total:</strong> <span style="color: #bd4b4b; font-weight: bold;">${data.estimatedTotal || 'N/A'}</span>
-                    </div>
-
-                    <div style="display: flex; gap: 5px; margin-top: 10px;">
-                        <button onclick="approveWebReservation('${data.id}', '${data.guestName}', '${data.roomType}', ${nights}, '${data.checkInDate}', '${data.checkOutDate}')" style="background: #557a46; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Assign Room</button>
-                        <button onclick="rejectWebReservation('${data.id}')" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">X</button>
-                    </div>
-                `;
-                list.appendChild(card);
-            });
         });
+
+        if (pendingDocs.length === 0) {
+            panel.style.display = "none";
+            return;
+        }
+
+        panel.style.display = "block"; 
+
+        pendingDocs.forEach((data) => {
+            const checkInDate = new Date(data.checkInDate || Date.now());
+            const checkOutDate = new Date(data.checkOutDate || Date.now());
+            const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
+            const nights = Math.ceil(timeDiff / (1000 * 3600 * 24)) || 1;
+
+            const card = document.createElement("div");
+            card.style.cssText = "background: white; padding: 12px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 250px;";
+            card.innerHTML = `
+                <div style="font-weight: bold; font-size: 15px;">${data.guestName || "Guest"}</div>
+                <div style="font-size: 12px; color: #555; margin-bottom: 5px;">📞 ${data.contact || "N/A"}</div>
+                <div style="color: #557a46; font-weight: bold; font-size: 13px;">${data.roomType || "Standard"} Room</div>
+                
+                <div style="font-size: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc;">
+                    <strong>In:</strong> ${data.checkInDate} <br>
+                    <strong>Out:</strong> ${data.checkOutDate} (${nights} nights)
+                </div>
+                
+                <div style="font-size: 12px; margin-top: 8px; background: #fff3cd; padding: 5px; border-radius: 4px;">
+                    <strong>Extras:</strong> ${data.addons || 'None'}<br>
+                    <strong>Est. Total:</strong> <span style="color: #bd4b4b; font-weight: bold;">${data.estimatedTotal || 'N/A'}</span>
+                </div>
+
+                <div style="display: flex; gap: 5px; margin-top: 10px;">
+                    <button onclick="approveWebReservation('${data.id}', '${data.guestName}', '${data.roomType}', ${nights}, '${data.checkInDate}', '${data.checkOutDate}')" style="background: #557a46; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Assign Room</button>
+                    <button onclick="rejectWebReservation('${data.id}')" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">X</button>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+    }, (error) => {
+        console.error("Listener error:", error);
+    });
 }
 
 async function approveWebReservation(resId, guestName, roomType, nights, checkInStr, checkOutStr) {
