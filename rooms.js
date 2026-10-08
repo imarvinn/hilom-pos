@@ -650,7 +650,7 @@ function listenForWebReservations() {
         
         snapshot.forEach((doc) => {
             const data = doc.data();
-            // Filter locally in memory to avoid any Firestore index blocks
+            // Local memory filter bypasses missing index blocks
             if (data.status === "PENDING") {
                 pendingDocs.push({ id: doc.id, ...data });
             }
@@ -693,7 +693,9 @@ function listenForWebReservations() {
             `;
             list.appendChild(card);
         });
-    }, (error) => {
+   }, (error) => {
+        // Ignore permission-denied errors that happen naturally during logout transitions
+        if (error.code === "permission-denied") return;
         console.error("Listener error:", error);
     });
 }
