@@ -1328,13 +1328,6 @@
     window.currentCalendarReservations = reservations;
     body.innerHTML = "";
 
-    // FIX 1: Hide the spinner BEFORE returning if the database is empty
-    if(roomsSnap.empty) {
-        document.getElementById("roomRackContainer")?.style.setProperty("display", "none");
-        body.innerHTML = `<tr><td colspan="31" style="padding: 20px;">No rooms configured yet.</td></tr>`;
-        return;
-    }
-
     roomsSnap.forEach(roomDoc => {
         const room = roomDoc.data();
         const currentRoomNo = room.roomNumber || roomDoc.id; 
@@ -1368,14 +1361,8 @@
         rowHtml += `</tr>`; 
         body.innerHTML += rowHtml;
     });
-
-    // FIX 2: Hide the spinner after all the rooms are successfully built
-    document.getElementById("roomRackContainer")?.style.setProperty("display", "none");
-
 } catch (error) {
     console.error("Error loading calendar:", error);
-    // FIX 3: Also hide the spinner if it crashes, so it doesn't spin forever
-    document.getElementById("roomRackContainer")?.style.setProperty("display", "none");
 }
         }
 
