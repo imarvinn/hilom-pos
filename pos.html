@@ -1535,6 +1535,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
             if (userRole === "Master" || userRole === "Manager" || userRole === "Front Desk") {
                 if (typeof listenForWebReservations === "function") listenForWebReservations(); 
                 if (typeof loadCalendar === "function") loadCalendar();
+                if (typeof loadRoomRack === "function") loadRoomRack();
             }
 
         } catch (error) {
