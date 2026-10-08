@@ -76,32 +76,5 @@ function saveNewPin() {
     });
 }
 
-// --- AUTHENTICATION ---
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('appScreen').classList.remove('hidden');
-        
-        // NEW: Fetch the saved PIN from Firebase immediately on login
-        db.collection("settings").doc("security").get().then((doc) => {
-            if (doc.exists && doc.data().adminPin) {
-                ADMIN_PIN = doc.data().adminPin;
-            }
-        }).catch(err => console.error("Error loading PIN:", err));
-
-        initializeConfig(); 
-        loadCategories(); 
-        loadRoomRack(); 
-        loadInventory(); 
-        loadMenu(); 
-        filterSales(); 
-        loadActiveTables();
-        loadAttendanceLogs();
-    } else {
-        document.getElementById('loginScreen').classList.remove('hidden');
-        document.getElementById('appScreen').classList.add('hidden');
-    }
-});
-
 function login() { auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value).catch(() => document.getElementById('errorMessage').innerText = "Login failed."); }
 function logout() { auth.signOut(); }
