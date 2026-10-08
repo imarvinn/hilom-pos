@@ -1688,31 +1688,38 @@ firebase.auth().onAuthStateChanged(async (user) => {
         }
 async function logITAuditAccess(user, userData) {
     try {
-        // 1. Fetch public IP and location metadata using a free geo-IP API
-        let ipData = { query: "Unknown", city: "Unknown", region: "Unknown", country: "Unknown", isp: "Unknown", mobile: false };
+        // 1. Fetch public IP and location metadata with a reliable fallback
+        let ipData = { ip: "Unknown", city: "Unknown", region: "Unknown", country: "Unknown", org: "Unknown" };
         try {
             const response = await fetch('https://ipapi.co/json/');
             if (response.ok) {
                 ipData = await response.json();
+            } else {
+                // Fallback to ipify if ipapi limits requests
+                const fallbackRes = await fetch('https://api.ipify.org?format=json');
+                if (fallbackRes.ok) {
+                    const fallbackJson = await fallbackRes.json();
+                    ipData.ip = fallbackJson.ip;
+                }
             }
         } catch (ipErr) {
             console.warn("Could not fetch IP location details:", ipErr);
         }
 
-        // 2. Build the exact log payload matching your table structure
+        // 2. Build the audit record with the correct 'ip' property
         const auditRecord = {
             uid: user.uid,
             email: user.email || userData.email || "Unknown",
             name: userData.name || userData.fullName || user.displayName || "Administrator",
             role: userData.role || "Master",
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            ipAddress: ipData.query || "Unknown",
+            ipAddress: ipData.ip || ipData.query || "Unknown", // Fixed key mapping
             location: `${ipData.city || "Unknown"}, ${ipData.region || "Unknown"}, ${ipData.country || "Unknown"}`,
             isp: ipData.org || ipData.isp || "Unknown",
             networkType: ipData.mobile ? "Mobile / Cellular" : "Broadband / Fixed"
         };
 
-        // 3. Push the record into the audit_logs collection
+        // 3. Push to Firestore
         await db.collection("audit_logs").add(auditRecord);
         console.log("Audit log recorded successfully.");
 
