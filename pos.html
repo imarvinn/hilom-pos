@@ -1411,18 +1411,20 @@ firebase.auth().onAuthStateChanged(async (user) => {
         try {
             // GATEKEEPER CHECK: Ensure they are fully approved
             const adminDoc = await db.collection("admin_users").doc(user.uid).get();
-            if (adminDoc.exists && adminDoc.data().status !== "APPROVED") {
+            
+            // THE FIX: If the doc doesn't exist yet OR they aren't approved, kick them out instantly
+            if (!adminDoc.exists || adminDoc.data().status !== "APPROVED") {
                 await firebase.auth().signOut();
-                return; // Kick them out instantly if PENDING or DECLINED
+                return; // System secured.
             }
 
             document.getElementById("loginScreen").classList.add("hidden");
             document.getElementById("appScreen").classList.remove("hidden");
 
-            const userData = adminDoc.exists ? adminDoc.data() : {};
+            const userData = adminDoc.data(); // Safe to do now, because we know it exists
 
             // ==========================================
-            // NEW: TRIGGER IT AUDIT LOGGER
+            // TRIGGER IT AUDIT LOGGER
             // ==========================================
             if (typeof logITAuditAccess === "function") {
                 logITAuditAccess(user, userData);
@@ -1431,11 +1433,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
             // ==========================================
             // ROLE-BASED ACCESS CONTROL (RBAC)
             // ==========================================
-            let userRole = "Master"; // Default to Master for the original owner
-            if (userData.role) {
-                userRole = userData.role;
-            }
-
+            // If the database has no role, default to a safe, restricted fallback—NOT Master.
+            let userRole = userData.role ? userData.role : "Front Desk";
+            
             // First, explicitly show all tabs (resets the view if switching accounts)
             document.getElementById("navFrontDesk").style.display = "block";
             document.getElementById("navPos").style.display = "block";
@@ -1449,42 +1449,32 @@ firebase.auth().onAuthStateChanged(async (user) => {
             if (navAudit) navAudit.style.display = "none"; // Hide audit tab by default
 
             if (userRole === "Front Desk") {
-                // Hide restricted tabs from Front Desk Staff
                 document.getElementById("navPos").style.display = "none";
                 document.getElementById("navKitchen").style.display = "none";
                 document.getElementById("navInv").style.display = "none";
                 document.getElementById("navMenu").style.display = "none";
                 document.getElementById("navSales").style.display = "none";
                 document.getElementById("navTimeClock").style.display = "none"; 
-                
-                // Force the dashboard to open directly to the Rooms View
                 document.getElementById("navFrontDesk").click();
 
             } else if (userRole === "F&B" || userRole === "Waiter") {
-                // Hide restricted tabs from Waiter / F&B Staff
                 document.getElementById("navFrontDesk").style.display = "none";
                 document.getElementById("navInv").style.display = "none";
                 document.getElementById("navMenu").style.display = "none";
                 document.getElementById("navSales").style.display = "none";
                 document.getElementById("navTimeClock").style.display = "none"; 
-                
-                // Force the dashboard to open directly to the POS View
                 document.getElementById("navPos").click();
 
             } else if (userRole === "Kitchen") {
-                // Hide restricted tabs from Kitchen Staff
                 document.getElementById("navFrontDesk").style.display = "none";
                 document.getElementById("navPos").style.display = "none";
                 document.getElementById("navInv").style.display = "none";
                 document.getElementById("navMenu").style.display = "none";
                 document.getElementById("navSales").style.display = "none";
                 document.getElementById("navTimeClock").style.display = "none"; 
-                
-                // Force the dashboard to open directly to the Kitchen KDS
                 document.getElementById("navKitchen").click();
 
             } else if (userRole === "IT") {
-                // NEW: Hide all operational tabs from IT Staff
                 document.getElementById("navFrontDesk").style.display = "none";
                 document.getElementById("navPos").style.display = "none";
                 document.getElementById("navKitchen").style.display = "none";
@@ -1492,15 +1482,13 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 document.getElementById("navMenu").style.display = "none";
                 document.getElementById("navSales").style.display = "none";
                 document.getElementById("navTimeClock").style.display = "none"; 
-                
-                // Force the dashboard to open directly to the IT Audit Logs
                 if (navAudit) {
                     navAudit.style.display = "block";
                     navAudit.click();
                 }
 
             } else {
-                // Master Admin & Manager (All tabs remain visible)
+                // Master Admin & Manager
                 if (navAudit) navAudit.style.display = "block";
                 document.getElementById("navPos").click();
             }
@@ -1508,15 +1496,12 @@ firebase.auth().onAuthStateChanged(async (user) => {
             // ==========================================
             // SAFE STARTUP: ROLE-RESTRICTED DATA LOADERS
             // ==========================================
-            
-            // 1. Data needed by ALL approved staff
             if (typeof loadSecuritySettings === "function") loadSecuritySettings();
             if (typeof loadMenu === "function") loadMenu();
             if (typeof loadCategories === "function") loadCategories();
             if (typeof loadActiveTables === "function") loadActiveTables();
             if (typeof loadAdminMenuBoard === "function") loadAdminMenuBoard();
 
-            // 2. Data strictly for MANAGEMENT
             if (userRole === "Master" || userRole === "Manager") {
                 if (typeof initializeConfig === "function") initializeConfig();
                 if (typeof loadPendingAdmins === "function") loadPendingAdmins();
@@ -1524,17 +1509,17 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 if (typeof loadPins === "function") loadPins();
             }
 
-            // 3. Data strictly for FRONT DESK and MANAGEMENT
             if (userRole === "Master" || userRole === "Manager" || userRole === "Front Desk") {
                 if (typeof listenForWebReservations === "function") listenForWebReservations(); 
                 if (typeof loadCalendar === "function") loadCalendar();
             }
 
         } catch (error) {
-            console.error("Auth check error:", error);
+            // Silently catch the error during the split-second registration phase so it doesn't spam the console
+            console.warn("Awaiting full database approval...");
+            await firebase.auth().signOut();
         }
     } else {
-        // If logged out, lock the UI down
         document.getElementById("loginScreen").classList.remove("hidden");
         document.getElementById("appScreen").classList.add("hidden");
     }
