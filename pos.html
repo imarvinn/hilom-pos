@@ -1405,7 +1405,7 @@
             });
         }
 
-// 1. MASTER STARTUP & SECURITY LISTENER
+// 1. MASTER STARTUP & SECURITY LISTENER (pos.html)
 firebase.auth().onAuthStateChanged(async (user) => {
     if (user) {
         try {
@@ -1415,13 +1415,18 @@ firebase.auth().onAuthStateChanged(async (user) => {
             // THE FIX: If the doc doesn't exist yet OR they aren't approved, kick them out instantly
             if (!adminDoc.exists || adminDoc.data().status !== "APPROVED") {
                 await firebase.auth().signOut();
-                return; // System secured.
+                // Ensure the UI stays locked during the kick-out
+                document.getElementById("loginScreen").classList.remove("hidden");
+                document.getElementById("appScreen").classList.add("hidden");
+                return; // System secured. Stop all further script execution.
             }
+
+            // --- ALL CODE BELOW THIS LINE ONLY RUNS FOR VERIFIED, APPROVED USERS ---
 
             document.getElementById("loginScreen").classList.add("hidden");
             document.getElementById("appScreen").classList.remove("hidden");
 
-            const userData = adminDoc.data(); // Safe to do now, because we know it exists
+            const userData = adminDoc.data(); 
 
             // ==========================================
             // TRIGGER IT AUDIT LOGGER
@@ -1433,10 +1438,8 @@ firebase.auth().onAuthStateChanged(async (user) => {
             // ==========================================
             // ROLE-BASED ACCESS CONTROL (RBAC)
             // ==========================================
-            // If the database has no role, default to a safe, restricted fallback—NOT Master.
             let userRole = userData.role ? userData.role : "Front Desk";
             
-            // First, explicitly show all tabs (resets the view if switching accounts)
             document.getElementById("navFrontDesk").style.display = "block";
             document.getElementById("navPos").style.display = "block";
             document.getElementById("navKitchen").style.display = "block";
@@ -1446,7 +1449,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
             document.getElementById("navTimeClock").style.display = "block"; 
             
             const navAudit = document.getElementById("navAudit");
-            if (navAudit) navAudit.style.display = "none"; // Hide audit tab by default
+            if (navAudit) navAudit.style.display = "none"; 
 
             if (userRole === "Front Desk") {
                 document.getElementById("navPos").style.display = "none";
@@ -1515,7 +1518,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
             }
 
         } catch (error) {
-            // Silently catch the error during the split-second registration phase so it doesn't spam the console
             console.warn("Awaiting full database approval...");
             await firebase.auth().signOut();
         }
