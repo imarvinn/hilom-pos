@@ -639,29 +639,38 @@ async function confirmFolioCheckout() {
     }
 }
 
-// --- 1. REAL-TIME LISTENER FOR PENDING WEB BOOKINGS ---
+// --- 1. REAL-TIME LISTENER FOR WEB BOOKINGS (Index-Safe Version) ---
 function listenForWebReservations() {
-    db.collection("web_reservations").where("status", "==", "PENDING")
+    db.collection("web_reservations")
         .onSnapshot((snapshot) => {
             const panel = document.getElementById("webReservationsPanel");
             const list = document.getElementById("webReservationsList");
+            if (!list || !panel) return;
+            
             list.innerHTML = "";
 
-            if (snapshot.empty) {
+            // Filter for PENDING in memory instead of relying on a Firestore index
+            const pendingDocs = [];
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                if (data.status === "PENDING") {
+                    pendingDocs.push({ id: doc.id, ...data });
+                }
+            });
+
+            if (pendingDocs.length === 0) {
                 panel.style.display = "none";
                 return;
             }
 
             panel.style.display = "block"; // Show panel if there are pending bookings
 
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                
+            pendingDocs.forEach((data) => {
                 // Calculate number of nights
                 const checkInDate = new Date(data.checkInDate);
                 const checkOutDate = new Date(data.checkOutDate);
                 const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
-                const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                const nights = Math.ceil(timeDiff / (1000 * 3600 * 24)) || 1;
 
                 const card = document.createElement("div");
                 card.style.cssText = "background: white; padding: 12px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 250px;";
@@ -681,8 +690,8 @@ function listenForWebReservations() {
                     </div>
 
                     <div style="display: flex; gap: 5px; margin-top: 10px;">
-                        <button onclick="approveWebReservation('${doc.id}', '${data.guestName}', '${data.roomType}', ${nights}, '${data.checkInDate}', '${data.checkOutDate}')" style="background: #557a46; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Assign Room</button>
-                        <button onclick="rejectWebReservation('${doc.id}')" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">X</button>
+                        <button onclick="approveWebReservation('${data.id}', '${data.guestName}', '${data.roomType}', ${nights}, '${data.checkInDate}', '${data.checkOutDate}')" style="background: #557a46; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Assign Room</button>
+                        <button onclick="rejectWebReservation('${data.id}')" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">X</button>
                     </div>
                 `;
                 list.appendChild(card);
