@@ -1577,14 +1577,16 @@ firebase.auth().onAuthStateChanged(async (user) => {
             }
         }
 
-        // 3. LOGOUT OVERRIDE (Kills ghost listeners instantly)
         function logout() {
-            firebase.auth().signOut().then(() => {
-                window.location.reload(); // Force page refresh to wipe memory
-            }).catch((err) => {
-                window.location.reload(); 
-            });
-        }
+    // Stop real-time listeners so they don't fire during logout
+    if (typeof webReservationUnsubscribe === "function") {
+        webReservationUnsubscribe();
+    }
+
+    firebase.auth().signOut().then(() => {
+        window.location.reload();
+    });
+}
 
         async function registerNewAdmin() {
             const email = document.getElementById("email").value.trim();
