@@ -1330,7 +1330,7 @@
 
     // FIX 1: Hide the spinner BEFORE returning if the database is empty
     if(roomsSnap.empty) {
-        document.getElementById("loadingSpinner")?.style.setProperty("display", "none");
+        document.getElementById("roomRackContainer")?.style.setProperty("display", "none");
         body.innerHTML = `<tr><td colspan="31" style="padding: 20px;">No rooms configured yet.</td></tr>`;
         return;
     }
@@ -1370,12 +1370,12 @@
     });
 
     // FIX 2: Hide the spinner after all the rooms are successfully built
-    document.getElementById("loadingSpinner")?.style.setProperty("display", "none");
+    document.getElementById("roomRackContainer")?.style.setProperty("display", "none");
 
 } catch (error) {
     console.error("Error loading calendar:", error);
     // FIX 3: Also hide the spinner if it crashes, so it doesn't spin forever
-    document.getElementById("loadingSpinner")?.style.setProperty("display", "none");
+    document.getElementById("roomRackContainer")?.style.setProperty("display", "none");
 }
         }
 
