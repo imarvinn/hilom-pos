@@ -130,7 +130,7 @@
         <button class="nav-btn" id="navMenu" onclick="switchView('menuManageView', this)"> Menu Builder</button>
         <button class="nav-btn" id="navSales" onclick="switchView('salesView', this)"> Sales & Reports</button>
         <button class="nav-btn" id="navTimeClock" onclick="switchView('timeClockView', this); loadAttendanceLogs();"> Time Clock</button>
-        
+        <button id="navAudit" class="nav-btn" onclick="switchView('auditLogView', this); loadAuditLogs();" style="display: none;"> IT Audit Logs</button>
         <button class="nav-btn logout-nav hidden" id="changePinBtn" onclick="openChangePinModal()" style="margin-top: auto;">🔑 Change PIN</button>
         <button class="nav-btn logout-nav hidden" id="lockBtn" onclick="lockAdmin()" style="margin-top: 5px;">🔒 Lock Admin</button>
         <button class="nav-btn logout-nav" onclick="logout()" style="margin-top: 5px;"> Logout</button>
@@ -551,6 +551,29 @@
         <!-- New reservations will populate here dynamically -->
     </div>
 </div>
+</div>
+
+<!-- --- VIEW: IT AUDIT LOGS --- -->
+<div id="auditLogView" class="view-section hidden">
+    <h2 style="color: #2b4227;">System Access Audit Logs</h2>
+    <p style="color: #666; margin-bottom: 20px;">Real-time monitoring of authenticated system sessions, IPs, and locations.</p>
+    
+    <div class="card" style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+            <thead style="background: #e0e5e0; color: #333;">
+                <tr>
+                    <th style="padding: 10px;">Date & Time</th>
+                    <th style="padding: 10px;">User & Role</th>
+                    <th style="padding: 10px;">IP Address</th>
+                    <th style="padding: 10px;">Location & ISP</th>
+                    <th style="padding: 10px;">Network</th>
+                </tr>
+            </thead>
+            <tbody id="auditLogsTableBody">
+                <tr><td colspan="5" style="text-align: center; padding: 15px;">Loading logs...</td></tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
     </div> <!-- End Main Content -->
@@ -1387,93 +1410,122 @@
         // =====================================================================
 
         // 1. MASTER STARTUP & SECURITY LISTENER
-        firebase.auth().onAuthStateChanged(async (user) => {
-            if (user) {
-                try {
-                    // GATEKEEPER CHECK: Ensure they are fully approved
-                    const adminDoc = await db.collection("admin_users").doc(user.uid).get();
-                    if (adminDoc.exists && adminDoc.data().status !== "APPROVED") {
-                        await firebase.auth().signOut();
-                        return; // Kick them out instantly if PENDING or DECLINED
-                    }
-
-                    document.getElementById("loginScreen").classList.add("hidden");
-                    document.getElementById("appScreen").classList.remove("hidden");
-
-                    // ==========================================
-// NEW: ROLE-BASED ACCESS CONTROL (RBAC)
-// ==========================================
-let userRole = "Master"; // Default to Master for the original owner
-if (adminDoc.exists && adminDoc.data().role) {
-    userRole = adminDoc.data().role;
-}
-
-// First, explicitly show all tabs (resets the view if switching accounts)
-document.getElementById("navFrontDesk").style.display = "block";
-document.getElementById("navPos").style.display = "block";
-document.getElementById("navKitchen").style.display = "block";
-document.getElementById("navInv").style.display = "block";
-document.getElementById("navMenu").style.display = "block";
-document.getElementById("navSales").style.display = "block";
-document.getElementById("navTimeClock").style.display = "block"; // Reset Time Clock
-
-if (userRole === "Front Desk") {
-    // Hide restricted tabs from Front Desk Staff
-    document.getElementById("navPos").style.display = "none";
-    document.getElementById("navKitchen").style.display = "none";
-    document.getElementById("navInv").style.display = "none";
-    document.getElementById("navMenu").style.display = "none";
-    document.getElementById("navSales").style.display = "none";
-    document.getElementById("navTimeClock").style.display = "none"; // HIDE TIME CLOCK
-    
-    // Force the dashboard to open directly to the Rooms View
-    document.getElementById("navFrontDesk").click();
-
-} else if (userRole === "F&B" || userRole === "Waiter") {
-    // Hide restricted tabs from Waiter / F&B Staff
-    document.getElementById("navFrontDesk").style.display = "none";
-    document.getElementById("navInv").style.display = "none";
-    document.getElementById("navMenu").style.display = "none";
-    document.getElementById("navSales").style.display = "none";
-    document.getElementById("navTimeClock").style.display = "none"; // HIDE TIME CLOCK
-    
-    // Force the dashboard to open directly to the POS View
-    document.getElementById("navPos").click();
-
-} else if (userRole === "Kitchen") {
-    // Hide restricted tabs from Kitchen Staff
-    document.getElementById("navFrontDesk").style.display = "none";
-    document.getElementById("navPos").style.display = "none";
-    document.getElementById("navInv").style.display = "none";
-    document.getElementById("navMenu").style.display = "none";
-    document.getElementById("navSales").style.display = "none";
-    document.getElementById("navTimeClock").style.display = "none"; 
-    
-    // Force the dashboard to open directly to the Kitchen KDS
-    document.getElementById("navKitchen").click();
-
-} else {
-    // Master Admin & Manager (All tabs remain visible)
-    document.getElementById("navPos").click();
-}
-
-                    // SAFE STARTUP: Fire data scripts ONLY now that security clearance is verified
-                    if (typeof listenForWebReservations === "function") listenForWebReservations(); 
-                    if (typeof loadAdminMenuBoard === "function") loadAdminMenuBoard();
-                    if (typeof loadMenu === "function") loadMenu();
-                    if (typeof loadCategories === "function") loadCategories();
-                    if (typeof loadActiveTables === "function") loadActiveTables();
-                    if (typeof loadPendingAdmins === "function") loadPendingAdmins();
-
-                } catch (error) {
-                    console.error("Auth check error:", error);
-                }
-            } else {
-                // If logged out, lock the UI down
-                document.getElementById("loginScreen").classList.remove("hidden");
-                document.getElementById("appScreen").classList.add("hidden");
+firebase.auth().onAuthStateChanged(async (user) => {
+    if (user) {
+        try {
+            // GATEKEEPER CHECK: Ensure they are fully approved
+            const adminDoc = await db.collection("admin_users").doc(user.uid).get();
+            if (adminDoc.exists && adminDoc.data().status !== "APPROVED") {
+                await firebase.auth().signOut();
+                return; // Kick them out instantly if PENDING or DECLINED
             }
-        });
+
+            document.getElementById("loginScreen").classList.add("hidden");
+            document.getElementById("appScreen").classList.remove("hidden");
+
+            const userData = adminDoc.exists ? adminDoc.data() : {};
+
+            // ==========================================
+            // NEW: TRIGGER IT AUDIT LOGGER
+            // ==========================================
+            if (typeof logITAuditAccess === "function") {
+                logITAuditAccess(user, userData);
+            }
+
+            // ==========================================
+            // ROLE-BASED ACCESS CONTROL (RBAC)
+            // ==========================================
+            let userRole = "Master"; // Default to Master for the original owner
+            if (userData.role) {
+                userRole = userData.role;
+            }
+
+            // First, explicitly show all tabs (resets the view if switching accounts)
+            document.getElementById("navFrontDesk").style.display = "block";
+            document.getElementById("navPos").style.display = "block";
+            document.getElementById("navKitchen").style.display = "block";
+            document.getElementById("navInv").style.display = "block";
+            document.getElementById("navMenu").style.display = "block";
+            document.getElementById("navSales").style.display = "block";
+            document.getElementById("navTimeClock").style.display = "block"; 
+            
+            const navAudit = document.getElementById("navAudit");
+            if (navAudit) navAudit.style.display = "none"; // Hide audit tab by default
+
+            if (userRole === "Front Desk") {
+                // Hide restricted tabs from Front Desk Staff
+                document.getElementById("navPos").style.display = "none";
+                document.getElementById("navKitchen").style.display = "none";
+                document.getElementById("navInv").style.display = "none";
+                document.getElementById("navMenu").style.display = "none";
+                document.getElementById("navSales").style.display = "none";
+                document.getElementById("navTimeClock").style.display = "none"; 
+                
+                // Force the dashboard to open directly to the Rooms View
+                document.getElementById("navFrontDesk").click();
+
+            } else if (userRole === "F&B" || userRole === "Waiter") {
+                // Hide restricted tabs from Waiter / F&B Staff
+                document.getElementById("navFrontDesk").style.display = "none";
+                document.getElementById("navInv").style.display = "none";
+                document.getElementById("navMenu").style.display = "none";
+                document.getElementById("navSales").style.display = "none";
+                document.getElementById("navTimeClock").style.display = "none"; 
+                
+                // Force the dashboard to open directly to the POS View
+                document.getElementById("navPos").click();
+
+            } else if (userRole === "Kitchen") {
+                // Hide restricted tabs from Kitchen Staff
+                document.getElementById("navFrontDesk").style.display = "none";
+                document.getElementById("navPos").style.display = "none";
+                document.getElementById("navInv").style.display = "none";
+                document.getElementById("navMenu").style.display = "none";
+                document.getElementById("navSales").style.display = "none";
+                document.getElementById("navTimeClock").style.display = "none"; 
+                
+                // Force the dashboard to open directly to the Kitchen KDS
+                document.getElementById("navKitchen").click();
+
+            } else if (userRole === "IT") {
+                // NEW: Hide all operational tabs from IT Staff
+                document.getElementById("navFrontDesk").style.display = "none";
+                document.getElementById("navPos").style.display = "none";
+                document.getElementById("navKitchen").style.display = "none";
+                document.getElementById("navInv").style.display = "none";
+                document.getElementById("navMenu").style.display = "none";
+                document.getElementById("navSales").style.display = "none";
+                document.getElementById("navTimeClock").style.display = "none"; 
+                
+                // Force the dashboard to open directly to the IT Audit Logs
+                if (navAudit) {
+                    navAudit.style.display = "block";
+                    navAudit.click();
+                }
+
+            } else {
+                // Master Admin & Manager (All tabs remain visible)
+                if (navAudit) navAudit.style.display = "block";
+                document.getElementById("navPos").click();
+            }
+
+            // SAFE STARTUP: Fire data scripts ONLY now that security clearance is verified
+            if (typeof listenForWebReservations === "function") listenForWebReservations(); 
+            if (typeof loadAdminMenuBoard === "function") loadAdminMenuBoard();
+            if (typeof loadMenu === "function") loadMenu();
+            if (typeof loadCategories === "function") loadCategories();
+            if (typeof loadActiveTables === "function") loadActiveTables();
+            if (typeof loadPendingAdmins === "function") loadPendingAdmins();
+
+        } catch (error) {
+            console.error("Auth check error:", error);
+        }
+    } else {
+        // If logged out, lock the UI down
+        document.getElementById("loginScreen").classList.remove("hidden");
+        document.getElementById("appScreen").classList.add("hidden");
+    }
+});
 
         // 2. SECURE LOGIN
         async function login() {
@@ -1629,6 +1681,66 @@ if (userRole === "Front Desk") {
             document.getElementById("saveMenuBtn").innerText = "Save Menu Recipe";
             document.getElementById("cancelEditBtn").classList.add("hidden");
         }
+        // --- IT AUDIT LOG: CAPTURE LOGIN DETAILS ---
+async function logITAuditAccess(user, userData) {
+    if (sessionStorage.getItem("auditLogged") === "true") return;
+
+    try {
+        const userAgent = navigator.userAgent;
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        const networkType = connection ? connection.effectiveType : "Unknown Network";
+
+        const geoResponse = await fetch("https://ipapi.co/json/");
+        const geoData = await geoResponse.json();
+
+        await db.collection("audit_logs").add({
+            uid: user.uid,
+            email: user.email,
+            name: userData.name || "Unknown",
+            role: userData.role || "Unknown",
+            ipAddress: geoData.ip || "Hidden",
+            location: `${geoData.city}, ${geoData.region}, ${geoData.country_name}`,
+            isp: geoData.org || "Unknown ISP",
+            deviceInfo: userAgent,
+            networkConnection: networkType,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        sessionStorage.setItem("auditLogged", "true");
+    } catch (error) {
+        console.error("Failed to write audit log:", error);
+    }
+}
+
+// --- LOAD AUDIT LOGS INTO DASHBOARD ---
+function loadAuditLogs() {
+    const list = document.getElementById("auditLogsTableBody");
+    if (!list) return;
+
+    db.collection("audit_logs").orderBy("timestamp", "desc").limit(50).onSnapshot(snapshot => {
+        list.innerHTML = "";
+        
+        if (snapshot.empty) {
+            list.innerHTML = "<tr><td colspan='5' style='text-align: center; padding: 15px;'>No access logs recorded.</td></tr>";
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const timeString = data.timestamp ? data.timestamp.toDate().toLocaleString() : "Just now";
+            
+            list.innerHTML += `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px; color: #555;">${timeString}</td>
+                    <td style="padding: 10px;"><strong>${data.name}</strong><br><span style="font-size: 11px; color: #888;">${data.role}</span></td>
+                    <td style="padding: 10px; font-family: monospace; color: #bd4b4b;">${data.ipAddress}</td>
+                    <td style="padding: 10px;">${data.location}<br><span style="font-size: 11px; color: #888;">${data.isp}</span></td>
+                    <td style="padding: 10px;"><span style="background: #e0e5e0; padding: 3px 6px; border-radius: 4px; font-size: 11px;">${data.networkConnection}</span></td>
+                </tr>
+            `;
+        });
+    });
+}
 
   </script>
 
