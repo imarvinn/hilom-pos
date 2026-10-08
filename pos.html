@@ -464,6 +464,7 @@
                 <tr style="background: #e9ece9; border-bottom: 2px solid #557a46;">
                     <th style="padding: 12px;">Name</th>
                     <th style="padding: 12px;">Role</th>
+                    <th style="padding: 12px;">Email Address</th>
                     <th style="padding: 12px;">Contact No.</th>
                     <th style="padding: 12px;">Address</th>
                     <th style="padding: 12px;">Emergency Contact</th>
@@ -1280,6 +1281,7 @@
                     tr.innerHTML = `
                         <td style="padding: 12px; font-weight: bold; color: #333;">${data.name}</td>
                         <td style="padding: 12px;"><span style="background: #f4f6f4; border: 1px solid ${roleColor}; color: ${roleColor}; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">${data.role}</span></td>
+                        <td style="padding: 12px; color: #4a6fa5; font-weight: 500;">${data.email || "No Email"}</td>
                         <td style="padding: 12px; color: #555;">${data.contact || "N/A"}</td>
                         <td style="padding: 12px; color: #555;">${data.address || "N/A"}</td>
                         <td style="padding: 12px; color: #bd4b4b; font-weight: bold; font-size: 12px;">${data.emergencyContact || "N/A"}</td>
@@ -1677,8 +1679,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
                                         <option value="Front Desk">Front Desk Only</option>
                                         <option value="F&B">Waiter / F&B</option>
                                     </select>
-                                    <button onclick="approveAdmin('${doc.id}', '${safeName}')" style="background: #557a46; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Approve</button>
-                                    <button onclick="declineAdmin('${doc.id}', '${safeName}')" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Decline</button>
+                                <button onclick="approveAdmin('${doc.id}', '${safeName}', '${displayEmail}')" style="background: #557a46; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Approve</button>                                    <button onclick="declineAdmin('${doc.id}', '${safeName}')" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Decline</button>
                                 </div>
                             </div>
                         `;
@@ -1697,14 +1698,49 @@ firebase.auth().onAuthStateChanged(async (user) => {
             }
         }
 
-        async function approveAdmin(uid, email) {
+        async function approveAdmin(uid, name, email) {
             const selectedRole = document.getElementById(`role-${uid}`).value;
-            if(confirm(`Approve ${email} as a ${selectedRole}?`)) {
-                await db.collection("admin_users").doc(uid).update({ 
+            
+            // 1. Prompt for a PIN right when you hit approve
+            let pin = prompt(`Assign a 4-digit PIN for ${name}'s POS and Time Clock access:`);
+            if (!pin || pin.length !== 4 || isNaN(pin)) {
+                return alert("Approval cancelled: A valid 4-digit numeric PIN is required for staff access.");
+            }
+
+            if(confirm(`Approve ${name} as a ${selectedRole} with PIN ${pin}?`)) {
+                
+                // Use a batch to update both databases simultaneously
+                const batch = db.batch();
+                
+                // A. Approve their email login access
+                const adminRef = db.collection("admin_users").doc(uid);
+                batch.update(adminRef, { 
                     status: "APPROVED",
                     role: selectedRole 
                 });
-                alert(`${email} is now approved as a ${selectedRole}.`);
+
+                // B. Auto-generate their Staff Information profile
+                // We use their exact UID so the accounts stay perfectly linked
+                const staffRef = db.collection("staff").doc(uid); 
+                batch.set(staffRef, {
+                    name: name,
+                    email: email,       // Saves the email to the staff sheet!
+                    role: selectedRole,
+                    pinCode: pin,       // Injects the PIN you just typed
+                    contact: "N/A",
+                    address: "N/A",
+                    emergencyContact: "N/A",
+                    status: "CLOCKED_OUT",
+                    dateHired: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                try {
+                    await batch.commit();
+                    alert(`${name} is now approved! They have been automatically added to the Staff Directory.`);
+                } catch (error) {
+                    console.error("Error approving:", error);
+                    alert("Error saving approval. Check permissions.");
+                }
             }
         }
         
