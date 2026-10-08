@@ -1439,62 +1439,59 @@ firebase.auth().onAuthStateChanged(async (user) => {
             // ROLE-BASED ACCESS CONTROL (RBAC) UI ROUTING
             // ==========================================
             let userRole = userData.role ? userData.role : "Front Desk";
-            
-            // Explicitly show all tabs to reset view
-            document.getElementById("navFrontDesk").style.display = "block";
-            document.getElementById("navPos").style.display = "block";
-            document.getElementById("navKitchen").style.display = "block";
-            document.getElementById("navInv").style.display = "block";
-            document.getElementById("navMenu").style.display = "block";
-            document.getElementById("navSales").style.display = "block";
-            document.getElementById("navTimeClock").style.display = "block"; 
-            
             const navAudit = document.getElementById("navAudit");
+            
+            // 1. DEFAULT SECURE STATE: Hide absolutely everything first
+            document.getElementById("navFrontDesk").style.display = "none";
+            document.getElementById("navPos").style.display = "none";
+            document.getElementById("navKitchen").style.display = "none";
+            document.getElementById("navInv").style.display = "none";
+            document.getElementById("navMenu").style.display = "none";
+            document.getElementById("navSales").style.display = "none";
+            document.getElementById("navTimeClock").style.display = "none"; 
             if (navAudit) navAudit.style.display = "none"; 
 
-            if (userRole === "Front Desk") {
-                document.getElementById("navPos").style.display = "none";
-                document.getElementById("navKitchen").style.display = "none";
-                document.getElementById("navInv").style.display = "none";
-                document.getElementById("navMenu").style.display = "none";
-                document.getElementById("navSales").style.display = "none";
-                document.getElementById("navTimeClock").style.display = "none"; 
+            // 2. REVEAL BASED ON EXACT ROLE
+            if (userRole === "Master" || userRole === "Manager" || userRole === "IT") {
+                // Master, Manager, and IT see absolutely everything
+                document.getElementById("navFrontDesk").style.display = "block";
+                document.getElementById("navPos").style.display = "block";
+                document.getElementById("navKitchen").style.display = "block";
+                document.getElementById("navInv").style.display = "block";
+                document.getElementById("navMenu").style.display = "block";
+                document.getElementById("navSales").style.display = "block";
+                document.getElementById("navTimeClock").style.display = "block";
+                if (navAudit) navAudit.style.display = "block";
+                
+                // IT starts on Audit screen, Master/Manager start on POS
+                if (userRole === "IT" && navAudit) {
+                    navAudit.click(); 
+                } else {
+                    document.getElementById("navPos").click(); 
+                }
+
+            } else if (userRole === "Front Desk") {
+                // Front Desk ONLY sees Front Desk Rack
+                document.getElementById("navFrontDesk").style.display = "block";
                 document.getElementById("navFrontDesk").click();
 
             } else if (userRole === "F&B" || userRole === "Waiter") {
-                document.getElementById("navFrontDesk").style.display = "none";
-                document.getElementById("navInv").style.display = "none";
-                document.getElementById("navMenu").style.display = "none";
-                document.getElementById("navSales").style.display = "none";
-                document.getElementById("navTimeClock").style.display = "none"; 
+                // Waiter ONLY sees POS and Kitchen KDS
+                document.getElementById("navPos").style.display = "block";
+                document.getElementById("navKitchen").style.display = "block";
                 document.getElementById("navPos").click();
 
             } else if (userRole === "Kitchen") {
-                document.getElementById("navFrontDesk").style.display = "none";
-                document.getElementById("navPos").style.display = "none";
-                document.getElementById("navInv").style.display = "none";
-                document.getElementById("navMenu").style.display = "none";
-                document.getElementById("navSales").style.display = "none";
-                document.getElementById("navTimeClock").style.display = "none"; 
+                // Kitchen ONLY sees KDS, Menu Builder, and Inventory
+                document.getElementById("navKitchen").style.display = "block";
+                document.getElementById("navMenu").style.display = "block";
+                document.getElementById("navInv").style.display = "block";
                 document.getElementById("navKitchen").click();
 
-            } else if (userRole === "IT") {
-                document.getElementById("navFrontDesk").style.display = "none";
-                document.getElementById("navPos").style.display = "none";
-                document.getElementById("navKitchen").style.display = "none";
-                document.getElementById("navInv").style.display = "none";
-                document.getElementById("navMenu").style.display = "none";
-                document.getElementById("navSales").style.display = "none";
-                document.getElementById("navTimeClock").style.display = "none"; 
-                if (navAudit) {
-                    navAudit.style.display = "block";
-                    navAudit.click();
-                }
-
             } else {
-                // Master Admin & Manager
-                if (navAudit) navAudit.style.display = "block";
-                document.getElementById("navPos").click();
+                // Fallback for any unknown roles
+                document.getElementById("navFrontDesk").style.display = "block";
+                document.getElementById("navFrontDesk").click();
             }
 
             // ==========================================
