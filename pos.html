@@ -1316,49 +1316,67 @@
             }
 
             try {
-                const roomsSnap = await db.collection("rooms").orderBy("roomNumber").get();
-                const resSnap = await db.collection("reservations").where("status", "in", ["CONFIRMED", "CHECKED_IN"]).get();
-                
-                const reservations = [];
-                resSnap.forEach(doc => { const data = doc.data(); if(data.checkIn && data.checkOut) { data.id = doc.id; reservations.push(data); } });
-                window.currentCalendarReservations = reservations;
-                body.innerHTML = "";
+    const roomsSnap = await db.collection("rooms").orderBy("roomNumber").get();
+    const resSnap = await db.collection("reservations").where("status", "in", ["CONFIRMED", "CHECKED_IN"]).get();
+    
+    const reservations = [];
+    resSnap.forEach(doc => { 
+        const data = doc.data(); 
+        if(data.checkIn && data.checkOut) { data.id = doc.id; reservations.push(data); } 
+    });
+    
+    window.currentCalendarReservations = reservations;
+    body.innerHTML = "";
 
-                if(roomsSnap.empty) return body.innerHTML = `<tr><td colspan="31" style="padding: 20px;">No rooms configured yet.</td></tr>`;
+    // FIX 1: Hide the spinner BEFORE returning if the database is empty
+    if(roomsSnap.empty) {
+        document.getElementById("loadingSpinner").style.display = "none"; // <-- ADD YOUR LOADER ID
+        body.innerHTML = `<tr><td colspan="31" style="padding: 20px;">No rooms configured yet.</td></tr>`;
+        return;
+    }
 
-                roomsSnap.forEach(roomDoc => {
-                    const room = roomDoc.data();
-                    const currentRoomNo = room.roomNumber || roomDoc.id; 
-                    let rowHtml = `<tr><td style="padding: 10px; border-right: 2px solid #557a46; border-bottom: 1px solid #eee; position: sticky; left: 0; background: white; font-weight: bold; z-index: 5; text-align: left; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">Room ${currentRoomNo} <span style="font-size: 10px; color: #888; display: block; font-weight: normal;">${room.roomType || ''}</span></td>`;
-                        
-                    days.forEach(day => {
-                        const offset = day.getTimezoneOffset();
-                        const dateStr = new Date(day.getTime() - (offset*60*1000)).toISOString().split('T')[0];
-                        let isBooked = false; let guestNameDisplay = ""; let hoverTooltip = ""; let activeResId = "";
-                        
-                        for(let res of reservations) {
-                            if (String(res.roomNumber) === String(currentRoomNo)) { 
-                                if (dateStr >= res.checkIn && dateStr < res.checkOut) {
-                                    isBooked = true; activeResId = res.id;
-                                    guestNameDisplay = (res.guestName || "RSV").split(' ')[0].substring(0, 6);
-                                    hoverTooltip = `Guest: ${res.guestName}\nIn: ${res.checkIn}\nOut: ${res.checkOut}`;
-                                    break;
-                                }
-                            }
-                        }
-                        
-                        const isWeekend = (day.getDay() === 0 || day.getDay() === 6);
-                        const bg = isWeekend ? "#f9f9f9" : "#ffffff";
+    roomsSnap.forEach(roomDoc => {
+        const room = roomDoc.data();
+        const currentRoomNo = room.roomNumber || roomDoc.id; 
+        let rowHtml = `<tr><td style="padding: 10px; border-right: 2px solid #557a46; border-bottom: 1px solid #eee; position: sticky; left: 0; background: white; font-weight: bold; z-index: 5; text-align: left; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">Room ${currentRoomNo} <span style="font-size: 10px; color: #888; display: block; font-weight: normal;">${room.roomType || ''}</span></td>`;
+            
+        days.forEach(day => {
+            const offset = day.getTimezoneOffset();
+            const dateStr = new Date(day.getTime() - (offset*60*1000)).toISOString().split('T')[0];
+            let isBooked = false; let guestNameDisplay = ""; let hoverTooltip = ""; let activeResId = "";
+            
+            for(let res of reservations) {
+                if (String(res.roomNumber) === String(currentRoomNo)) { 
+                    if (dateStr >= res.checkIn && dateStr < res.checkOut) {
+                        isBooked = true; activeResId = res.id;
+                        guestNameDisplay = (res.guestName || "RSV").split(' ')[0].substring(0, 6);
+                        hoverTooltip = `Guest: ${res.guestName}\nIn: ${res.checkIn}\nOut: ${res.checkOut}`;
+                        break;
+                    }
+                }
+            }
+            
+            const isWeekend = (day.getDay() === 0 || day.getDay() === 6);
+            const bg = isWeekend ? "#f9f9f9" : "#ffffff";
 
-                        if (isBooked) {
-                            rowHtml += `<td style="padding: 3px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; background: ${bg};"><div onclick="openBookingDetails('${activeResId}')" style="background: #557a46; color: white; font-size: 13px; font-weight: bold; padding: 6px 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; letter-spacing: 0.5px;" title="${hoverTooltip}">${guestNameDisplay}</div></td>`;
-                        } else {
-                            rowHtml += `<td style="padding: 10px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; background: ${bg};"></td>`;
-                        }
-                    });
-                    rowHtml += `</tr>`; body.innerHTML += rowHtml;
-                });
-            } catch(e) { console.error("Error loading calendar", e); body.innerHTML = `<tr><td colspan="31" style="padding: 20px; color: #bd4b4b;">Error generating timeline.</td></tr>`; } 
+            if (isBooked) {
+                rowHtml += `<td style="padding: 3px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; background: ${bg};"><div onclick="openBookingDetails('${activeResId}')" style="background: #557a46; color: white; font-size: 13px; font-weight: bold; padding: 6px 4px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; letter-spacing: 0.5px;" title="${hoverTooltip}">${guestNameDisplay}</div></td>`;
+            } else {
+                rowHtml += `<td style="padding: 10px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; background: ${bg};"></td>`;
+            }
+        });
+        rowHtml += `</tr>`; 
+        body.innerHTML += rowHtml;
+    });
+
+    // FIX 2: Hide the spinner after all the rooms are successfully built
+    document.getElementById("loadingSpinner").style.display = "none"; // <-- ADD YOUR LOADER ID
+
+} catch (error) {
+    console.error("Error loading calendar:", error);
+    // FIX 3: Also hide the spinner if it crashes, so it doesn't spin forever
+    document.getElementById("loadingSpinner").style.display = "none"; 
+}
         }
 
         function loadAdminMenuBoard() {
