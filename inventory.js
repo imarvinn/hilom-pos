@@ -15,6 +15,8 @@ function loadInventory() {
         // Render both tables when data updates
         renderInventoryPage(currentInvPage);
         renderReportPage(currentRepPage);
+    }, (error) => {
+        console.error("Error loading inventory:", error);
     });
 }
 
@@ -22,6 +24,9 @@ function loadInventory() {
 function renderInventoryPage(page) {
     const invList = document.getElementById("inventoryList");
     const paginationDiv = document.getElementById("inventoryPagination");
+    
+    // Safety check: Abort if the HTML elements don't exist yet
+    if (!invList || !paginationDiv) return;
     
     const totalPages = Math.ceil(allInventoryItems.length / invItemsPerPage) || 1;
     if (page > totalPages) page = totalPages;
@@ -33,38 +38,46 @@ function renderInventoryPage(page) {
     const pageItems = allInventoryItems.slice(startIndex, endIndex);
 
     invList.innerHTML = ""; 
+    
+    if (pageItems.length === 0) {
+        invList.innerHTML = "<tr><td colspan='6' style='text-align:center;'>No inventory items found.</td></tr>";
+    }
+
     pageItems.forEach((item) => {
         let expiryHTML = "-";
         if (item.expiry) {
             const expDate = new Date(item.expiry); const today = new Date(); today.setHours(0,0,0,0);
             const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
-            if (diffDays < 0) { expiryHTML = `<span class="status-expired">Expired</span><br><small>${item.expiry}</small>`; } 
-            else if (diffDays <= 7) { expiryHTML = `<span class="status-warning">Expiring Soon</span><br><small>${item.expiry}</small>`; } 
-            else { expiryHTML = `<span class="status-ok">Good</span><br><small>${item.expiry}</small>`; }
+            if (diffDays < 0) { expiryHTML = `<span class="status-expired" style="color:#c62828; font-weight:bold;">Expired</span><br><small>${item.expiry}</small>`; } 
+            else if (diffDays <= 7) { expiryHTML = `<span class="status-warning" style="color:#d4a373; font-weight:bold;">Expiring Soon</span><br><small>${item.expiry}</small>`; } 
+            else { expiryHTML = `<span class="status-ok" style="color:#2e7d32; font-weight:bold;">Good</span><br><small>${item.expiry}</small>`; }
         }
 
-        let statusBadge = item.quantity <= 5 ? '<span class="status-low">Low Stock</span>' : '<span class="status-ok">In Stock</span>';
+        let statusBadge = (item.quantity || 0) <= 5 ? '<span class="status-low" style="background:#ffebee; color:#c62828; padding:3px 8px; border-radius:12px; font-size:12px;">Low Stock</span>' : '<span class="status-ok" style="background:#e8f5e9; color:#2e7d32; padding:3px 8px; border-radius:12px; font-size:12px;">In Stock</span>';
 
         invList.innerHTML += `
             <tr>
-                <td><strong>${item.name}</strong></td>
+                <td><strong>${item.name || 'Unnamed'}</strong></td>
                 <td>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <button onclick="updateStockQty('${item.id}', -1, ${item.quantity})" style="padding: 4px 10px; background: #e0e5e0; color: #333; font-size: 14px; border-radius: 4px;">-</button>
-                        <span style="font-size: 16px; font-weight: bold; min-width: 25px; text-align: center;">${item.quantity}</span>
-                        <button onclick="updateStockQty('${item.id}', 1, ${item.quantity})" style="padding: 4px 10px; background: #e0e5e0; color: #333; font-size: 14px; border-radius: 4px;">+</button>
+                        <button onclick="updateStockQty('${item.id}', -1, ${item.quantity || 0})" style="padding: 4px 10px; background: #e0e5e0; color: #333; font-size: 14px; border-radius: 4px; border:none; cursor:pointer;">-</button>
+                        <span style="font-size: 16px; font-weight: bold; min-width: 25px; text-align: center;">${item.quantity || 0}</span>
+                        <button onclick="updateStockQty('${item.id}', 1, ${item.quantity || 0})" style="padding: 4px 10px; background: #e0e5e0; color: #333; font-size: 14px; border-radius: 4px; border:none; cursor:pointer;">+</button>
                     </div>
                 </td>
-                <td>₱${(item.cost||0).toFixed(2)}</td><td>${expiryHTML}</td><td>${statusBadge}</td><td class="no-print"><button class="delete-btn" onclick="deleteItem('${item.id}')">✕</button></td>
+                <td>₱${(item.cost||0).toFixed(2)}</td>
+                <td>${expiryHTML}</td>
+                <td>${statusBadge}</td>
+                <td class="no-print"><button class="delete-btn" style="background:transparent; color:#bd4b4b; border:1px solid #bd4b4b; border-radius:4px; cursor:pointer;" onclick="deleteItem('${item.id}')">✕</button></td>
             </tr>
         `;
     });
 
     // Build Pagination Buttons
     paginationDiv.innerHTML = `
-        <button class="page-btn" onclick="renderInventoryPage(${page - 1})" ${page === 1 ? 'disabled' : ''}>◄ Prev</button>
-        <span class="page-info">Page ${page} of ${totalPages}</span>
-        <button class="page-btn" onclick="renderInventoryPage(${page + 1})" ${page === totalPages ? 'disabled' : ''}>Next ►</button>
+        <button class="page-btn" style="padding:5px 10px; margin:0 5px;" onclick="renderInventoryPage(${page - 1})" ${page === 1 ? 'disabled' : ''}>◄ Prev</button>
+        <span class="page-info" style="font-weight:bold;">Page ${page} of ${totalPages}</span>
+        <button class="page-btn" style="padding:5px 10px; margin:0 5px;" onclick="renderInventoryPage(${page + 1})" ${page === totalPages ? 'disabled' : ''}>Next ►</button>
     `;
 }
 
@@ -72,6 +85,9 @@ function renderInventoryPage(page) {
 function renderReportPage(page) {
     const reportList = document.getElementById("inventoryReportList");
     const paginationDiv = document.getElementById("reportPagination");
+    
+    // Safety check
+    if (!reportList || !paginationDiv) return;
     
     // If 'ALL' is passed (used for printing), render every item
     let pageItems = [];
@@ -90,18 +106,18 @@ function renderReportPage(page) {
         pageItems = allInventoryItems.slice(startIndex, endIndex);
 
         paginationDiv.innerHTML = `
-            <button class="page-btn" onclick="renderReportPage(${page - 1})" ${page === 1 ? 'disabled' : ''}>◄ Prev</button>
-            <span class="page-info">Page ${page} of ${totalPages}</span>
-            <button class="page-btn" onclick="renderReportPage(${page + 1})" ${page === totalPages ? 'disabled' : ''}>Next ►</button>
+            <button class="page-btn" style="padding:5px 10px; margin:0 5px;" onclick="renderReportPage(${page - 1})" ${page === 1 ? 'disabled' : ''}>◄ Prev</button>
+            <span class="page-info" style="font-weight:bold;">Page ${page} of ${totalPages}</span>
+            <button class="page-btn" style="padding:5px 10px; margin:0 5px;" onclick="renderReportPage(${page + 1})" ${page === totalPages ? 'disabled' : ''}>Next ►</button>
         `;
     }
 
     reportList.innerHTML = ""; 
     pageItems.forEach((item) => {
-        let startQty = item.shiftStartQty !== undefined ? item.shiftStartQty : item.quantity; 
+        let startQty = item.shiftStartQty !== undefined ? item.shiftStartQty : (item.quantity || 0); 
         
         // Calculate net change: Current Quantity minus Starting Quantity
-        let netChange = item.quantity - startQty;
+        let netChange = (item.quantity || 0) - startQty;
         
         // Green for added stock (+), Red for deductions (-), Grey for no change
         let changeColor = netChange > 0 ? '#557a46' : (netChange < 0 ? '#bd4b4b' : '#666'); 
@@ -111,9 +127,9 @@ function renderReportPage(page) {
 
         reportList.innerHTML += `
             <tr>
-                <td><strong>${item.name}</strong></td>
+                <td><strong>${item.name || 'Unnamed'}</strong></td>
                 <td>${startQty}</td>
-                <td>${item.quantity}</td>
+                <td>${item.quantity || 0}</td>
                 <td style="color:${changeColor}; font-weight:bold;">${formattedChange}</td>
             </tr>
         `;
@@ -135,19 +151,22 @@ function addItem() {
 }
 
 function deleteItem(id) { 
-    if(confirm("Delete inventory item?")) 
+    if(confirm("Delete inventory item?")) {
         db.collection("inventory").doc(id).delete(); 
     }
+}
 
 // --- INVENTORY TAB SWITCHER ---
 function switchInvTab(tabName) {
     const liveCard = document.getElementById("liveInventoryCard");
     const reportCard = document.getElementById("inventoryReportCard");
-    const assetsCard = document.getElementById("assetsCard"); // NEW
+    const assetsCard = document.getElementById("assetsCard"); 
 
     const btnLive = document.getElementById("tabLiveInventory");
     const btnReport = document.getElementById("tabShiftAnalysis");
-    const btnAssets = document.getElementById("tabFixedAssets"); // NEW
+    const btnAssets = document.getElementById("tabFixedAssets"); 
+    
+    if(!liveCard || !reportCard || !assetsCard) return;
 
     // 1. Reset all buttons to inactive gray
     btnLive.style.backgroundColor = "#e0e5e0";
@@ -232,6 +251,8 @@ function loadAssets() {
 
     assetsListener = db.collection("fixed_assets").orderBy("name").onSnapshot(snapshot => {
         const list = document.getElementById("assetsList");
+        if (!list) return;
+        
         list.innerHTML = "";
 
         if (snapshot.empty) {
@@ -245,10 +266,10 @@ function loadAssets() {
                 <tr style="border-bottom: 1px solid #eee;">
                     <td style="font-weight: bold; color: #333;">${data.name}</td>
                     <td><span style="background: #e9ece9; padding: 4px 8px; border-radius: 4px; font-size: 12px; color: #555;">${data.category}</span></td>
-                    <td style="font-weight: bold; font-size: 15px; color: #2b4227;">${data.quantity}</td>
+                    <td style="font-weight: bold; font-size: 15px; color: #2b4227;">${data.quantity || 0}</td>
                     <td class="no-print">
-                        <button onclick="updateAssetQty('${doc.id}', ${data.quantity}, 1)" style="background: #557a46; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: bold;">+1</button>
-                        <button onclick="updateAssetQty('${doc.id}', ${data.quantity}, -1)" style="background: #d4a373; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 5px;">-1</button>
+                        <button onclick="updateAssetQty('${doc.id}', ${data.quantity || 0}, 1)" style="background: #557a46; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: bold;">+1</button>
+                        <button onclick="updateAssetQty('${doc.id}', ${data.quantity || 0}, -1)" style="background: #d4a373; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 5px;">-1</button>
                         <button onclick="deleteAsset('${doc.id}')" style="background: transparent; color: #bd4b4b; border: 1px solid #bd4b4b; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-left: 10px; font-size: 11px;">Remove</button>
                     </td>
                 </tr>
