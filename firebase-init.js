@@ -8,7 +8,10 @@ const firebaseConfig = {
     appId: "1:176532211278:web:57d78462a3355a32ce251f"
 };
 
-firebase.initializeApp(firebaseConfig);
+// 1. SAFE INITIALIZATION CHECK
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.firestore();
 const auth = firebase.auth();
 
@@ -31,9 +34,11 @@ let currentPrintType = "";
 // GLOBAL UTILITIES
 function showToast(message) {
     const toast = document.getElementById("toast"); 
-    toast.innerText = message; 
-    toast.className = "show";
-    setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+    if (toast) {
+        toast.innerText = message; 
+        toast.className = "show";
+        setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+    }
 }
 
 // ========================================================
@@ -45,7 +50,6 @@ function loadSecuritySettings() {
         if (doc.exists && doc.data().adminPin) {
             ADMIN_PIN = doc.data().adminPin;
         } else {
-            // Failsafe if the document gets deleted
             db.collection("settings").doc("security").set({ adminPin: "1234" }).catch(err => console.error(err));
         }
     });
@@ -74,3 +78,38 @@ async function updatePinInDatabase(newPin) {
     showToast("Error updating PIN.");
   }
 }
+
+// INVENTORY PAGINATION
+let lastVisibleProduct = null;
+
+async function loadInventoryChunk() {
+    let query = db.collection("inventory").orderBy("name").limit(20);
+    
+    if (lastVisibleProduct) {
+        query = query.startAfter(lastVisibleProduct);
+    }
+
+    const snapshot = await query.get();
+    
+    if (snapshot.empty) {
+        showToast("No more items to load.");
+        return;
+    }
+
+    lastVisibleProduct = snapshot.docs[snapshot.docs.length - 1];
+
+    snapshot.forEach(doc => {
+        // Ensure you have a function called renderProductCard defined elsewhere to handle this data
+        if (typeof renderProductCard === "function") {
+            renderProductCard(doc.data());
+        }
+    });
+}
+
+// 2. SAFELY ATTACH EVENT LISTENER
+document.addEventListener('DOMContentLoaded', () => {
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', loadInventoryChunk);
+    }
+});
