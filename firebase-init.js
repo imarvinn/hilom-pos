@@ -79,33 +79,7 @@ async function updatePinInDatabase(newPin) {
   }
 }
 
-// INVENTORY PAGINATION
-let lastVisibleProduct = null;
-
-async function loadInventoryChunk() {
-    let query = db.collection("inventory").orderBy("name").limit(20);
-    
-    if (lastVisibleProduct) {
-        query = query.startAfter(lastVisibleProduct);
-    }
-
-    const snapshot = await query.get();
-    
-    if (snapshot.empty) {
-        showToast("No more items to load.");
-        return;
-    }
-
-    lastVisibleProduct = snapshot.docs[snapshot.docs.length - 1];
-
-    snapshot.forEach(doc => {
-        // Ensure you have a function called renderProductCard defined elsewhere to handle this data
-        if (typeof renderProductCard === "function") {
-            renderProductCard(doc.data());
-        }
-    });
-}
-
+// FRONTEND SEARCH OPTIMIZATION
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('pos-search-bar');
     if (searchInput) {
