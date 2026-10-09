@@ -9,12 +9,30 @@
     <link rel="manifest" href="./manifest.json">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
  <style>
+    /* --- CLS PREVENTION --- */
+        #menuGridContainer {
+            min-height: 65vh; 
+            align-content: flex-start;
+        }
+        #activeTablesContainer {
+            min-height: 200px;
+        }
+        #cartItemsContainer {
+            min-height: 150px;
+        }
         /* 1. HIDE ADMIN CONTROLS ON POS SCREEN */
         #posView #menuGridContainer button[onclick*="edit"], 
         #posView #menuGridContainer button[onclick*="delete"],
         #posView #menuGridContainer button[onclick*="remove"] { 
             display: none !important; 
         }
+        /* --- NEW SKELETON CSS HERE --- */
+        .skeleton-card { background-color: #f3f4f6; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 10px; min-height: 180px; width: 160px; box-sizing: border-box; }
+        .skeleton-img, .skeleton-text { background: #e5e7eb; border-radius: 4px; animation: pulse 1.5s infinite ease-in-out; }
+        .skeleton-img { height: 100px; width: 100%; }
+        .skeleton-text.title { height: 15px; width: 80%; }
+        .skeleton-text.price { height: 15px; width: 50%; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
         /* 2. LOCK POS MENU BUTTONS FROM STRETCHING */
         #menuGridContainer > div {
@@ -120,8 +138,7 @@
      <!-- SIDEBAR NAVIGATION -->
     <div class="sidebar no-print">
         <div class="sidebar-header">
-            <img src="hilom.png" alt="Hilom Logo" style="max-width: 180px; display: block; margin: 0 auto 10px auto; border-radius: 8px;">
-            HILOM POS
+<img src="hilom.png" alt="Hilom Logo" width="180" height="80" style="max-width: 180px; height: auto; aspect-ratio: 9/4; object-fit: contain; display: block; margin: 0 auto 10px auto; border-radius: 8px;">            HILOM POS
         </div>
 <button class="nav-btn" id="navFrontDesk" onclick="switchView('roomsView', this); loadRoomRack(); loadBookingCalendar();"> Front Desk Rack</button>        <button class="nav-btn active" id="navPos" onclick="switchView('posView', this)"> POS / Ordering</button>
         <button class="nav-btn" id="navKitchen" onclick="switchView('kitchenView', this)"> Kitchen KDS</button>
@@ -153,7 +170,14 @@
                 <div class="pos-container">
                     <div class="card menu-section" style="margin-bottom: 0;">
                         <h2>Customer Menu</h2>
-                        <div id="menuGridContainer"></div>
+                        <div id="menuGridContainer">
+    <!-- Hardcoded Skeleton Cards for LCP Optimization -->
+    <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
+    <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
+    <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
+    <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
+    <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
+</div>
                     </div>
 
                     <div class="sidebar-section">
@@ -526,8 +550,7 @@
         </div>
         
         <div style="overflow-x: auto; background: white; border: 1px solid #ccc; border-radius: 8px; max-height: 400px; overflow-y: auto;">
-            <table id="calendarTable" style="width: 100%; border-collapse: collapse; min-width: 1200px; font-size: 12px; text-align: center;">
-                <thead>
+<table id="calendarTable" style="width: 100%; border-collapse: collapse; min-width: 1200px; table-layout: fixed; font-size: 12px; text-align: center;">                <thead>
                     <tr id="calendarHeaders" style="background: #f1f8e9; border-bottom: 2px solid #557a46;">
                         <!-- JS will populate 30 days here -->
                     </tr>
@@ -1546,30 +1569,31 @@ firebase.auth().onAuthStateChanged(async (user) => {
                 document.getElementById("navFrontDesk").click();
             }
 
-            // ==========================================
+           // ==========================================
             // SAFE STARTUP: ROLE-RESTRICTED DATA LOADERS
+            // (Staggered to reduce Total Blocking Time)
             // ==========================================
             
             // 1. Data needed by ALL approved staff
-            if (typeof loadSecuritySettings === "function") loadSecuritySettings();
-            if (typeof loadMenu === "function") loadMenu();
-            if (typeof loadCategories === "function") loadCategories();
-            if (typeof loadActiveTables === "function") loadActiveTables();
-            if (typeof loadAdminMenuBoard === "function") loadAdminMenuBoard();
+            setTimeout(() => { if (typeof loadSecuritySettings === "function") loadSecuritySettings(); }, 0);
+            setTimeout(() => { if (typeof loadMenu === "function") loadMenu(); }, 50);
+            setTimeout(() => { if (typeof loadCategories === "function") loadCategories(); }, 100);
+            setTimeout(() => { if (typeof loadActiveTables === "function") loadActiveTables(); }, 150);
+            setTimeout(() => { if (typeof loadAdminMenuBoard === "function") loadAdminMenuBoard(); }, 200);
 
             // 2. Data strictly for MANAGEMENT
             if (userRole === "Master" || userRole === "Manager") {
-                if (typeof initializeConfig === "function") initializeConfig();
-                if (typeof loadPendingAdmins === "function") loadPendingAdmins();
-                if (typeof loadInventory === "function") loadInventory();
-                if (typeof loadPins === "function") loadPins();
+                setTimeout(() => { if (typeof initializeConfig === "function") initializeConfig(); }, 250);
+                setTimeout(() => { if (typeof loadPendingAdmins === "function") loadPendingAdmins(); }, 300);
+                setTimeout(() => { if (typeof loadInventory === "function") loadInventory(); }, 350);
+                setTimeout(() => { if (typeof loadPins === "function") loadPins(); }, 400);
             }
 
             // 3. Data strictly for FRONT DESK and MANAGEMENT
             if (userRole === "Master" || userRole === "Manager" || userRole === "Front Desk") {
-                if (typeof listenForWebReservations === "function") listenForWebReservations(); 
-                if (typeof loadCalendar === "function") loadCalendar();
-                if (typeof loadRoomRack === "function") loadRoomRack();
+                setTimeout(() => { if (typeof listenForWebReservations === "function") listenForWebReservations(); }, 450);
+                setTimeout(() => { if (typeof loadCalendar === "function") loadCalendar(); }, 500);
+                setTimeout(() => { if (typeof loadRoomRack === "function") loadRoomRack(); }, 550);
             }
 
         } catch (error) {
