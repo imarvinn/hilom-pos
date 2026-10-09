@@ -106,10 +106,11 @@ async function loadInventoryChunk() {
     });
 }
 
-// 2. SAFELY ATTACH EVENT LISTENER
 document.addEventListener('DOMContentLoaded', () => {
-    const loadMoreBtn = document.getElementById('load-more-btn');
-    if (loadMoreBtn) {
-        loadMoreBtn.addEventListener('click', loadInventoryChunk);
+    const searchInput = document.getElementById('pos-search-bar');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(handleSearch, 300));
+    } else {
+        console.warn("Search bar not found on this page.");
     }
 });

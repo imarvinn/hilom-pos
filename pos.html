@@ -1107,10 +1107,6 @@ const handleSearch = (event) => {
     // Trigger your inventory filter or API fetch here
 };
 
-// 3. Attach the debounced function to your input element
-const searchInput = document.getElementById('pos-search-bar');
-searchInput.addEventListener('input', debounce(handleSearch, 300));
-
 function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'product-card';
