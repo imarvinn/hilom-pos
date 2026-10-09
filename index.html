@@ -8,6 +8,12 @@
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <!-- Critical scripts (e.g., auth checks) load normally -->
+<script src="auth.js"></script>
+
+<!-- Non-critical scripts defer until HTML is parsed -->
+<script src="reports.js" defer></script>
+<script src="inventory.js" defer></script>
 
     <style>
         :root {

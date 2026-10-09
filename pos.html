@@ -1088,6 +1088,49 @@
     <script src="reports.js"></script>
     
     <script>
+
+// 1. Define the debounce utility
+function debounce(func, delay) {
+    let timeoutId;
+    return function (...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            func.apply(this, args);
+        }, delay);
+    };
+}
+
+// 2. Define your actual search logic
+const handleSearch = (event) => {
+    const searchTerm = event.target.value;
+    console.log('Executing search for:', searchTerm);
+    // Trigger your inventory filter or API fetch here
+};
+
+// 3. Attach the debounced function to your input element
+const searchInput = document.getElementById('pos-search-bar');
+searchInput.addEventListener('input', debounce(handleSearch, 300));
+
+function createProductCard(product) {
+    const card = document.createElement('div');
+    card.className = 'product-card';
+
+    const img = document.createElement('img');
+    img.src = product.image_url;
+    img.alt = product.name;
+    // Force the browser to lazy-load this specific image
+    img.loading = 'lazy'; 
+
+    const title = document.createElement('h3');
+    title.textContent = product.name;
+
+    card.appendChild(img);
+    card.appendChild(title);
+    
+    return card;
+}
+
+
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
             .then(() => console.log('Service Worker Registered Successfully'))
