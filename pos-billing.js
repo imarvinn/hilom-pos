@@ -385,9 +385,9 @@ function printPreBill() {
     const method = document.getElementById("paymentMethod").value;
     const printTime = new Date();
 
-    const bName = document.getElementById("buyerNameInput").value.trim();
-    const bTin = document.getElementById("buyerTinInput").value.trim();
-    const bAddress = document.getElementById("buyerAddressInput").value.trim();
+    const bName = sanitizeHTML(document.getElementById("buyerNameInput").value.trim());
+    const bTin = sanitizeHTML(document.getElementById("buyerTinInput").value.trim());
+    const bAddress = sanitizeHTML(document.getElementById("buyerAddressInput").value.trim());
 
     document.getElementById("receiptHeaderTitle").innerText = "BILLING STATEMENT";
     document.getElementById("receiptInvoiceNo").innerText = ""; 
@@ -482,9 +482,9 @@ async function processPayment() {
     const method = document.getElementById("paymentMethod").value;
     const payTime = new Date();
 
-    const bName = document.getElementById("buyerNameInput").value.trim();
-    const bTin = document.getElementById("buyerTinInput").value.trim();
-    const bAddress = document.getElementById("buyerAddressInput").value.trim();
+    const bName = sanitizeHTML(document.getElementById("buyerNameInput").value.trim());
+    const bTin = sanitizeHTML(document.getElementById("buyerTinInput").value.trim());
+    const bAddress = sanitizeHTML(document.getElementById("buyerAddressInput").value.trim());
 
     let bfDiscountAmount = 0; let totalCostForSale = 0;
     for (let [itemName, itemData] of Object.entries(data.items)) {
@@ -558,8 +558,7 @@ async function processPayment() {
         status: 'COMPLETED',
         archived: false,
         timestamp: payTime,
-        seniorDetails: isSenior ? { name: document.getElementById('seniorNameInput').value, id: document.getElementById('seniorIdInput').value } : null,
-        buyerDetails: (bName || bTin || bAddress) ? { name: bName, tin: bTin, address: bAddress } : null
+seniorDetails: isSenior ? { name: sanitizeHTML(document.getElementById('seniorNameInput').value), id: sanitizeHTML(document.getElementById('seniorIdInput').value) } : null,        buyerDetails: (bName || bTin || bAddress) ? { name: bName, tin: bTin, address: bAddress } : null
     });
     
     batch.update(configRef, { invoiceCount: invNum + 1, grandTotal: currentGT + finalTotal });
@@ -660,8 +659,7 @@ function resetMenuForm() {
     document.getElementById("ingredientInputs").innerHTML = `<div class="ingredient-row"><input type="text" class="ing-name" placeholder="Ingredient Needed" style="flex: 1;"><input type="number" class="ing-qty" placeholder="Qty" style="width: 80px;"></div>`;
 }
 function saveMenuItem() {
-    const name = document.getElementById("newMenuName").value.trim(), price = parseFloat(document.getElementById("menuPrice").value) || 0, category = document.getElementById("menuCategory").value;
-    let recipe = []; document.querySelectorAll(".ingredient-row").forEach(row => { const n = row.querySelector(".ing-name").value.trim(), q = row.querySelector(".ing-qty").value; if(n && q) recipe.push({name: n, deduct: parseInt(q)}); });
+const name = sanitizeHTML(document.getElementById("newMenuName").value.trim()), price = parseFloat(document.getElementById("menuPrice").value) || 0, category = document.getElementById("menuCategory").value;    let recipe = []; document.querySelectorAll(".ingredient-row").forEach(row => { const n = row.querySelector(".ing-name").value.trim(), q = row.querySelector(".ing-qty").value; if(n && q) recipe.push({name: n, deduct: parseInt(q)}); });
     if(!name) return showToast("Menu Name is required.");
     const payload = {name, price, category, recipe};
     if(editingMenuId) db.collection("menu").doc(editingMenuId).update(payload).then(resetMenuForm); else { payload.timestamp = firebase.firestore.FieldValue.serverTimestamp(); db.collection("menu").add(payload).then(resetMenuForm); }
@@ -836,7 +834,7 @@ function loadCategories() {
 }
 
 function addCategory() {
-    const catName = document.getElementById("newCategoryName").value.trim();
+    const catName = sanitizeHTML(document.getElementById("newCategoryName").value.trim());
     if(!catName) return showToast("Enter a category name.");
     if(menuCategories.includes(catName)) return showToast("Category already exists!");
     

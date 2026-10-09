@@ -143,8 +143,8 @@ function closeAdvanceBookingModal() {
 }
 
 async function confirmAdvanceBooking() {
-    const guestName = document.getElementById("advGuestName").value.trim();
-    const contact = document.getElementById("advContact").value.trim();
+    const guestName = sanitizeHTML(document.getElementById("advGuestName").value.trim());
+    const contact = sanitizeHTML(document.getElementById("advContact").value.trim());
     const checkIn = document.getElementById("advCheckIn").value;
     const checkOut = document.getElementById("advCheckOut").value;
 
@@ -190,15 +190,14 @@ async function confirmAdvanceBooking() {
 
 // Handles the database save when they click "Confirm Check-In"
 async function confirmWalkInCheckIn() {
-    const guestName = document.getElementById("walkInName").value.trim();
+    const guestName = sanitizeHTML(document.getElementById("walkInName").value.trim());
     const nightsStr = document.getElementById("walkInNights").value;
-    const inclusions = document.getElementById("walkInInclusions").value.trim() || "None";
+    const inclusions = sanitizeHTML(document.getElementById("walkInInclusions").value.trim()) || "None";
     
-    const guestAge = document.getElementById("walkInAge").value.trim();
-    const guestContact = document.getElementById("walkInContact").value.trim();
-    const guestEmail = document.getElementById("walkInEmail").value.trim();
-    const guestAddress = document.getElementById("walkInAddress").value.trim();
-
+    const guestAge = sanitizeHTML(document.getElementById("walkInAge").value.trim());
+    const guestContact = sanitizeHTML(document.getElementById("walkInContact").value.trim());
+    const guestEmail = sanitizeHTML(document.getElementById("walkInEmail").value.trim());
+    const guestAddress = sanitizeHTML(document.getElementById("walkInAddress").value.trim());
     const nights = parseInt(nightsStr);
 
     if (!guestName || isNaN(nights) || nights <= 0) {
@@ -422,8 +421,8 @@ function printFolioInvoice() {
 }
 
 function addNewRoom() {
-    const roomNumber = document.getElementById("newRoomNumber").value.trim();
-    const roomType = document.getElementById("newRoomType").value.trim();
+    const roomNumber = sanitizeHTML(document.getElementById("newRoomNumber").value.trim());
+    const roomType = sanitizeHTML(document.getElementById("newRoomType").value.trim());
     const dailyRate = parseFloat(document.getElementById("newRoomRate").value);
 
     if (!roomNumber || !roomType || !dailyRate) return showToast("Please fill in all room details.");
@@ -465,7 +464,7 @@ function closeExtraChargeModal() {
 
 // 3. Process the data
 async function confirmExtraCharge() {
-    const chargeName = document.getElementById("extraChargeDesc").value.trim();
+    const chargeName = sanitizeHTML(document.getElementById("extraChargeDesc").value.trim());
     const qty = parseInt(document.getElementById("extraChargeQty").value) || 1;
     const unitPrice = parseFloat(document.getElementById("extraChargeAmount").value);
 

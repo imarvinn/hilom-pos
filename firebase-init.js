@@ -8,6 +8,16 @@ const firebaseConfig = {
     appId: "1:176532211278:web:57d78462a3355a32ce251f"
 };
 
+// ==========================================
+// DISABLE PRODUCTION DEBUGGING
+// ==========================================
+if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    console.log = function() {};
+    console.warn = function() {};
+    console.info = function() {};
+    // Note: console.error is intentionally left active so critical crashes still report to the browser
+}
+
 // 1. SAFE INITIALIZATION CHECK
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
@@ -49,6 +59,16 @@ function showToast(message) {
         setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
     }
 }
+
+// GLOBAL UTILITIES
+function sanitizeHTML(str) {
+    if (typeof str !== 'string') return str;
+    const temp = document.createElement('div');
+    temp.textContent = str;
+    return temp.innerHTML;
+}
+
+
 
 // ========================================================
 // DELAYED LOADERS: Only fire these AFTER user is authorized
