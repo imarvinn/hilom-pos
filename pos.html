@@ -1371,8 +1371,7 @@ function createProductCard(product) {
             const body = document.getElementById("calendarBody");
             if (!headerRow || !body) return;
 
-            headerRow.innerHTML = `<th style="padding: 15px 10px; border-right: 2px solid #557a46; min-width: 120px; position: sticky; left: 0; background: #e8f5e9; z-index: 10; text-align: left; color: #2b4227; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">Room Name</th>`;
-            body.innerHTML = `<tr><td colspan="31" style="padding: 20px;">Loading calendar data...</td></tr>`;
+headerRow.innerHTML = `<th style="width: 150px; min-width: 150px; max-width: 150px; padding: 15px 10px; border-right: 2px solid #557a46; position: sticky; left: 0; background: #e8f5e9; z-index: 10; text-align: left; color: #2b4227; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">Room Name</th>`;            body.innerHTML = `<tr><td colspan="31" style="padding: 20px;">Loading calendar data...</td></tr>`;
 
             const today = new Date();
             const days = [];
@@ -1400,8 +1399,7 @@ function createProductCard(product) {
     roomsSnap.forEach(roomDoc => {
         const room = roomDoc.data();
         const currentRoomNo = room.roomNumber || roomDoc.id; 
-        let rowHtml = `<tr><td style="padding: 10px; border-right: 2px solid #557a46; border-bottom: 1px solid #eee; position: sticky; left: 0; background: white; font-weight: bold; z-index: 5; text-align: left; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">Room ${currentRoomNo} <span style="font-size: 10px; color: #888; display: block; font-weight: normal;">${room.roomType || ''}</span></td>`;
-            
+let rowHtml = `<tr><td style="width: 150px; min-width: 150px; max-width: 150px; padding: 10px; border-right: 2px solid #557a46; border-bottom: 1px solid #eee; position: sticky; left: 0; background: white; font-weight: bold; z-index: 5; text-align: left; box-shadow: 2px 0 5px rgba(0,0,0,0.05); white-space: normal; word-wrap: break-word;">${currentRoomNo} <span style="font-size: 10px; color: #888; display: block; font-weight: normal;">${room.roomType || ''}</span></td>`;            
         days.forEach(day => {
             const offset = day.getTimezoneOffset();
             const dateStr = new Date(day.getTime() - (offset*60*1000)).toISOString().split('T')[0];
