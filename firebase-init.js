@@ -13,6 +13,15 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.firestore();
+// Enable Firebase Offline Persistence (Local Caching)
+db.enablePersistence({ synchronizeTabs: true })
+  .catch((err) => {
+      if (err.code === 'failed-precondition') {
+          console.warn("Multiple tabs open, persistence disabled.");
+      } else if (err.code === 'unimplemented') {
+          console.warn("Browser does not support local caching.");
+      }
+  });
 const auth = firebase.auth();
 
 // GLOBAL VARIABLES
