@@ -624,8 +624,10 @@ function exportEJournal() {
         txt += "Developer: Marvin R. Arreglado\n";
         txt += "Address: Talisay City, Negros Occidental\n";
         txt += "TIN: 428-898-119-000\n";
-        txt += "Accreditation No: xxxxxxx\n";
+        txt += "Accreditation No: (Pending)\n";
+        txt += "PTU No: (Pending)\n";
         txt += "MIN: MIN-xxxxxx | SN: SN-xxxxxx\n";
+        txt += "THIS INVOICE/RECEIPT SHALL BE VALID FOR FIVE(5) YEARS FROM THE DATE OF THE PERMIT TO USE\n";
         txt += "=================================================\n\n";
     });
 
