@@ -2,7 +2,7 @@
   "outputDirectory": ".",
   "headers": [
     {
-      "source": "/(.*\\.(png|jpg|jpeg|gif|webp|svg|ico))",
+      "source": "/(.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico))",
       "headers": [
         {
           "key": "Cache-Control",
@@ -11,7 +11,7 @@
       ]
     },
     {
-      "source": "/(.*\\.(css|js))",
+      "source": "/(.*\\.(?:css|js))",
       "headers": [
         {
           "key": "Cache-Control",
