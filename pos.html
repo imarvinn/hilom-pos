@@ -245,10 +245,39 @@
                 <h2 style="color: #2b4227;">Fixed Assets & Equipment</h2>
                 <p style="color: #666; font-size: 14px; margin-top: 0; margin-bottom: 15px;">Track non-consumable items, purchase costs, and equipment status.</p>
                 
+                <!-- ASSET VALUATION & STATUS METRICS -->
+                <div class="profit-dashboard" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div style="flex:1; text-align:center; min-width: 140px; background:#fff; padding:10px; border-radius:8px; border:1px solid #e0e5e0;">
+                        <h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Total Equipment Units</h4>
+                        <span id="assetMetricTotalUnits" style="font-size:22px; font-weight:bold; color:#2b4227;">0</span>
+                    </div>
+                    <div style="flex:1; text-align:center; min-width: 140px; background:#fff; padding:10px; border-radius:8px; border:1px solid #e0e5e0;">
+                        <h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Total Asset Valuation</h4>
+                        <span id="assetMetricTotalValuation" style="font-size:22px; font-weight:bold; color:#557a46;">₱0.00</span>
+                    </div>
+                    <div style="flex:1; text-align:center; min-width: 140px; background:#fff; padding:10px; border-radius:8px; border:1px solid #e0e5e0;">
+                        <h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Active In-Service</h4>
+                        <span id="assetMetricActiveUnits" style="font-size:22px; font-weight:bold; color:#2e7d32;">0</span>
+                    </div>
+                    <div style="flex:1; text-align:center; min-width: 140px; background:#fff; padding:10px; border-radius:8px; border:1px solid #e0e5e0;">
+                        <h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Under Repair</h4>
+                        <span id="assetMetricMaintUnits" style="font-size:22px; font-weight:bold; color:#d4a373;">0</span>
+                    </div>
+                    <div style="flex:1; text-align:center; min-width: 140px; background:#fff; padding:10px; border-radius:8px; border:1px solid #e0e5e0;">
+                        <h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Damaged / Disposed</h4>
+                        <span id="assetMetricDisposedUnits" style="font-size:22px; font-weight:bold; color:#bd4b4b;">0</span>
+                    </div>
+                </div>
+
+                <div class="no-print" style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+                    <button class="save-btn" onclick="printAssetReport()" style="background: #2b4227; padding: 8px 16px;">🖨️ Print Asset Valuation Report</button>
+                </div>
+
                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
                     <input type="text" id="assetName" placeholder="Item Name (e.g., POS Terminal)" required style="flex: 2; min-width: 150px; margin: 0;">
                     <select id="assetCategory" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin: 0; flex: 1;">
                         <option value="Linens">Linens & Towels</option>
+                        <option value="Other">Kitchenware</option>
                         <option value="Furniture">Furniture</option>
                         <option value="Appliances">Appliances</option>
                         <option value="IT/Electronics">IT / Electronics</option>
@@ -256,7 +285,7 @@
                         <option value="Other">Other</option>
                     </select>
                     <input type="number" id="assetQty" placeholder="Qty" required style="width: 80px; margin: 0;">
-                    <input type="number" id="assetCost" placeholder="Cost (₱)" style="width: 100px; margin: 0;">
+                    <input type="number" id="assetCost" placeholder="Unit Cost (₱)" style="width: 110px; margin: 0;">
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
                     <input type="date" id="assetDate" title="Purchase Date" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin: 0;">
@@ -271,7 +300,7 @@
                 
                 <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                     <thead>
-                        <tr style="background: #e9ece9; border-bottom: 2px solid #557a46;">
+                        <tr style="background: #e9ece9; border-bottom: 2px solid #557a46; text-align: left;">
                             <th style="padding: 10px;">Item Name</th>
                             <th style="padding: 10px;">Category</th>
                             <th style="padding: 10px;">Qty</th>
@@ -287,7 +316,6 @@
                     </tbody>
                 </table>
             </div>
-        </div>
 
            <!-- ================= VIEW 3: MENU BUILDER ================= -->
             <div id="menuManageView" class="view-section hidden">
