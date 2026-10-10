@@ -240,36 +240,50 @@
                 </table>
                 <div id="reportPagination" class="pagination-controls no-print"></div>
             </div>
-
-            <!-- FIXED ASSETS CARD -->
+<!-- FIXED ASSETS CARD -->
             <div class="card hidden" id="assetsCard">
                 <h2 style="color: #2b4227;">Fixed Assets & Equipment</h2>
-                <p style="color: #666; font-size: 14px; margin-top: 0; margin-bottom: 15px;">Track non-consumable items like tables, chairs, linens, and appliances.</p>
+                <p style="color: #666; font-size: 14px; margin-top: 0; margin-bottom: 15px;">Track non-consumable items, purchase costs, and equipment status.</p>
                 
                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
-                    <input type="text" id="assetName" placeholder="Item Name (e.g., Pool Towel)" required style="flex: 1; min-width: 150px; margin: 0;">
-                    <select id="assetCategory" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin: 0;">
+                    <input type="text" id="assetName" placeholder="Item Name (e.g., POS Terminal)" required style="flex: 2; min-width: 150px; margin: 0;">
+                    <select id="assetCategory" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin: 0; flex: 1;">
                         <option value="Linens">Linens & Towels</option>
                         <option value="Furniture">Furniture</option>
                         <option value="Appliances">Appliances</option>
+                        <option value="IT/Electronics">IT / Electronics</option>
                         <option value="Decor">Decor & Fixtures</option>
                         <option value="Other">Other</option>
                     </select>
-                    <input type="number" id="assetQty" placeholder="Total Qty" required style="width: 100px; margin: 0;">
-                    <button class="add-btn no-print" onclick="addAsset()" style="margin: 0;">+ Add Asset</button>
+                    <input type="number" id="assetQty" placeholder="Qty" required style="width: 80px; margin: 0;">
+                    <input type="number" id="assetCost" placeholder="Cost (₱)" style="width: 100px; margin: 0;">
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
+                    <input type="date" id="assetDate" title="Purchase Date" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin: 0;">
+                    <input type="text" id="assetSerial" placeholder="Serial Number (Optional)" style="flex: 1; min-width: 150px; margin: 0;">
+                    <select id="assetStatus" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin: 0;">
+                        <option value="Active">🟢 Active</option>
+                        <option value="Maintenance">🟠 Maintenance</option>
+                        <option value="Disposed">🔴 Disposed</option>
+                    </select>
+                    <button class="add-btn no-print" onclick="addAsset()" style="margin: 0; padding: 10px 20px;">+ Add Asset</button>
                 </div>
                 
-                <table style="width: 100%; border-collapse: collapse;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                     <thead>
-                        <tr>
-                            <th>Item Name</th>
-                            <th>Category</th>
-                            <th>Total Quantity</th>
-                            <th class="no-print">Actions</th>
+                        <tr style="background: #e9ece9; border-bottom: 2px solid #557a46;">
+                            <th style="padding: 10px;">Item Name</th>
+                            <th style="padding: 10px;">Category</th>
+                            <th style="padding: 10px;">Qty</th>
+                            <th style="padding: 10px;">Cost (₱)</th>
+                            <th style="padding: 10px;">Serial No.</th>
+                            <th style="padding: 10px;">Status</th>
+                            <th style="padding: 10px;">Purchased</th>
+                            <th class="no-print" style="padding: 10px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="assetsList">
-                        <tr><td colspan="4" style="text-align: center; color: #888; padding: 15px;">Loading assets...</td></tr>
+                        <tr><td colspan="8" style="text-align: center; color: #888; padding: 15px;">Loading assets...</td></tr>
                     </tbody>
                 </table>
             </div>
