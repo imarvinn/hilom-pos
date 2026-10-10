@@ -266,6 +266,17 @@ async function voidActiveTable(tableId) {
             batch.update(doc.ref, { quantity: firebase.firestore.FieldValue.increment(restoreTotals[name]) });
         }
     });
+    // --- NEW: WRITE TO IMMUTABLE AUDIT LOG ---
+    const auditRef = db.collection("audit_logs").doc();
+    batch.set(auditRef, {
+        action: "VOID_ORDER",
+        tableNo: tableData.tableNo,
+        amount: tableData.subtotal,
+        authorizedBy: "Manager PIN", // Or pass the specific manager's name if available
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        details: `Voided ${Object.keys(tableData.items).length} items. Inventory restored.`
+    });
+
     batch.delete(db.collection("active_tables").doc(tableId));
 
     // NEW: Release the Room if voiding a Room Folio
@@ -275,8 +286,13 @@ async function voidActiveTable(tableId) {
         });
     }
     
-    try { await batch.commit(); showToast("Table voided and inventory restored."); } 
-    catch(e) { showToast("Error voiding table."); console.error(e); }
+    try { 
+        await batch.commit(); 
+        showToast("Table voided and recorded in Audit Log."); 
+    } catch(e) { 
+        showToast("Error voiding table."); 
+        console.error(e); 
+    }
 }
 
 function voidActiveTableModal() { if(activeBillingTableId) { voidActiveTable(activeBillingTableId).then(() => { closeBillingModal(); }); } }
