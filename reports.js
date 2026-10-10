@@ -659,3 +659,55 @@ function switchRevenueTab(tabType) {
     // Refresh the table to show the correct data
     renderSalesPage(1); 
 }
+
+// --- EXPORT IMMUTABLE AUDIT LOGS (BIR COMPLIANT) ---
+async function exportAuditLogs() {
+    try {
+        // Fetch logs ordered by oldest to newest
+        const snapshot = await db.collection("audit_logs").orderBy("timestamp", "asc").get();
+        
+        if (snapshot.empty) {
+            alert("No audit logs found.");
+            return;
+        }
+
+        // Set up the CSV headers
+        let csvContent = "Timestamp,Action,Table/Order,Amount,Authorized By,Details\n";
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            
+            // Format the timestamp
+            const time = data.timestamp ? data.timestamp.toDate().toLocaleString() : "N/A";
+            
+            // Sanitize details to prevent CSV formatting breaks if there are commas in the text
+            const safeDetails = `"${(data.details || "").replace(/"/g, '""')}"`;
+            const safeAction = `"${data.action || "UNKNOWN"}"`;
+            const safeTable = `"${data.tableNo || "N/A"}"`;
+            const safeAuth = `"${data.authorizedBy || "Manager"}"`;
+            const amountStr = data.amount ? data.amount.toFixed(2) : "0.00";
+            
+            // Append the row
+            csvContent += `"${time}",${safeAction},${safeTable},"${amountStr}",${safeAuth},${safeDetails}\n`;
+        });
+
+        // Trigger the automatic download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute("href", url);
+        // Names the file automatically with today's date (e.g., Audit_Logs_2026-10-10.csv)
+        const dateString = new Date().toISOString().split('T')[0];
+        link.setAttribute("download", `Audit_Logs_${dateString}.csv`);
+        
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+    } catch (error) {
+        console.error("Error exporting audit logs:", error);
+        alert("Network error: Failed to export audit logs.");
+    }
+}
