@@ -621,9 +621,9 @@ function exportEJournal() {
         txt += `Method: ${s.paymentMethod || "Cash"}\n`;
         txt += "-------------------------------------------------\n";
         
-        txt += "Developer: HILOM Solutions Inc.\n";
-        txt += "Address: Bacolod City, Negros Occidental\n";
-        txt += "TIN: 000-000-000-000\n";
+        txt += "Developer: Marvin R. Arreglado\n";
+        txt += "Address: Talisay City, Negros Occidental\n";
+        txt += "TIN: 428-898-119-000\n";
         txt += "Accreditation No: xxxxxxx\n";
         txt += "MIN: MIN-xxxxxx | SN: SN-xxxxxx\n";
         txt += "=================================================\n\n";
