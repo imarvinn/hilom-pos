@@ -389,7 +389,7 @@ function printPreBill() {
     const bTin = sanitizeHTML(document.getElementById("buyerTinInput").value.trim());
     const bAddress = sanitizeHTML(document.getElementById("buyerAddressInput").value.trim());
 
-    document.getElementById("receiptHeaderTitle").innerText = "BILLING STATEMENT";
+    document.getElementById("receiptHeaderTitle").innerHTML = "BILLING STATEMENT<br><span style='font-size:12px; font-weight:normal;'>THIS IS NOT AN OFFICIAL RECEIPT</span>";
     document.getElementById("receiptInvoiceNo").innerText = ""; 
     document.getElementById("receiptTableNo").innerText = `${data.tableNo}`;
     document.getElementById("receiptTime").innerText = printTime.toLocaleString();
@@ -473,7 +473,7 @@ function printPreBill() {
     showDigitalReceipt('customerReceiptArea'); closeBillingModal();
 }
 
-// --- PROCESS PAYMENT (BIR COMPLIANT) ---
+// --- PROCESS PAYMENT (BIR COMPLIANT TRANSACTION) ---
 async function processPayment() {
     if(!activeBillingTableId) return;
     const data = activeTablesData[activeBillingTableId]; 
@@ -517,111 +517,128 @@ async function processPayment() {
         change = tendered - finalTotal;
     }
 
+    // Prepare database references
     const configRef = db.collection('config').doc('system');
-    const configDoc = await configRef.get();
-    let invNum = configDoc.exists ? (configDoc.data().invoiceCount || 1) : 1;
-    let currentGT = configDoc.exists ? (configDoc.data().grandTotal || 0) : 0;
-    let invString = "INV-" + String(invNum).padStart(6, '0');
-
-    document.getElementById("receiptHeaderTitle").innerText = "SALES INVOICE";
-    document.getElementById("receiptInvoiceNo").innerText = invString;
-    document.getElementById("receiptTableNo").innerText = `${data.tableNo}`;
-    document.getElementById("receiptTime").innerText = payTime.toLocaleString();
-    
-    if(bName || bTin || bAddress) {
-        document.getElementById("receiptBuyerInfo").classList.remove("hidden");
-        document.getElementById("receiptBuyerName").innerText = bName || "-";
-        document.getElementById("receiptBuyerTin").innerText = bTin || "-";
-        document.getElementById("receiptBuyerAddress").innerText = bAddress || "-";
-    } else { document.getElementById("receiptBuyerInfo").classList.add("hidden"); }
-
-    const receiptItems = document.getElementById("receiptItems"); receiptItems.innerHTML = "";
-    const batch = db.batch(); 
-
-    for (let [itemName, itemData] of Object.entries(data.items)) {
-        let itemPrice = itemData.basePrice * itemData.qty; 
-        receiptItems.innerHTML += `<div class="receipt-item" style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${itemData.qty}x ${itemName}</span><span>₱${itemPrice.toFixed(2)}</span></div>`;
-    }
-
     const newSaleRef = db.collection("sales").doc();
-    batch.set(newSaleRef, {
-        invoiceNo: invString,
-        tableNo: data.tableNo,
-        items: data.items,
-        grossAmount: subtotal,
-        discountAmount: totalDiscount,
-        netAmount: finalTotal,
-        totalCost: totalCostForSale,
-        paymentMethod: method,
-        cashTendered: method === "Cash" ? tendered : finalTotal,
-        changeDue: method === "Cash" ? change : 0,
-        status: 'COMPLETED',
-        archived: false,
-        timestamp: payTime,
-seniorDetails: isSenior ? { name: sanitizeHTML(document.getElementById('seniorNameInput').value), id: sanitizeHTML(document.getElementById('seniorIdInput').value) } : null,        buyerDetails: (bName || bTin || bAddress) ? { name: bName, tin: bTin, address: bAddress } : null
-    });
-    
-    batch.update(configRef, { invoiceCount: invNum + 1, grandTotal: currentGT + finalTotal });
-
-    document.getElementById("receiptSubtotal").innerText = `₱${subtotal.toFixed(2)}`;
-    if (totalDiscount > 0) {
-        document.getElementById("receiptDiscountRow").classList.remove("hidden");
-        let discLabel = "Discount:";
-        if (isFreeBF && isSenior) discLabel = "Free BF + Senior:";
-        else if (isFreeBF) discLabel = "Free Breakfast:";
-        else if (isSenior) discLabel = "Senior/PWD (20%):";
-        document.getElementById("receiptDiscountLabel").innerText = discLabel;
-        document.getElementById("receiptDiscountAmount").innerText = `-₱${totalDiscount.toFixed(2)}`;
-    } else { document.getElementById("receiptDiscountRow").classList.add("hidden"); }
-    
-    document.getElementById("receiptFinalTotal").innerText = `₱${finalTotal.toFixed(2)}`;
-
-    const paymentSection = document.getElementById("receiptPaymentSection");
-    paymentSection.classList.remove("hidden");
-    paymentSection.style.display = "block";
-    
-    document.getElementById("receiptPayMethod").innerText = method;
-    const tenderedRow = document.getElementById("receiptTenderedRow");
-    const changeRow = document.getElementById("receiptChangeRow");
-
-    if (method === "Cash") {
-        tenderedRow.classList.remove("hidden");
-        changeRow.classList.remove("hidden");
-        tenderedRow.style.display = "flex";
-        changeRow.style.display = "flex";
-        document.getElementById("receiptTenderedAmount").innerText = `₱${tendered.toFixed(2)}`;
-        document.getElementById("receiptChangeAmount").innerText = `₱${change.toFixed(2)}`;
-    } else {
-        tenderedRow.classList.add("hidden");
-        changeRow.classList.add("hidden");
-        tenderedRow.style.display = "none";
-        changeRow.style.display = "none";
-    }
-
-    document.getElementById("receiptVatSales").innerText = `₱${vatableSales.toFixed(2)}`;
-    document.getElementById("receiptVatAmount").innerText = `₱${vatAmount.toFixed(2)}`;
-    document.getElementById("receiptVatExempt").innerText = `₱${vatExemptSales.toFixed(2)}`;
-    if(isSenior) {
-        document.getElementById("receiptSeniorInfo").classList.remove("hidden");
-        document.getElementById("receiptScName").innerText = document.getElementById("seniorNameInput").value;
-        document.getElementById("receiptScId").innerText = document.getElementById("seniorIdInput").value;
-    } else { document.getElementById("receiptSeniorInfo").classList.add("hidden"); }
-
     const tableRef = db.collection("active_tables").doc(activeBillingTableId);
-    batch.delete(tableRef);
-
-    // NEW: Release the Room if checking out from a Room Folio
-    if (data.isRoomFolio && data.roomId) {
-        batch.update(db.collection("rooms").doc(data.roomId), {
-            status: "AVAILABLE", activeTableId: null, currentGuestName: null
-        });
-    }
-
+    
     try {
-        await batch.commit();
-        closeBillingModal(); showToast("Invoice Generated & Saved!");
+        // EXECUTE ATOMIC TRANSACTION
+        const finalInvString = await db.runTransaction(async (transaction) => {
+            // 1. Read the current counter (Locks the document)
+            const configDoc = await transaction.get(configRef);
+            let invNum = configDoc.exists ? (configDoc.data().invoiceCount || 1) : 1;
+            let currentGT = configDoc.exists ? (configDoc.data().grandTotal || 0) : 0;
+            let invString = "INV-" + String(invNum).padStart(6, '0');
+
+            // 2. Write the new sale securely using the guaranteed number
+            transaction.set(newSaleRef, {
+                invoiceNo: invString,
+                tableNo: data.tableNo,
+                items: data.items,
+                grossAmount: subtotal,
+                discountAmount: totalDiscount,
+                netAmount: finalTotal,
+                totalCost: totalCostForSale,
+                paymentMethod: method,
+                cashTendered: method === "Cash" ? tendered : finalTotal,
+                changeDue: method === "Cash" ? change : 0,
+                status: 'COMPLETED',
+                archived: false,
+                timestamp: payTime,
+                seniorDetails: isSenior ? { name: sanitizeHTML(document.getElementById('seniorNameInput').value), id: sanitizeHTML(document.getElementById('seniorIdInput').value) } : null,
+                buyerDetails: (bName || bTin || bAddress) ? { name: bName, tin: bTin, address: bAddress } : null
+            });
+
+            // 3. Update the master counter and grand total
+            transaction.update(configRef, { invoiceCount: invNum + 1, grandTotal: currentGT + finalTotal });
+            
+            // 4. Delete the active table
+            transaction.delete(tableRef);
+
+            // 5. Release room if checking out from a Room Folio
+            if (data.isRoomFolio && data.roomId) {
+                const roomRef = db.collection("rooms").doc(data.roomId);
+                transaction.update(roomRef, {
+                    status: "AVAILABLE", activeTableId: null, currentGuestName: null
+                });
+            }
+
+            return invString; // Pass the final invoice number to the UI
+        });
+
+        // TRANSACTION SUCCESSFUL: Update Receipt UI
+        document.getElementById("receiptHeaderTitle").innerText = "SALES INVOICE";
+        document.getElementById("receiptInvoiceNo").innerText = finalInvString;
+        document.getElementById("receiptTableNo").innerText = `${data.tableNo}`;
+        document.getElementById("receiptTime").innerText = payTime.toLocaleString();
+        
+        if(bName || bTin || bAddress) {
+            document.getElementById("receiptBuyerInfo").classList.remove("hidden");
+            document.getElementById("receiptBuyerName").innerText = bName || "-";
+            document.getElementById("receiptBuyerTin").innerText = bTin || "-";
+            document.getElementById("receiptBuyerAddress").innerText = bAddress || "-";
+        } else { document.getElementById("receiptBuyerInfo").classList.add("hidden"); }
+
+        const receiptItems = document.getElementById("receiptItems"); receiptItems.innerHTML = "";
+        for (let [itemName, itemData] of Object.entries(data.items)) {
+            let itemPrice = itemData.basePrice * itemData.qty; 
+            receiptItems.innerHTML += `<div class="receipt-item" style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${itemData.qty}x ${itemName}</span><span>₱${itemPrice.toFixed(2)}</span></div>`;
+        }
+
+        document.getElementById("receiptSubtotal").innerText = `₱${subtotal.toFixed(2)}`;
+        if (totalDiscount > 0) {
+            document.getElementById("receiptDiscountRow").classList.remove("hidden");
+            let discLabel = "Discount:";
+            if (isFreeBF && isSenior) discLabel = "Free BF + Senior:";
+            else if (isFreeBF) discLabel = "Free Breakfast:";
+            else if (isSenior) discLabel = "Senior/PWD (20%):";
+            document.getElementById("receiptDiscountLabel").innerText = discLabel;
+            document.getElementById("receiptDiscountAmount").innerText = `-₱${totalDiscount.toFixed(2)}`;
+        } else { document.getElementById("receiptDiscountRow").classList.add("hidden"); }
+        
+        document.getElementById("receiptFinalTotal").innerText = `₱${finalTotal.toFixed(2)}`;
+
+        const paymentSection = document.getElementById("receiptPaymentSection");
+        paymentSection.classList.remove("hidden");
+        paymentSection.style.display = "block";
+        
+        document.getElementById("receiptPayMethod").innerText = method;
+        const tenderedRow = document.getElementById("receiptTenderedRow");
+        const changeRow = document.getElementById("receiptChangeRow");
+
+        if (method === "Cash") {
+            tenderedRow.classList.remove("hidden");
+            changeRow.classList.remove("hidden");
+            tenderedRow.style.display = "flex";
+            changeRow.style.display = "flex";
+            document.getElementById("receiptTenderedAmount").innerText = `₱${tendered.toFixed(2)}`;
+            document.getElementById("receiptChangeAmount").innerText = `₱${change.toFixed(2)}`;
+        } else {
+            tenderedRow.classList.add("hidden");
+            changeRow.classList.add("hidden");
+            tenderedRow.style.display = "none";
+            changeRow.style.display = "none";
+        }
+
+        document.getElementById("receiptVatSales").innerText = `₱${vatableSales.toFixed(2)}`;
+        document.getElementById("receiptVatAmount").innerText = `₱${vatAmount.toFixed(2)}`;
+        document.getElementById("receiptVatExempt").innerText = `₱${vatExemptSales.toFixed(2)}`;
+        
+        if(isSenior) {
+            document.getElementById("receiptSeniorInfo").classList.remove("hidden");
+            document.getElementById("receiptScName").innerText = document.getElementById("seniorNameInput").value;
+            document.getElementById("receiptScId").innerText = document.getElementById("seniorIdInput").value;
+        } else { document.getElementById("receiptSeniorInfo").classList.add("hidden"); }
+
+        closeBillingModal(); 
+        showToast("Invoice Generated & Saved!");
         showDigitalReceipt('customerReceiptArea');
-    } catch(err) { console.error(err); showToast("Error processing payment."); }
+
+    } catch(err) {
+        console.error("Transaction failed: ", err); 
+        showToast("Network error: Could not secure invoice number. Please try again."); 
+    }
 }
 
 // --- MENU BUILDER LOGIC (STRICTLY FOOD & BEVERAGE) ---
