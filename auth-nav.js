@@ -10,8 +10,11 @@ function switchView(viewId, navElement) {
         return;
     }
 
-    document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden', 'active'));
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+document.querySelectorAll('.view-section').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('active');
+    });
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     const targetView = document.getElementById(viewId);
     if (targetView) { targetView.classList.remove('hidden'); targetView.classList.add('active'); }
     if (navElement) navElement.classList.add('active');
