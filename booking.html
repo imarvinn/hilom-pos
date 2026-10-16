@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hilom Resort | Reservations</title>
+    <link rel="stylesheet" href="public-style.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+
+    <nav>
+        <div class="brand-container">
+            <img src="text-1790998905612.png" alt="Hilom" class="new-text-logo">
+            <span class="sub-text">by Dondeezco</span>
+        </div>
+        <div>
+            <a href="index.html">Home</a>
+            <a href="experience.html">Experience</a>
+            <a href="rooms.html">Our Rooms</a>
+            <a href="booking.html">Book & Status</a>
+            <a href="contact.html">Contact</a>
+            <a href="booking.html" class="btn">Book Now</a>
+        </div>
+    </nav>
+
+    <section class="booking-section">
+        <div class="booking-container">
+            <h2 style="text-align: center; color: var(--primary-dark); margin-top: 0;">Reservation Request</h2>
+            <p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 25px;">Submit your details below and our Front Desk will contact you shortly to confirm your booking.</p>
+            
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="guestName" placeholder="e.g. Juan Dela Cruz" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Contact Number</label>
+                    <input type="text" id="contact" placeholder="e.g. 0917-123-4567" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Room Preference</label>
+                    <select id="roomType" required>
+                        <option value="" disabled selected>Select a room type...</option>
+                        <option value="Deluxe">Deluxe Room</option>
+                        <option value="Family">Family Room</option>
+                        <option value="Shoreline">Shoreline Room</option>
+                    </select>
+                </div>
+
+                <div class="date-group">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Check-In Date</label>
+                        <input type="date" id="checkIn" required>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Check-Out Date</label>
+                        <input type="date" id="checkOut" required>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 20px;">
+                    <label>Enhance Your Stay (Optional)</label>
+                    <select id="addonSelect">
+                        <option value="None" data-price="0">No Extra Add-ons</option>
+                        <option value="Breakfast" data-price="0"> Daily Breakfast </option>
+                        <option value="Airport Transfer" data-price="300"> Sea/Air Port Pick-up (300.00) </option>
+                        <option value="Extra Bed" data-price="800"> Extra Bed (800.00)</option>
+                    </select>
+                </div>
+
+                <div style="background: #eef2eb; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--primary); text-align: right;">
+                    <span style="font-size: 14px; color: #555;">Estimated Total:</span>
+                    <div id="priceEstimate" style="font-size: 28px; font-weight: bold; color: var(--primary-dark);">₱0.00</div>
+                    <div id="priceBreakdown" style="font-size: 13px; color: #666; margin-top: 5px;">Select dates and room to see price</div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">Send Booking Request</button>
+            </form>
+        </div>
+
+        <div style="max-width: 600px; margin: 50px auto 0; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 5px solid var(--accent); text-align: center;">
+            <h2 style="color: var(--primary-dark); margin-top: 0;">Check Reservation Status</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Enter the contact number you used to book.</p>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" id="trackContact" placeholder="e.g. 0917-123-4567" style="flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; min-width: 200px;">
+                <button onclick="checkStatus()" style="background-color: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px;">Search</button>
+            </div>
+            
+            <div id="statusResult" style="margin-top: 20px; text-align: left; display: none;"></div>
+        </div>
+    </section>
+
+    <footer>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap; padding-top: 10px;">
+            <p style="margin: 0; font-size: 14px;">&copy; <span id="year"></span> Hilom by Dondeezco. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('year').innerText = new Date().getFullYear();
+
+        // ⚠️ YOUR FIREBASE CONFIG
+        const firebaseConfig = {
+          apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
+          authDomain: "dbr-pos.firebaseapp.com",
+          projectId: "dbr-pos",
+          storageBucket: "dbr-pos.firebasestorage.app",
+          messagingSenderId: "176532211278",
+          appId: "1:176532211278:web:57d78462a3355a32ce251f",
+          measurementId: "G-MPYZMBHZDC"
+        };
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        const db = firebase.firestore();
+
+        // Pricing Logic
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById("checkIn").setAttribute('min', today);
+        document.getElementById("checkOut").setAttribute('min', today);
+        const roomRates = { "Deluxe": 3600, "Family": 5500, "Shoreline": 3800 };
+
+        function calculateTotal() {
+            const roomType = document.getElementById("roomType").value;
+            const checkIn = document.getElementById("checkIn").value;
+            const checkOut = document.getElementById("checkOut").value;
+            if(!roomType || !checkIn || !checkOut) return;
+            const inDate = new Date(checkIn); const outDate = new Date(checkOut);
+            if (outDate <= inDate) return; 
+            const nights = Math.ceil((outDate - inDate) / (1000 * 3600 * 24));
+            const baseRate = roomRates[roomType];
+            let roomTotal = baseRate * nights;
+            const addonSelect = document.getElementById("addonSelect");
+            const selectedOption = addonSelect.options[addonSelect.selectedIndex];
+            const addonPrice = parseFloat(selectedOption.getAttribute("data-price"));
+            let addonsTotal = 0;
+            if (addonPrice > 0) addonsTotal = (selectedOption.value === "Airport Transfer") ? addonPrice : (addonPrice * nights);
+            const grandTotal = roomTotal + addonsTotal;
+            document.getElementById("priceEstimate").innerText = `₱${grandTotal.toLocaleString('en-PH', {minimumFractionDigits: 2})}`;
+            document.getElementById("priceBreakdown").innerText = `${nights} night(s) at ₱${baseRate.toLocaleString()} + Add-ons`;
+        }
+
+        document.getElementById("roomType").addEventListener("change", calculateTotal);
+        document.getElementById("checkIn").addEventListener("change", calculateTotal);
+        document.getElementById("checkOut").addEventListener("change", calculateTotal);
+        document.getElementById("addonSelect").addEventListener("change", calculateTotal);
+
+        // Submit Booking
+        document.getElementById("bookingForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("submitBtn");
+            btn.innerText = "Sending..."; btn.disabled = true;
+            const checkIn = document.getElementById("checkIn").value;
+            const checkOut = document.getElementById("checkOut").value;
+
+            if (new Date(checkOut) <= new Date(checkIn)) {
+                alert("Check-out date must be after check-in date.");
+                btn.innerText = "Send Booking Request"; btn.disabled = false;
+                return;
+            }
+
+            try {
+                await db.collection("web_reservations").add({
+                    guestName: document.getElementById("guestName").value.trim(),
+                    contact: document.getElementById("contact").value.trim(),
+                    roomType: document.getElementById("roomType").value,
+                    checkInDate: checkIn,
+                    checkOutDate: checkOut,
+                    addons: document.getElementById("addonSelect").value,
+                    estimatedTotal: document.getElementById("priceEstimate").innerText,
+                    status: "PENDING",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("Success! Your booking request has been sent to our Front Desk.");
+                document.getElementById("bookingForm").reset();
+                document.getElementById("priceEstimate").innerText = "₱0.00";
+                document.getElementById("priceBreakdown").innerText = "Select dates and room to see price";
+            } catch (error) {
+                console.error(error); alert("Error submitting request.");
+            } finally {
+                btn.innerText = "Send Booking Request"; btn.disabled = false;
+            }
+        });
+
+        // Status Tracker
+        async function checkStatus() {
+            const contact = document.getElementById("trackContact").value.trim();
+            const resultDiv = document.getElementById("statusResult");
+            if (!contact) return alert("Please enter a contact number.");
+            
+            resultDiv.style.display = "block";
+            resultDiv.innerHTML = "<p style='text-align:center; color: #666;'>Searching...</p>";
+
+            try {
+                const snapshot = await db.collection("web_reservations").where("contact", "==", contact).get();
+                if (snapshot.empty) {
+                    resultDiv.innerHTML = "<p style='color: #bd4b4b; text-align:center; font-weight: bold;'>No reservation found.</p>";
+                    return;
+                }
+                let bookings = [];
+                snapshot.forEach(doc => bookings.push(doc.data()));
+                bookings.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+                let html = "";
+                bookings.forEach(data => {
+                    let statusColor = "#f39c12"; let statusText = data.status ? data.status.toUpperCase() : "PENDING";
+                    if (statusText === "CONFIRMED" || statusText === "APPROVED") { statusColor = "#557a46"; statusText = "CONFIRMED"; } 
+                    else if (statusText === "REJECTED" || statusText === "CANCELLED") { statusColor = "#bd4b4b"; }
+                    html += `
+                        <div style="border: 1px solid #e0e5e0; padding: 15px; border-radius: 8px; margin-bottom: 10px; background: #f9f9f9;">
+                            <div style="font-weight: bold; font-size: 18px; color: var(--primary-dark); margin-bottom: 5px;">${data.guestName}</div>
+                            <div style="font-size: 14px; color: #555; margin-bottom: 3px;"><strong>Room:</strong> ${data.roomType}</div>
+                            <div style="font-size: 14px; color: #555; margin-bottom: 15px;"><strong>Dates:</strong> ${data.checkInDate} to ${data.checkOutDate}</div>
+                            <div style="font-size: 15px; font-weight: bold; color: ${statusColor}; border-top: 1px dashed #ccc; padding-top: 10px;">⬤ STATUS: ${statusText}</div>
+                        </div>`;
+                });
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                console.error(error); resultDiv.innerHTML = "<p style='color: #bd4b4b; text-align:center;'>Error retrieving data.</p>";
+            }
+        }
+        
+        window.addEventListener("scroll", function() {
+            const nav = document.querySelector("nav");
+            if (window.scrollY > 50) nav.classList.add("scrolled");
+            else nav.classList.remove("scrolled");
+        });
+    </script>
+</body>
+</html>
