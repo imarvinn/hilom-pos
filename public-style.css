@@ -146,6 +146,8 @@ footer { background-color: #1a2918; color: white; text-align: center; padding: 6
     font-size: 28px;
     cursor: pointer;
     transition: color 0.3s ease;
+    position: relative;
+    z-index: 999; /* Forces the button to be clickable above everything */
 }
 nav.scrolled .mobile-menu-btn {
     color: var(--primary-dark);
