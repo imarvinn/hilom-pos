@@ -337,3 +337,35 @@ nav.scrolled .mobile-menu-btn {
     0% { transform: scale(0.95); opacity: 0.6; }
     100% { transform: scale(1.05); opacity: 1; }
 }
+
+/* --- FOOTER MOBILE FIXES --- */
+@media (max-width: 768px) {
+    .footer-container {
+        text-align: center;
+        gap: 30px;
+    }
+    
+    /* Constrains the large tree logo */
+    .footer-brand .footer-logo {
+        height: auto;
+        max-width: 90%; 
+        max-height: 140px;
+        margin: 0 auto 15px auto;
+    }
+
+    .footer-brand p {
+        margin: 0 auto;
+    }
+
+    /* Forces links to stack vertically and removes the blue */
+    .footer-links a {
+        display: block !important; 
+        color: #a0aab2 !important; 
+        padding: 8px 0;
+        font-size: 16px;
+    }
+
+    .social-icons a {
+        color: white !important;
+    }
+}
