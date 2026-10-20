@@ -1,98 +1,155 @@
-/* --- HILOM PUBLIC WEBSITE THEME --- */
+/* --- HILOM PUBLIC WEBSITE: CINEMATIC THEME --- */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600&display=swap');
+
 :root {
     --primary: #557a46;
     --primary-dark: #2b4227;
     --accent: #8c5d3a;
-    --bg-color: #f9f9f9;
+    --bg-color: #fbfbfb;
+    --text-main: #333333;
+    --text-light: #666666;
 }
 
 body, html {
     margin: 0; padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Montserrat', sans-serif;
     background-color: var(--bg-color);
-    color: #333;
+    color: var(--text-main);
     scroll-behavior: smooth;
+    overflow-x: hidden;
 }
 
 body { 
-    padding-top: 90px; 
     display: flex; 
     flex-direction: column; 
     min-height: 100vh; 
 }
 
-/* NAVBAR */
-nav {
-    background-color: white; padding: 20px 40px; display: flex;
-    justify-content: space-between; align-items: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: fixed; 
-    width: 100%; box-sizing: border-box; top: 0; z-index: 100; transition: all 0.4s ease;
+/* CINEMATIC TYPOGRAPHY */
+h1, h2, h3, h4, h5 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
-nav a { text-decoration: none; color: #333; font-weight: bold; margin-left: 20px; display: inline-block; vertical-align: middle; }
-nav a.btn { background-color: var(--primary); color: white; padding: 10px 20px; border-radius: 5px; }
-nav a:hover:not(.btn) { color: var(--primary); }
 
-.brand-container { display: flex; align-items: flex-end; gap: 10px; transition: transform 0.3s ease; }
-.new-text-logo { height: 50px; width: auto; object-fit: contain; }
-.sub-text { font-size: 18px; font-weight: 600; color: var(--primary-dark); margin-bottom: 8px; letter-spacing: 1px; }
+/* GLASSMORPHISM NAVBAR */
+nav {
+    background-color: transparent; 
+    padding: 30px 50px; display: flex;
+    justify-content: space-between; align-items: center;
+    position: fixed; width: 100%; box-sizing: border-box; 
+    top: 0; z-index: 100; transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
 
-/* SCROLLED NAVBAR ANIMATION */
-nav.scrolled { padding: 10px 40px; }
-nav.scrolled .new-text-logo { height: 35px; }
-nav.scrolled .sub-text { font-size: 14px; margin-bottom: 4px; }
+nav a { 
+    text-decoration: none; 
+    color: white; 
+    font-weight: 500; 
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-left: 30px; 
+    display: inline-block; 
+    vertical-align: middle;
+    transition: color 0.3s ease;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* Helps text pop on light videos */
+}
 
-/* HERO SECTION */
-.hero { position: relative; height: 70vh; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 0 20px; overflow: hidden; }
+nav a:hover:not(.btn) { color: #e0e5e0; }
+
+nav a.btn { 
+    background-color: rgba(255, 255, 255, 0.15); 
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white; 
+    padding: 12px 25px; 
+    border-radius: 30px; 
+    transition: all 0.4s ease;
+}
+
+nav a.btn:hover {
+    background-color: white;
+    color: var(--primary-dark);
+    text-shadow: none;
+}
+
+.brand-container { display: flex; align-items: flex-end; gap: 10px; transition: transform 0.4s ease; }
+.new-text-logo { height: 55px; width: auto; object-fit: contain; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.4)); transition: all 0.4s ease; }
+.sub-text { font-size: 16px; font-weight: 400; color: white; margin-bottom: 8px; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+
+/* SCROLLED NAVBAR STATE */
+nav.scrolled { 
+    background: rgba(43, 66, 39, 0.95); 
+    backdrop-filter: blur(15px); 
+    padding: 15px 50px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+nav.scrolled a { text-shadow: none; }
+nav.scrolled .new-text-logo { height: 35px; filter: none; filter: brightness(0) invert(1); }
+nav.scrolled .sub-text { font-size: 12px; margin-bottom: 4px; text-shadow: none; }
+nav.scrolled a.btn { background: white; color: var(--primary-dark); border: none; }
+
+/* CINEMATIC HERO SECTION */
+.hero { position: relative; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 0 20px; overflow: hidden; }
 .hero-video { position: absolute; top: 50%; left: 50%; min-width: 100%; min-height: 100%; width: auto; height: auto; transform: translateX(-50%) translateY(-50%); object-fit: cover; z-index: 1; }
-.hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(43, 66, 39, 0.5); z-index: 2; }
-.hero-content { position: relative; z-index: 3; }
-.hero h2 { font-size: 54px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-.hero p { font-size: 22px; margin-bottom: 30px; max-width: 600px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
+.hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(43, 66, 39, 0.6) 100%); z-index: 2; }
+.hero-content { position: relative; z-index: 3; margin-top: 50px; }
+.hero h2 { font-size: 72px; margin-bottom: 10px; text-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+.hero p { font-size: 20px; font-weight: 300; margin-bottom: 40px; max-width: 600px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); letter-spacing: 1px; line-height: 1.6; }
 
-/* GALLERY & ROOMS */
-.gallery, .rooms { padding: 50px 20px; max-width: 1200px; margin: 0 auto; text-align: center; }
-.rooms { background-color: #f1f8e9; max-width: 100%; }
-.gallery h2, .rooms h2 { color: var(--primary-dark); margin-bottom: 30px; font-size: 36px;}
-.gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
-.gallery-grid img { width: 100%; height: 250px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.3s; }
-.gallery-grid img:hover { transform: scale(1.03); }
+/* SECTIONS & REVEAL ANIMATIONS */
+section:not(.hero) { padding: 100px 20px; }
+.gallery, .rooms { max-width: 1200px; margin: 0 auto; text-align: center; }
+.rooms { background-color: var(--bg-color); max-width: 100%; }
+.gallery h2, .rooms h2 { color: var(--primary-dark); margin-bottom: 15px; font-size: 42px;}
+.section-subtitle { color: var(--text-light); font-size: 16px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 50px; display: block; }
 
-.rooms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; margin-top: 30px; max-width: 1200px; margin: 30px auto 0; }
-.room-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.3s; }
-.room-card:hover { transform: translateY(-5px); }
-.room-card img { width: 100%; height: 250px; object-fit: cover; }
-.room-details { padding: 20px; text-align: left; }
-.room-details h3 { margin: 0 0 10px 0; color: var(--primary-dark); font-size: 24px;}
-.room-price { color: var(--accent); font-weight: bold; font-size: 18px; }
+/* SMOOTH SCROLL REVEAL CLASS */
+.reveal { opacity: 0; transform: translateY(50px); transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.reveal.active { opacity: 1; transform: translateY(0); }
+
+/* CINEMATIC GALLERY & ROOMS */
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.gallery-grid img { width: 100%; height: 400px; object-fit: cover; border-radius: 4px; transition: transform 0.8s ease, filter 0.8s ease; filter: brightness(0.9); }
+.gallery-grid img:hover { transform: scale(1.05); filter: brightness(1.1); box-shadow: 0 20px 40px rgba(0,0,0,0.2); z-index: 10; position: relative;}
+
+.rooms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 40px; max-width: 1200px; margin: 0 auto; text-align: left; }
+.room-card { background: white; border-radius: 0; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: transform 0.5s ease; }
+.room-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+.room-card img { width: 100%; height: 350px; object-fit: cover; }
+.room-details { padding: 35px; }
+.room-details h3 { margin: 0 0 15px 0; color: var(--primary-dark); font-size: 28px;}
+.room-details p { line-height: 1.7; color: var(--text-light); font-size: 15px; }
+.room-price { color: var(--accent); font-weight: 500; font-size: 20px; margin-top: 20px; font-family: 'Playfair Display', serif; font-style: italic; }
 
 /* BOOKING FORM */
-.booking-section { background-color: white; padding: 60px 20px; flex: 1; }
-.booking-container { max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 40px; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border-top: 5px solid var(--primary); }
-.form-group { margin-bottom: 15px; }
-.form-group label { display: block; font-weight: bold; margin-bottom: 5px; color: var(--primary-dark); }
-.form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; box-sizing: border-box; outline: none; }
-.form-group input:focus, .form-group select:focus { border-color: var(--primary); }
-.submit-btn { width: 100%; padding: 15px; background-color: var(--primary); color: white; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background 0.3s; margin-top: 10px; }
-.submit-btn:hover { background-color: var(--primary-dark); }
-.date-group { display: flex; gap: 15px; }
+.booking-section { background-color: white; flex: 1; }
+.booking-container { max-width: 700px; margin: 0 auto; background: white; padding: 60px; box-shadow: 0 20px 50px rgba(0,0,0,0.08); border-top: 1px solid #eee; }
+.form-group { margin-bottom: 25px; text-align: left; }
+.form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--primary-dark); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+.form-group input, .form-group select { width: 100%; padding: 15px; border: 0; border-bottom: 1px solid #ddd; background: #fdfdfd; font-size: 16px; font-family: 'Montserrat', sans-serif; box-sizing: border-box; outline: none; transition: border-color 0.3s ease, background 0.3s ease; }
+.form-group input:focus, .form-group select:focus { border-bottom: 2px solid var(--primary-dark); background: transparent; }
+.submit-btn { width: 100%; padding: 18px; background-color: var(--primary-dark); color: white; border: none; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; cursor: pointer; transition: background 0.4s ease, transform 0.4s ease; margin-top: 20px; }
+.submit-btn:hover { background-color: #1a2918; transform: translateY(-2px); }
+.date-group { display: flex; gap: 20px; }
 
 /* FOOTER */
-footer { background-color: var(--primary-dark); color: white; text-align: center; padding: 30px 20px; margin-top: auto; }
+footer { background-color: #1a2918; color: white; text-align: center; padding: 60px 20px 40px; margin-top: auto; }
 
 /* MOBILE RESPONSIVENESS */
 @media (max-width: 768px) {
-    body { padding-top: 70px; }
-    nav { flex-direction: row; justify-content: space-between; padding: 10px 15px; height: 70px; }
-    nav.scrolled { height: 55px; padding: 10px 15px; }
+    nav { flex-direction: row; justify-content: space-between; padding: 15px 20px; }
+    nav.scrolled { padding: 15px 20px; }
     .brand-container { align-items: center; gap: 5px; }
-    .new-text-logo { height: 30px; }
-    nav.scrolled .new-text-logo { height: 22px; }
-    .sub-text { font-size: 13px; margin-bottom: 0; }
+    .new-text-logo { height: 40px; }
+    nav.scrolled .new-text-logo { height: 28px; }
+    .sub-text { font-size: 12px; margin-bottom: 0; }
     nav.scrolled .sub-text { font-size: 10px; }
     nav a:not(.btn) { display: none; }
-    nav a.btn { padding: 8px 12px; font-size: 13px; margin-left: 0; }
-    .hero h2 { font-size: 36px; }
-    .hero p { font-size: 18px; }
-    .booking-container { padding: 20px; }
+    nav a.btn { padding: 10px 15px; font-size: 11px; margin-left: 0; }
+    .hero h2 { font-size: 42px; }
+    .hero p { font-size: 16px; }
+    .booking-container { padding: 30px 20px; }
     .date-group { flex-direction: column; gap: 0; }
+    .gallery-grid img { height: 300px; }
 }
