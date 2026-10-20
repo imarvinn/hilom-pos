@@ -10,6 +10,29 @@
     --text-light: #666666;
 }
 
+/* --- CUSTOM RESORT SCROLLBAR --- */
+/* 1. Width of the scrollbar */
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+/* 2. The track (background) of the scrollbar */
+::-webkit-scrollbar-track {
+    background: var(--bg-color); 
+}
+
+/* 3. The draggable scrolling handle */
+::-webkit-scrollbar-thumb {
+    background-color: var(--primary-dark);
+    border-radius: 10px;
+    border: 3px solid var(--bg-color); /* Creates a sleek padded effect */
+}
+
+/* 4. Hover state when a user clicks/hovers the handle */
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--accent); /* Turns earthy gold on hover */
+}
+
 body, html {
     margin: 0; padding: 0;
     font-family: 'Montserrat', sans-serif;
