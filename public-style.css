@@ -448,3 +448,66 @@ nav.scrolled .mobile-menu-btn {
         font-size: 32px;
     }
 }
+
+/* --- TESTIMONIALS SECTION --- */
+.testimonials-section {
+    background-color: var(--bg-color);
+    text-align: center;
+    padding: 100px 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.testimonials-section h2 {
+    color: var(--primary-dark);
+    font-size: 38px;
+    margin-bottom: 50px;
+}
+
+.testimonial-slider {
+    position: relative;
+    min-height: 180px; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.testimonial-slide {
+    position: absolute;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+    pointer-events: none;
+    width: 100%;
+}
+
+.testimonial-slide.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.stars {
+    color: var(--accent); /* Uses your earthy gold color */
+    font-size: 22px;
+    margin-bottom: 20px;
+    letter-spacing: 4px;
+}
+
+.quote {
+    font-size: 22px;
+    font-style: italic;
+    color: var(--text-light);
+    line-height: 1.6;
+    margin-bottom: 25px;
+    font-family: 'Playfair Display', serif;
+}
+
+.author {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-dark);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+

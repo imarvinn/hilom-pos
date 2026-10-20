@@ -44,6 +44,32 @@
             <a href="booking.html" style="background: var(--accent); color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px;">Reserve a Room</a>
         </div>
     </section>
+
+<!-- TESTIMONIALS SECTION -->
+    <section class="testimonials-section reveal">
+        <h2>Guest Experiences</h2>
+        <div class="testimonial-slider">
+            <!-- Review 1 -->
+            <div class="testimonial-slide active">
+                <div class="stars">★★★★★</div>
+                <p class="quote">"An absolute paradise. The coastal views from the Shoreline Room were breathtaking. We will definitely be back."</p>
+                <span class="author">- Maria S.</span>
+            </div>
+            <!-- Review 2 -->
+            <div class="testimonial-slide">
+                <div class="stars">★★★★★</div>
+                <p class="quote">"The perfect escape from the city. The staff was incredibly welcoming, and the aesthetic is simply stunning."</p>
+                <span class="author">- James D.</span>
+            </div>
+            <!-- Review 3 -->
+            <div class="testimonial-slide">
+                <div class="stars">★★★★★</div>
+                <p class="quote">"A true hidden gem in Siquijor. Highly recommend the family room if you're traveling with a group. 10/10."</p>
+                <span class="author">- Anna L.</span>
+            </div>
+        </div>
+    </section>
+
 <!-- PARALLAX IMAGE BREAK -->
     <section class="parallax-section">
         <div class="parallax-overlay"></div>
@@ -141,6 +167,21 @@
         }, 300);
     });
 
+    // Testimonial Auto-Slider
+    function startTestimonials() {
+        const slides = document.querySelectorAll('.testimonial-slide');
+        if (slides.length === 0) return;
+        
+        let currentSlide = 0;
+        setInterval(() => {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }, 5000); // Changes every 5000 milliseconds (5 seconds)
+    }
+    
+    // Start the slider when the page loads
+    window.addEventListener('load', startTestimonials);
     
 </script>
 </body>
