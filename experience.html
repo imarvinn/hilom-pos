@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="public-style.css">
 </head>
 <body>
+    <!-- CINEMATIC PRELOADER -->
+<div id="preloader" class="preloader">
+    <img src="text-1790998905612.png" alt="Hilom" class="preloader-logo">
+</div>
 
     <nav>
     <div class="brand-container">
@@ -106,6 +110,21 @@
         });
     }
     highlightActiveLink();
+
+    // Cinematic Preloader (Wait for page load)
+    window.addEventListener('load', function() {
+        const preloader = document.getElementById('preloader');
+        
+        // A tiny 300ms theatrical delay to ensure the video has started playing
+        setTimeout(() => {
+            preloader.classList.add('fade-out');
+            
+            // Remove the preloader from the code entirely after the fade finishes
+            setTimeout(() => {
+                if(preloader) preloader.remove();
+            }, 800);
+        }, 300);
+    });
 </script>
 </body>
 </html>
