@@ -511,3 +511,32 @@ nav.scrolled .mobile-menu-btn {
     letter-spacing: 2px;
 }
 
+/* --- LUXURY CALENDAR THEME --- */
+.flatpickr-calendar {
+    font-family: 'Montserrat', sans-serif !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+    border: none !important;
+}
+.flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange, .flatpickr-day.selected:focus, .flatpickr-day.startRange:focus, .flatpickr-day.endRange:focus, .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.endRange.prevMonthDay, .flatpickr-day.selected.nextMonthDay, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.endRange.nextMonthDay {
+    background: var(--primary-dark) !important;
+    border-color: var(--primary-dark) !important;
+}
+
+/* --- CINEMATIC MAP --- */
+.map-container {
+    margin-top: 50px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border-top: 5px solid var(--primary-dark);
+    /* Desaturates the map slightly to fit the cinematic theme */
+    filter: grayscale(30%) contrast(110%); 
+    transition: filter 0.5s ease;
+}
+.map-container:hover {
+    /* Snaps back to full Google Maps color on hover */
+    filter: grayscale(0%) contrast(100%); 
+}

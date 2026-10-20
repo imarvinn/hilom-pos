@@ -1,9 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Flatpickr Custom Calendar -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hilom Resort | Reservations</title>
+    <!-- Open Graph / Social Media Preview Tags -->
+    <meta property="og:title" content="Hilom Resort by Dondeezco">
+    <meta property="og:description" content="Experience relaxation, comfort, and exceptional coastal views in Siquijor. Book your luxury getaway today.">
+    <!-- Using your Shoreline room image as the preview thumbnail -->
+    <meta property="og:image" content="https://hilomresort.vercel.app/757863595_122180789318854145_5234982306311465279_n.jpg">
+    <meta property="og:url" content="https://hilomresort.vercel.app/">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="stylesheet" href="public-style.css">
     
     <!-- Firebase SDKs -->
@@ -268,6 +278,21 @@
             else nav.classList.remove("scrolled");
         });
     </script>
+
+
+// Initialize Luxury Calendar Picker
+        flatpickr("#checkIn", {
+            minDate: "today",
+            altInput: true,
+            altFormat: "F j, Y",
+            dateFormat: "Y-m-d",
+        });
+        flatpickr("#checkOut", {
+            minDate: "today",
+            altInput: true,
+            altFormat: "F j, Y",
+            dateFormat: "Y-m-d",
+        });
 
     <script>
     document.getElementById('year').innerText = new Date().getFullYear();
