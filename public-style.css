@@ -163,7 +163,8 @@ section:not(.hero) { padding: 100px 20px; }
 }
 
 .footer-brand .footer-logo {
-    height: 60px;
+    height: 100px; /* Increased from 60px */
+    width: auto; /* Ensures it doesn't stretch weirdly */
     margin-bottom: 15px;
     filter: brightness(0) invert(1);
 }
