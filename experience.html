@@ -9,19 +9,24 @@
 <body>
 
     <nav>
-        <div class="brand-container">
-            <img src="text-1790998905612.png" alt="Hilom" class="new-text-logo">
-            <span class="sub-text">by Dondeezco</span>
-        </div>
-        <div>
-            <a href="index.html">Home</a>
-            <a href="experience.html">Experience</a>
-            <a href="rooms.html">Our Rooms</a>
-            <a href="booking.html">Book & Status</a>
-            <a href="contact.html">Contact</a>
-            <a href="booking.html" class="btn">Book Now</a>
-        </div>
-    </nav>
+    <div class="brand-container">
+        <img src="text-1790998905612.png" alt="Hilom" class="new-text-logo">
+        <span class="sub-text">by Dondeezco</span>
+    </div>
+    
+    <!-- New Hamburger Button for Mobile -->
+    <button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
+
+    <!-- Wrapped Links -->
+    <div class="nav-links" id="navLinks">
+        <a href="index.html">Home</a>
+        <a href="experience.html">Experience</a>
+        <a href="rooms.html">Our Rooms</a>
+        <a href="booking.html">Book & Status</a>
+        <a href="contact.html">Contact</a>
+        <a href="booking.html" class="btn">Book Now</a>
+    </div>
+</nav>
 
     <section class="gallery" style="flex: 1;">
         <h2>Experience Hilom</h2>
