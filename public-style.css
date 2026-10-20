@@ -136,20 +136,77 @@ section:not(.hero) { padding: 100px 20px; }
 /* FOOTER */
 footer { background-color: #1a2918; color: white; text-align: center; padding: 60px 20px 40px; margin-top: auto; }
 
+
+/* --- HAMBURGER MENU & NAV LINKS --- */
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+nav.scrolled .mobile-menu-btn {
+    color: var(--primary-dark);
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+}
+
 /* MOBILE RESPONSIVENESS */
 @media (max-width: 768px) {
-    nav { flex-direction: row; justify-content: space-between; padding: 15px 20px; }
+    nav { padding: 15px 20px; }
     nav.scrolled { padding: 15px 20px; }
-    .brand-container { align-items: center; gap: 5px; }
-    .new-text-logo { height: 40px; }
+    .brand-container { gap: 5px; }
+    .new-text-logo { height: 35px; }
     nav.scrolled .new-text-logo { height: 28px; }
-    .sub-text { font-size: 12px; margin-bottom: 0; }
+    .sub-text { font-size: 11px; margin-bottom: 0; }
     nav.scrolled .sub-text { font-size: 10px; }
-    nav a:not(.btn) { display: none; }
-    nav a.btn { padding: 10px 15px; font-size: 11px; margin-left: 0; }
+    
+    /* Show the hamburger button */
+    .mobile-menu-btn { display: block; }
+    
+    /* Hide the links off-screen by default */
+    .nav-links {
+        position: fixed;
+        top: 65px; /* Sits just below the navbar */
+        right: -100%; /* Hides it off the right side of the screen */
+        width: 100%;
+        height: calc(100vh - 65px);
+        background: rgba(26, 41, 24, 0.98); /* Deep cinematic green */
+        backdrop-filter: blur(15px);
+        flex-direction: column;
+        justify-content: center;
+        gap: 35px;
+        transition: right 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    /* This class is added by Javascript when the button is clicked */
+    .nav-links.active {
+        right: 0;
+    }
+
+    /* Style the links for the mobile menu */
+    .nav-links a {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 3px;
+        text-shadow: none;
+        color: white;
+    }
+    
+    .nav-links a.btn {
+        margin-top: 20px;
+        padding: 15px 40px;
+        background: white;
+        color: var(--primary-dark);
+    }
+
     .hero h2 { font-size: 42px; }
     .hero p { font-size: 16px; }
     .booking-container { padding: 30px 20px; }
     .date-group { flex-direction: column; gap: 0; }
-    .gallery-grid img { height: 300px; }
 }

@@ -23,7 +23,7 @@
         </div>
     </nav>
 
-   <section class="gallery reveal" style="flex: 1;">
+    <section class="gallery" style="flex: 1;">
         <h2>Experience Hilom</h2>
         <div class="gallery-grid">
             <img src="708910845_122173818824854145_7561146922554022170_n.jpg" alt="Beach Pathway">
@@ -46,31 +46,5 @@
             else nav.classList.remove("scrolled");
         });
     </script>
-
-    <script>
-    document.getElementById('year').innerText = new Date().getFullYear();
-    
-    // Transparent to Glass Navbar
-    window.addEventListener("scroll", function() {
-        const nav = document.querySelector("nav");
-        if (window.scrollY > 50) nav.classList.add("scrolled");
-        else nav.classList.remove("scrolled");
-    });
-
-    // Cinematic Scroll Reveal Animation
-    function reveal() {
-        var reveals = document.querySelectorAll(".reveal");
-        for (var i = 0; i < reveals.length; i++) {
-            var windowHeight = window.innerHeight;
-            var elementTop = reveals[i].getBoundingClientRect().top;
-            var elementVisible = 100; // Trigger point
-            if (elementTop < windowHeight - elementVisible) {
-                reveals[i].classList.add("active");
-            }
-        }
-    }
-    window.addEventListener("scroll", reveal);
-    reveal(); // Trigger once on load
-</script>
 </body>
 </html>
