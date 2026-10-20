@@ -95,17 +95,25 @@
         document.getElementById("navLinks").classList.toggle("active");
     }
 
-    // Highlight Active Menu Item Automatically
+    // Highlight Active Menu Item Automatically (Vercel Clean URL Fix)
     function highlightActiveLink() {
-        // Get the current file name (e.g., "rooms.html")
-        let currentPage = window.location.pathname.split("/").pop();
+        let path = window.location.pathname;
         
-        // If it's the root domain with no file name, default to index.html
-        if (currentPage === "") currentPage = "index.html"; 
-
+        // If it's the root domain, default to index
+        if (path === "/" || path === "") {
+            path = "index.html";
+        }
+        
         const navLinks = document.querySelectorAll('.nav-links a');
         navLinks.forEach(link => {
-            if (link.getAttribute('href') === currentPage) {
+            let href = link.getAttribute('href');
+            
+            // Strip .html and leading slashes from both to compare them reliably
+            let cleanPath = path.replace('.html', '').replace(/^\//, ''); 
+            let cleanHref = href.replace('.html', '');
+            
+            // Add the active class, but ignore the "Book Now" button
+            if (cleanPath === cleanHref && !link.classList.contains('btn')) {
                 link.classList.add('active');
             }
         });
