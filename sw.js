@@ -1,10 +1,16 @@
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open('hilom-pwa-v1').then((cache) => {
+    caches.open('hilom-pwa-v2').then((cache) => {
       return cache.addAll([
+        './',
         './index.html',
+        './experience.html',
+        './rooms.html',
+        './booking.html',
+        './contact.html',
         './kitchen.html',
-        './style.css',
+        './public-style.css',
+        './pos-style.css',
         './pos-billing.js',
         './inventory.js',
         './reports.js',
@@ -18,9 +24,7 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    // Always try to fetch the newest version from the internet first
     fetch(e.request).catch(() => {
-      // If the internet is down, fall back to the cached version
       return caches.match(e.request);
     })
   );
