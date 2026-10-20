@@ -144,8 +144,87 @@ section:not(.hero) { padding: 100px 20px; }
 .submit-btn:hover { background-color: #1a2918; transform: translateY(-2px); }
 .date-group { display: flex; gap: 20px; }
 
-/* FOOTER */
-footer { background-color: #1a2918; color: white; text-align: center; padding: 60px 20px 40px; margin-top: auto; }
+/* --- EXECUTIVE FOOTER --- */
+.executive-footer {
+    background-color: var(--primary-dark);
+    color: white;
+    padding: 70px 20px 20px;
+    margin-top: auto;
+}
+
+.footer-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 40px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 50px;
+}
+
+.footer-brand .footer-logo {
+    height: 60px;
+    margin-bottom: 15px;
+    filter: brightness(0) invert(1);
+}
+
+.footer-brand p {
+    color: #a0aab2;
+    line-height: 1.6;
+    font-size: 14px;
+    max-width: 300px;
+}
+
+.footer-links h4, .footer-contact h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+    color: white;
+}
+
+.footer-links a {
+    display: block;
+    color: #a0aab2;
+    text-decoration: none;
+    margin-bottom: 12px;
+    font-size: 14px;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.footer-links a:hover {
+    color: var(--accent);
+    transform: translateX(5px); /* Subtly slides the link to the right on hover */
+}
+
+.footer-contact p {
+    color: #a0aab2;
+    font-size: 14px;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+.social-icons {
+    margin-top: 20px;
+}
+
+.social-icons a {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.social-icons a:hover {
+    color: var(--accent);
+}
+
+.footer-bottom {
+    text-align: center;
+    padding-top: 25px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+}
 
 
 /* --- HAMBURGER MENU & NAV LINKS --- */
