@@ -283,6 +283,21 @@
 
 
     <script>
+
+        // Smooth Page Transitions
+    document.querySelectorAll('a[href]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            let href = this.getAttribute('href');
+            // Only apply to internal pages, skip external links or the WhatsApp widget
+            if(href && !href.startsWith('http') && !href.startsWith('wa.me')) {
+                e.preventDefault();
+                document.body.classList.add('fade-out-active');
+                setTimeout(() => {
+                    window.location.href = href;
+                }, 400); // Waits for the fade animation to finish
+            }
+        });
+    });
     document.getElementById('year').innerText = new Date().getFullYear();
 
     // Initialize Luxury Calendar Picker
