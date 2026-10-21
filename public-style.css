@@ -612,3 +612,69 @@ nav.scrolled .mobile-menu-btn {
 .room-card img:hover {
     filter: brightness(1.1);
 }
+
+
+/* --- FLOATING CONCIERGE --- */
+.floating-concierge {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background-color: #25D366; 
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    z-index: 9999;
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s;
+}
+
+.floating-concierge:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    color: white;
+}
+
+/* --- STICKY MOBILE BOOK BAR (Hidden on Desktop) --- */
+.mobile-sticky-book {
+    display: none; /* Keeps it invisible on large screens */
+}
+
+/* --- MOBILE OVERRIDES FOR CONCIERGE & STICKY BAR --- */
+@media (max-width: 768px) {
+    /* Show the sticky bar on mobile */
+    .mobile-sticky-book {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: var(--accent);
+        text-align: center;
+        z-index: 9998;
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.15);
+    }
+    
+    .mobile-sticky-book a {
+        display: block;
+        color: white !important;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        padding: 18px 0;
+        text-decoration: none;
+    }
+
+    /* Bump the WhatsApp widget up so it doesn't overlap the sticky bar */
+    .floating-concierge {
+        bottom: 75px !important;
+        right: 20px;
+        width: 55px;
+        height: 55px;
+    }
+}
