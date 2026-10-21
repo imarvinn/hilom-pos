@@ -568,3 +568,47 @@ nav.scrolled .mobile-menu-btn {
     /* Snaps back to full Google Maps color on hover */
     filter: grayscale(0%) contrast(100%); 
 }
+
+/* --- IMAGE LIGHTBOX --- */
+.lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(15, 23, 14, 0.95); /* Deep green/black tint */
+    z-index: 999999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+.lightbox.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.lightbox img {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    transform: scale(0.95);
+    transition: transform 0.4s ease;
+}
+
+.lightbox.active img {
+    transform: scale(1);
+}
+
+/* Make room images clickable */
+.room-card img {
+    cursor: pointer;
+    transition: filter 0.3s;
+}
+.room-card img:hover {
+    filter: brightness(1.1);
+}
