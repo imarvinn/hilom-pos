@@ -280,7 +280,12 @@
     </script>
 
 
-// Initialize Luxury Calendar Picker
+
+
+    <script>
+    document.getElementById('year').innerText = new Date().getFullYear();
+
+    // Initialize Luxury Calendar Picker
         flatpickr("#checkIn", {
             minDate: "today",
             altInput: true,
@@ -293,9 +298,6 @@
             altFormat: "F j, Y",
             dateFormat: "Y-m-d",
         });
-
-    <script>
-    document.getElementById('year').innerText = new Date().getFullYear();
     
     // Transparent to Glass Navbar
     window.addEventListener("scroll", function() {
