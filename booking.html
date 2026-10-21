@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Google reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <!-- Flatpickr Custom Calendar -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -93,6 +95,11 @@
                         <option value="Extra Bed" data-price="800"> Extra Bed (800.00)</option>
                     </select>
                 </div>
+
+                <!-- Google reCAPTCHA Widget -->
+                <div class="g-recaptcha" data-sitekey="6LcPfPktAAAAALtZuLt0M5H1hg2uj8TAwuVQI0Bd" style="margin: 20px 0; display: flex; justify-content: right;"></div>
+
+                <div style="background: #eef2eb; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--primary); text-align: right;">
 
                 <div style="background: #eef2eb; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--primary); text-align: right;">
                     <span style="font-size: 14px; color: #555;">Estimated Total:</span>
@@ -200,6 +207,12 @@
         // Submit Booking
         document.getElementById("bookingForm").addEventListener("submit", async (e) => {
             e.preventDefault();
+            // reCAPTCHA Validation
+            const recaptchaResponse = grecaptcha.getResponse();
+            if (recaptchaResponse.length === 0) {
+                alert("Please verify that you are not a robot.");
+                return;
+            }
             const btn = document.getElementById("submitBtn");
             btn.innerText = "Sending..."; btn.disabled = true;
             const checkIn = document.getElementById("checkIn").value;
@@ -225,6 +238,7 @@
                 });
                 alert("Success! Your booking request has been sent to our Front Desk.");
                 document.getElementById("bookingForm").reset();
+                grecaptcha.reset(); // Resets the reCAPTCHA widget after successful booking
                 document.getElementById("priceEstimate").innerText = "₱0.00";
                 document.getElementById("priceBreakdown").innerText = "Select dates and room to see price";
             } catch (error) {
