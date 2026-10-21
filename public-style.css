@@ -678,3 +678,75 @@ nav.scrolled .mobile-menu-btn {
         height: 55px;
     }
 }
+
+/* --- LIVE WEATHER WIDGET --- */
+.weather-section {
+    padding: 80px 20px;
+    background-color: var(--bg-color);
+    display: flex;
+    justify-content: center;
+}
+
+.weather-widget {
+    background-color: var(--primary-dark);
+    border-radius: 12px;
+    padding: 40px;
+    max-width: 800px;
+    width: 100%;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Elegant gold accent line across the top */
+.weather-widget::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 5px;
+    background-color: var(--accent);
+}
+
+.weather-header h3 {
+    color: white;
+    font-size: 32px;
+    margin-bottom: 5px;
+}
+
+.weather-header p {
+    font-size: 14px;
+    color: #a0aab2;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 30px;
+}
+
+.weather-data {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.data-box {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.data-label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #a0aab2;
+    margin-bottom: 10px;
+}
+
+.data-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+    color: var(--accent); /* Earthy Gold */
+}
