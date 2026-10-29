@@ -506,23 +506,51 @@
     
     <!-- Registration Form -->
     <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #e0e5e0; margin-bottom: 20px;">
+        
+        <!-- ROW 1 -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 10px;">
-            <input type="text" id="newStaffName" placeholder="Full Name (Required)" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-            <select id="newStaffRole" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-                <option value="Front Desk">Front Desk</option>
-                <option value="Waiter">Waiter</option>
-                <option value="F&B">F&B</option>
-                <option value="Housekeeping">Housekeeping</option>
-                <option value="Kitchen">Kitchen</option>
-                <option value="Manager">Manager</option>
-            </select>
-            <input type="password" id="newStaffPin" placeholder="4-Digit PIN (Required)" maxlength="4" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label style="font-size: 12px; color: #555; font-weight: bold;">Full Name</label>
+                <input type="text" id="newStaffName" placeholder="e.g. Juan Dela Cruz" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin: 0;">
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label style="font-size: 12px; color: #555; font-weight: bold;">Assigned Role</label>
+                <select id="newStaffRole" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin: 0;">
+                    <option value="Front Desk">Front Desk</option>
+                    <option value="Waiter">Waiter</option>
+                    <option value="F&B">F&B</option>
+                    <option value="Housekeeping">Housekeeping</option>
+                    <option value="Kitchen">Kitchen</option>
+                    <option value="Manager">Manager</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label style="font-size: 12px; color: #555; font-weight: bold;">4-Digit PIN Code</label>
+                <input type="password" id="newStaffPin" placeholder="e.g. 1234" maxlength="4" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin: 0;">
+            </div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 10px;">
-            <input type="text" id="newStaffContact" placeholder="Contact Number" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-            <input type="text" id="newStaffAddress" placeholder="Home Address" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-            <input type="text" id="newStaffEmergency" placeholder="Emergency Contact Name & No." style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        
+        <!-- ROW 2 -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label style="font-size: 12px; color: #555; font-weight: bold;">Contact Number</label>
+                <input type="text" id="newStaffContact" placeholder="e.g. 0917-123-4567" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin: 0;">
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label style="font-size: 12px; color: #555; font-weight: bold;">Home Address</label>
+                <input type="text" id="newStaffAddress" placeholder="City, Province" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin: 0;">
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label style="font-size: 12px; color: #555; font-weight: bold;">Emergency Contact (Name & No.)</label>
+                <input type="text" id="newStaffEmergency" placeholder="e.g. Maria (0917...)" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin: 0;">
+            </div>
         </div>
+        
+        <!-- BUTTONS -->
         <div style="display: flex; gap: 10px;">
             <button id="staffSubmitBtn" onclick="addStaffMember()" style="background: #557a46; color: white; border: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 2;">+ Register Staff Member</button>
             <button id="cancelEditStaffBtn" onclick="resetStaffForm()" style="background: #888; color: white; border: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; display: none;">Cancel Edit</button>
