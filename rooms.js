@@ -84,18 +84,9 @@ let pendingWalkInRoomNumber = null;
 let pendingWalkInRate = null;
 let pendingWalkInType = null;
 
-// Opens the custom modal
-function checkInRoom(roomId, roomRate, roomType) {
-    pendingWalkInRoomId = roomId;
-    
-    // We need to fetch the room number from the DOM or pass it differently.
-    // For now, extract it assuming roomId is the roomNumber string based on your setup.
-    pendingWalkInRoomNumber = roomId; 
-    
-    pendingWalkInRate = roomRate;
-    pendingWalkInType = roomType;
-
-    document.getElementById("walkInRoomDisplay").innerText = "Room " + pendingWalkInRoomNumber + ` (₱${roomRate}/night)`;
+async function checkInRoom(clickedRoomId, roomRate, roomType) {
+    const checklistContainer = document.getElementById("walkInRoomChecklist");
+    checklistContainer.innerHTML = "<p style='color:#888; font-size:12px;'>Loading available rooms...</p>";
     
     // Clear old inputs
     document.getElementById("walkInName").value = "";
@@ -107,11 +98,30 @@ function checkInRoom(roomId, roomRate, roomType) {
     document.getElementById("walkInAddress").value = "";
 
     document.getElementById("walkInModal").classList.remove("hidden");
-}
 
-function closeWalkInModal() {
-    document.getElementById("walkInModal").classList.add("hidden");
-    pendingWalkInRoomId = null;
+    try {
+        // Fetch ONLY AVAILABLE rooms to prevent double booking errors
+        const snapshot = await db.collection("rooms").where("status", "==", "AVAILABLE").get();
+        checklistContainer.innerHTML = "";
+        
+        // Sort rooms sequentially for neatness
+        const rooms = [];
+        snapshot.forEach(doc => rooms.push({ id: doc.id, ...doc.data() }));
+        rooms.sort((a, b) => a.roomNumber.localeCompare(b.roomNumber));
+        
+        rooms.forEach(room => {
+            const isClicked = room.id === clickedRoomId;
+            checklistContainer.innerHTML += `
+                <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; padding: 6px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;">
+                    <input type="checkbox" class="walkin-room-checkbox" value="${room.id}" data-rate="${room.dailyRate}" data-type="${room.roomType}" ${isClicked ? "checked" : ""}>
+                    <strong>Room ${room.id}</strong> <span style="color:#666; font-size:12px;">(₱${room.dailyRate})</span>
+                </label>
+            `;
+        });
+    } catch(e) {
+        console.error(e);
+        checklistContainer.innerHTML = "<p style='color:red;'>Error loading rooms.</p>";
+    }
 }
 
 
@@ -230,7 +240,6 @@ async function confirmAdvanceBooking() {
     }
 }
 
-// Handles the database save when they click "Confirm Check-In"
 async function confirmWalkInCheckIn() {
     const guestName = sanitizeHTML(document.getElementById("walkInName").value.trim());
     const nightsStr = document.getElementById("walkInNights").value;
@@ -242,9 +251,14 @@ async function confirmWalkInCheckIn() {
     const guestAddress = sanitizeHTML(document.getElementById("walkInAddress").value.trim());
     const nights = parseInt(nightsStr);
 
+    // Gather all selected checkboxes
+    const checkboxes = document.querySelectorAll(".walkin-room-checkbox:checked");
+    if (checkboxes.length === 0) {
+        return alert("Please select at least one room to check in.");
+    }
+
     if (!guestName || isNaN(nights) || nights <= 0) {
-        alert("Please enter the guest's name and a valid number of nights.");
-        return;
+        return alert("Please enter the guest's name and a valid number of nights.");
     }
 
     let checkInDate = new Date();
@@ -252,45 +266,71 @@ async function confirmWalkInCheckIn() {
     expectedCheckOut.setDate(expectedCheckOut.getDate() + nights);
     expectedCheckOut.setHours(12, 0, 0, 0); 
 
+    // Compute combined totals and string room names together (e.g. "F1, F2")
+    let combinedRate = 0;
+    let roomIdsArr = [];
+    let roomTypesArr = [];
+
+    checkboxes.forEach(cb => {
+        combinedRate += parseFloat(cb.getAttribute("data-rate"));
+        roomIdsArr.push(cb.value);
+        roomTypesArr.push(cb.getAttribute("data-type"));
+    });
+
+    const combinedRoomString = roomIdsArr.join(", ");
+    
+    // Grabs unique room types (e.g. "Deluxe, Shoreline")
+    const combinedTypeString = [...new Set(roomTypesArr)].join(", "); 
+
+    const btn = document.getElementById("walkInSaveBtn");
+    btn.innerText = "Checking In...";
+    btn.disabled = true;
+
     const batch = db.batch();
     const folioRef = db.collection("folios").doc();
 
-    // 1. Create the Folio Ledger for billing
+    // 1. Create ONE Master Folio Ledger for billing all rooms
     batch.set(folioRef, {
-        roomId: pendingWalkInRoomId,
-        roomType: pendingWalkInType || "Standard", 
+        roomId: combinedRoomString, 
+        roomType: combinedTypeString, 
         guestName: guestName,
         checkInTime: checkInDate.toISOString(),
         expectedCheckOut: expectedCheckOut.toISOString(), 
-        dailyRate: pendingWalkInRate,
+        dailyRate: combinedRate, // Combined rate for all rooms
         nights: nights,
         inclusions: inclusions,
-        roomChargesTotal: pendingWalkInRate * nights,
+        roomQty: checkboxes.length,
+        roomChargesTotal: combinedRate * nights,
         posChargesTotal: 0,
         posOrders: [],
-        grandTotal: pendingWalkInRate * nights,
+        grandTotal: combinedRate * nights,
         status: "OPEN"
     });
 
-    // 2. Lock the room and save the CRM Data
-    batch.update(db.collection("rooms").doc(pendingWalkInRoomId), {
-        status: "OCCUPIED",
-        currentGuestName: guestName,
-        currentFolioId: folioRef.id,
-        guestAge: guestAge,
-        guestContact: guestContact,
-        guestEmail: guestEmail,
-        guestAddress: guestAddress,
-        checkInTime: firebase.firestore.FieldValue.serverTimestamp()
+    // 2. Lock ALL selected rooms and link them to the exact same Master Folio
+    checkboxes.forEach(cb => {
+        batch.update(db.collection("rooms").doc(cb.value), {
+            status: "OCCUPIED",
+            currentGuestName: guestName,
+            currentFolioId: folioRef.id,
+            guestAge: guestAge,
+            guestContact: guestContact,
+            guestEmail: guestEmail,
+            guestAddress: guestAddress,
+            checkInTime: firebase.firestore.FieldValue.serverTimestamp()
+        });
     });
 
     try {
         await batch.commit();
-        alert(`Success: ${guestName} checked into Room ${pendingWalkInRoomNumber}`);
+        alert(`Success: ${guestName} checked into ${checkboxes.length} room(s): ${combinedRoomString}`);
         closeWalkInModal();
     } catch (error) {
         console.error("Error checking in:", error);
         alert("Failed to check in guest. Check permissions.");
+    } finally {
+        btn.innerText = "✔️ Confirm Check-In";
+        btn.disabled = false;
     }
 }
 
