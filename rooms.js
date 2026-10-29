@@ -166,10 +166,15 @@ async function openAdvanceBookingModal(clickedRoomId, rate, type) {
     }
 }
 
+function closeWalkInModal() {
+    document.getElementById("walkInModal").classList.add("hidden");
+}
+
 function closeAdvanceBookingModal() {
     document.getElementById("advanceBookingModal").classList.add("hidden");
 }
 
+const extraBeds = parseInt(document.getElementById("advExtraBeds").value) || 0;
 async function confirmAdvanceBooking() {
     const guestName = sanitizeHTML(document.getElementById("advGuestName").value.trim());
     const contact = sanitizeHTML(document.getElementById("advContact").value.trim());
@@ -216,7 +221,10 @@ async function confirmAdvanceBooking() {
                 status: "CONFIRMED", 
                 source: "Front Desk Multi-Room Booking",
                 bookingRef: uniqueRef, 
+                extraBeds: extraBeds,
+                addons: extraBeds > 0 ? `${extraBeds}x Extra Bed(s)` : "None",
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                
             });
         });
 
@@ -241,6 +249,7 @@ async function confirmAdvanceBooking() {
 }
 
 async function confirmWalkInCheckIn() {
+    // 1. Gather text inputs
     const guestName = sanitizeHTML(document.getElementById("walkInName").value.trim());
     const nightsStr = document.getElementById("walkInNights").value;
     const inclusions = sanitizeHTML(document.getElementById("walkInInclusions").value.trim()) || "None";
@@ -251,7 +260,10 @@ async function confirmWalkInCheckIn() {
     const guestAddress = sanitizeHTML(document.getElementById("walkInAddress").value.trim());
     const nights = parseInt(nightsStr);
 
-    // Gather all selected checkboxes
+    // 2. Capture extra beds
+    const extraBeds = parseInt(document.getElementById("walkInExtraBeds").value) || 0;
+
+    // 3. Gather all selected room checkboxes
     const checkboxes = document.querySelectorAll(".walkin-room-checkbox:checked");
     if (checkboxes.length === 0) {
         return alert("Please select at least one room to check in.");
@@ -261,12 +273,13 @@ async function confirmWalkInCheckIn() {
         return alert("Please enter the guest's name and a valid number of nights.");
     }
 
+    // 4. Compute Dates
     let checkInDate = new Date();
     let expectedCheckOut = new Date(checkInDate);
     expectedCheckOut.setDate(expectedCheckOut.getDate() + nights);
     expectedCheckOut.setHours(12, 0, 0, 0); 
 
-    // Compute combined totals and string room names together (e.g. "F1, F2")
+    // 5. Compute combined totals and string room names together (e.g. "F1, F2")
     let combinedRate = 0;
     let roomIdsArr = [];
     let roomTypesArr = [];
@@ -282,32 +295,48 @@ async function confirmWalkInCheckIn() {
     // Grabs unique room types (e.g. "Deluxe, Shoreline")
     const combinedTypeString = [...new Set(roomTypesArr)].join(", "); 
 
+    // Calculate extra bed costs (Qty * Price * Nights)
+    const extraBedCost = extraBeds * 800 * nights;
+
     const btn = document.getElementById("walkInSaveBtn");
-    btn.innerText = "Checking In...";
-    btn.disabled = true;
+    if (btn) {
+        btn.innerText = "Checking In...";
+        btn.disabled = true;
+    }
 
     const batch = db.batch();
     const folioRef = db.collection("folios").doc();
 
-    // 1. Create ONE Master Folio Ledger for billing all rooms
+    // Automatically create a POS order for the extra beds if they added any
+    let initialPosOrders = [];
+    if (extraBeds > 0) {
+        initialPosOrders.push({
+            itemsSummary: `Front Desk: ${extraBeds}x Extra Bed(s) (${nights} nights)`,
+            amount: extraBedCost,
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    // 6. Create ONE Master Folio Ledger for billing all rooms + Extra Beds
     batch.set(folioRef, {
         roomId: combinedRoomString, 
         roomType: combinedTypeString, 
         guestName: guestName,
         checkInTime: checkInDate.toISOString(),
         expectedCheckOut: expectedCheckOut.toISOString(), 
-        dailyRate: combinedRate, // Combined rate for all rooms
+        dailyRate: combinedRate, 
         nights: nights,
         inclusions: inclusions,
         roomQty: checkboxes.length,
+        extraBeds: extraBeds,
         roomChargesTotal: combinedRate * nights,
-        posChargesTotal: 0,
-        posOrders: [],
-        grandTotal: combinedRate * nights,
+        posChargesTotal: extraBedCost, // Adds the extra bed total to POS charges
+        posOrders: initialPosOrders,
+        grandTotal: (combinedRate * nights) + extraBedCost, // Updates Grand Total
         status: "OPEN"
     });
 
-    // 2. Lock ALL selected rooms and link them to the exact same Master Folio
+    // 7. Lock ALL selected rooms and link them to the exact same Master Folio
     checkboxes.forEach(cb => {
         batch.update(db.collection("rooms").doc(cb.value), {
             status: "OCCUPIED",
@@ -329,11 +358,12 @@ async function confirmWalkInCheckIn() {
         console.error("Error checking in:", error);
         alert("Failed to check in guest. Check permissions.");
     } finally {
-        btn.innerText = "✔️ Confirm Check-In";
-        btn.disabled = false;
+        if (btn) {
+            btn.innerText = "✔️ Confirm Check-In";
+            btn.disabled = false;
+        }
     }
 }
-
 // --- 2. UPDATE THIS: VIEW & SETTLE FOLIO ---
 async function openFolioModal(roomId, folioId) {
     if(!folioId) return showToast("No active folio found.");
