@@ -1070,5 +1070,144 @@ async function confirmCancelBooking(resId) {
     }
 }
 
+// --- FOLIO PAYMENT & VALIDATION LOGIC ---
+
+let currentCheckoutFolioId = null;
+let currentCheckoutTotal = 0;
+
+// Opens the payment modal from the Folio Screen
+function initiateFolioCheckout() {
+    const rawTotal = document.getElementById("folioGrandTotal").innerText.replace(/[^\d.-]/g, '');
+    currentCheckoutTotal = parseFloat(rawTotal) || 0;
+    
+    // We assume window.activeFolioId is set when the folio is opened
+    currentCheckoutFolioId = window.activeFolioId; 
+
+    document.getElementById("folioPaymentTotalDue").innerText = `₱${currentCheckoutTotal.toFixed(2)}`;
+    document.getElementById("folioCashTendered").value = "";
+    document.getElementById("folioRefNumber").value = "";
+    document.getElementById("folioPaymentChange").innerText = "₱0.00";
+    
+    // Reset inputs
+    document.getElementById("folioPayMethod").value = "Cash";
+    toggleFolioPaymentInputs();
+    
+    document.getElementById("folioPaymentModal").style.display = "flex";
+}
+
+function closeFolioPaymentModal() {
+    document.getElementById("folioPaymentModal").style.display = "none";
+}
+
+// Toggles between Cash Inputs and Reference Number based on dropdown
+function toggleFolioPaymentInputs() {
+    const method = document.getElementById("folioPayMethod").value;
+    const cashSec = document.getElementById("folioCashInputSection");
+    const refSec = document.getElementById("folioReferenceInputSection");
+
+    if (method === "Cash") {
+        cashSec.style.display = "block";
+        refSec.style.display = "none";
+    } else {
+        cashSec.style.display = "none";
+        refSec.style.display = "block";
+    }
+}
+
+// Calculates change dynamically as they type
+function calculateFolioChange() {
+    const tendered = parseFloat(document.getElementById("folioCashTendered").value) || 0;
+    let change = tendered - currentCheckoutTotal;
+    if (change < 0) change = 0;
+    document.getElementById("folioPaymentChange").innerText = `₱${change.toFixed(2)}`;
+}
+
+// Executes the Checkout Process
+async function confirmFolioCheckout() {
+    const method = document.getElementById("folioPayMethod").value;
+    let tendered = 0;
+    let change = 0;
+    let refNum = "N/A";
+
+    // 1. Validation
+    if (method === "Cash") {
+        tendered = parseFloat(document.getElementById("folioCashTendered").value) || 0;
+        if (tendered < currentCheckoutTotal) {
+            return alert(`Insufficient cash. Guest must pay at least ₱${currentCheckoutTotal.toFixed(2)}`);
+        }
+        change = tendered - currentCheckoutTotal;
+    } else {
+        refNum = document.getElementById("folioRefNumber").value.trim();
+        if (!refNum) {
+            return alert(`A Reference Number is required when paying via ${method}.`);
+        }
+        tendered = currentCheckoutTotal; // Digital payments are exact amounts
+    }
+
+    try {
+        const batch = db.batch();
+        const folioRef = db.collection("folios").doc(currentCheckoutFolioId);
+        
+        // 2. Update Folio to CLOSED with payment details
+        batch.update(folioRef, {
+            status: "CLOSED",
+            paymentMethod: method,
+            referenceNumber: refNum,
+            amountTendered: tendered,
+            changeDue: change,
+            checkedOutAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // 3. Free up the rooms (Fetch the folio to see which rooms were tied to it)
+        const folioDoc = await folioRef.get();
+        if (folioDoc.exists) {
+            const roomIdsString = folioDoc.data().roomId;
+            const roomIds = roomIdsString.split(",").map(id => id.trim());
+            
+            roomIds.forEach(id => {
+                batch.update(db.collection("rooms").doc(id), {
+                    status: "MAINTENANCE", // Set to dirty/maintenance after checkout
+                    currentGuestName: "",
+                    currentFolioId: "",
+                    guestAge: "",
+                    guestContact: "",
+                    guestEmail: "",
+                    guestAddress: "",
+                    checkInTime: null
+                });
+            });
+        }
+
+        await batch.commit();
+
+        // 4. Update the Invoice UI before printing
+        document.getElementById("invPaymentDetails").style.display = "block";
+        document.getElementById("invPayMethod").innerText = method;
+
+        if (method === "Cash") {
+            document.getElementById("invCashRow").style.display = "flex";
+            document.getElementById("invChangeRow").style.display = "flex";
+            document.getElementById("invRefRow").style.display = "none";
+            document.getElementById("invCashTendered").innerText = `₱${tendered.toFixed(2)}`;
+            document.getElementById("invChangeDue").innerText = `₱${change.toFixed(2)}`;
+        } else {
+            document.getElementById("invCashRow").style.display = "none";
+            document.getElementById("invChangeRow").style.display = "none";
+            document.getElementById("invRefRow").style.display = "flex";
+            document.getElementById("invRefNum").innerText = refNum;
+        }
+
+        alert(`Success! Folio settled via ${method}.\nRooms have been set to Maintenance for cleaning.`);
+        
+        closeFolioPaymentModal();
+        closeFolioModal(); // Closes the main folio screen
+        printFolioInvoice(); // Automatically prints the receipt!
+        
+    } catch (error) {
+        console.error("Error during checkout:", error);
+        alert("Checkout failed. Check your connection.");
+    }
+}
+
 
 
