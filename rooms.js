@@ -69,9 +69,11 @@ function loadRoomRack() {
                         ${primaryActions}
                         <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #ccc; padding-top: 8px;">
                             <div>${secondaryActions}</div>
-                            <button onclick="deleteRoom('${doc.id}')" style="background: transparent; color: #bd4b4b; border: none; font-size: 12px; cursor: pointer; font-weight: bold; padding: 0;">🗑️ Delete</button>
+                            <div style="display: flex; gap: 15px;">
+                                <button onclick="editRoomRate('${doc.id}', ${room.dailyRate})" style="background: transparent; color: #4a6fa5; border: none; font-size: 12px; cursor: pointer; font-weight: bold; padding: 0;">✏️ Edit</button>
+                                <button onclick="deleteRoom('${doc.id}')" style="background: transparent; color: #bd4b4b; border: none; font-size: 12px; cursor: pointer; font-weight: bold; padding: 0;">🗑️ Delete</button>
+                            </div>
                         </div>
-                    </div>
                 </div>
             `;
         });
@@ -555,7 +557,31 @@ function deleteRoom(roomId) {
     if (confirm(`Are you sure you want to delete Room ${roomId}?`)) db.collection("rooms").doc(roomId).delete();
 }
 
-// --- ADD EXTRA CUSTOM CHARGE TO FOLIO (e.g., Beddings) ---
+
+function editRoomRate(roomId, currentRate) {
+    // Prompt the manager for the new price
+    const newRateStr = prompt(`Enter new daily rate for Room ${roomId}:`, currentRate);
+    if (!newRateStr) return; // Cancelled
+    
+    const newRate = parseFloat(newRateStr);
+    if (isNaN(newRate) || newRate < 0) {
+        return alert("Please enter a valid numeric amount.");
+    }
+    
+    // Update Firebase
+    db.collection("rooms").doc(roomId).update({ 
+        dailyRate: newRate,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    })
+    .then(() => {
+        alert(`Success! Room ${roomId} is now priced at ₱${newRate.toFixed(2)} / night.`);
+    })
+    .catch((e) => {
+        console.error("Error updating room:", e);
+        alert("Failed to update room rate.");
+    });
+}
+
 
 // --- ADD EXTRA CUSTOM CHARGE TO FOLIO ---
 
