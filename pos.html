@@ -718,7 +718,7 @@
         </div>
     </div>
 
-    <!-- BOOKING DETAILS & CANCEL MODAL -->
+   <!-- BOOKING DETAILS & CANCEL MODAL -->
     <div id="bookingDetailsModal" class="modal-overlay hidden" style="z-index: 2600;">
         <div class="modal-content" style="max-width: 400px; text-align: left;">
             <h2 style="border-bottom: none; color: #2b4227; margin-top: 0; margin-bottom: 5px;">Booking Details</h2>
@@ -727,9 +727,11 @@
             <div id="bookingDetailsContent" style="margin-top: 15px; font-size: 15px; color: #333; line-height: 1.8; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #e0e5e0;">
             </div>
 
+            <!-- REPLACE THIS BOTTOM DIV WITH THE CODE BELOW -->
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button class="delete-btn" style="flex: 2; padding: 12px; font-size: 15px;" id="cancelBookingBtn">❌ Cancel Booking</button>
                 <button class="save-btn" style="flex: 1; padding: 12px; font-size: 15px; background: #888;" onclick="closeBookingDetailsModal()">Close</button>
+                <button type="button" id="printInvoiceBtn" class="print-btn" style="flex: 2; padding: 12px; font-size: 15px;">🖨️ Print Invoice</button>
             </div>
         </div>
     </div>
@@ -1967,6 +1969,11 @@ function loadAuditLogs() {
     });
 }
 
+// Trigger Print from Booking Details Modal
+document.getElementById("printInvoiceBtn").addEventListener("click", () => {
+    window.print();
+});
+
   </script>
 
   <!-- Document Preview Modal -->
@@ -2025,6 +2032,8 @@ function loadAuditLogs() {
         </div>
     </div>
 </div>
+
+
 
 </body>
 </html>

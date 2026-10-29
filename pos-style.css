@@ -352,3 +352,43 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
 
 /* Modifier Badge for POS Cart */
 .mod-badge { background: #ffeaa7; color: #d63031; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 3px; }
+
+/* --- PRINT INVOICE BUTTON & BEHAVIOR --- */
+.print-btn {
+    background-color: #4a6fa5;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.print-btn:hover {
+    background-color: #3b5985;
+}
+
+@media print {
+    /* Hide everything on the POS screen */
+    body * {
+        visibility: hidden;
+    }
+    
+    /* Show ONLY the booking details modal */
+    #bookingDetailsModal, #bookingDetailsModal * {
+        visibility: visible;
+    }
+    
+    /* Position the modal at the top left of the paper */
+    #bookingDetailsModal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        background: white;
+    }
+
+    /* Hide the buttons on the printed paper */
+    #bookingDetailsModal button {
+        display: none !important;
+    }
+}
