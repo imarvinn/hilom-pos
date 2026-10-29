@@ -115,15 +115,13 @@ function closeWalkInModal() {
 }
 
 
-// --- ADVANCE BOOKING LOGIC ---
-let pendingAdvRoomId = null;
-let pendingAdvRoomType = null;
+// --- ADVANCE BOOKING LOGIC (MULTI-ROOM) ---
 
-function openAdvanceBookingModal(roomId, rate, type) {
-    pendingAdvRoomId = roomId;
-    pendingAdvRoomType = type;
+async function openAdvanceBookingModal(clickedRoomId, rate, type) {
+    const checklistContainer = document.getElementById("advRoomChecklist");
+    checklistContainer.innerHTML = "<p style='color:#888; font-size:12px;'>Loading rooms...</p>";
     
-    document.getElementById("advRoomDisplay").innerText = `Room ${roomId} (${type})`;
+    // Reset Form
     document.getElementById("advGuestName").value = "";
     document.getElementById("advContact").value = "";
     document.getElementById("advCheckIn").value = "";
@@ -135,11 +133,31 @@ function openAdvanceBookingModal(roomId, rate, type) {
     document.getElementById("advCheckOut").setAttribute('min', today);
 
     document.getElementById("advanceBookingModal").classList.remove("hidden");
+
+    // Fetch all rooms from Firebase to build the checklist
+    try {
+        const snapshot = await db.collection("rooms").orderBy("roomNumber", "asc").get();
+        checklistContainer.innerHTML = "";
+        
+        snapshot.forEach(doc => {
+            const room = doc.data();
+            const isClicked = doc.id === clickedRoomId;
+            
+            checklistContainer.innerHTML += `
+                <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; padding: 6px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;">
+                    <input type="checkbox" class="adv-room-checkbox" value="${doc.id}" data-type="${room.roomType}" ${isClicked ? "checked" : ""}>
+                    <strong>Room ${doc.id}</strong> <span style="color:#666; font-size:12px;">(${room.roomType})</span>
+                </label>
+            `;
+        });
+    } catch(e) {
+        console.error(e);
+        checklistContainer.innerHTML = "<p style='color:red;'>Error loading rooms.</p>";
+    }
 }
 
 function closeAdvanceBookingModal() {
     document.getElementById("advanceBookingModal").classList.add("hidden");
-    pendingAdvRoomId = null;
 }
 
 async function confirmAdvanceBooking() {
@@ -147,6 +165,12 @@ async function confirmAdvanceBooking() {
     const contact = sanitizeHTML(document.getElementById("advContact").value.trim());
     const checkIn = document.getElementById("advCheckIn").value;
     const checkOut = document.getElementById("advCheckOut").value;
+
+    // 1. Gather all selected checkboxes
+    const checkboxes = document.querySelectorAll(".adv-room-checkbox:checked");
+    if (checkboxes.length === 0) {
+        return alert("Please select at least one room for this booking.");
+    }
 
     if (!guestName || !checkIn || !checkOut) {
         return alert("Please fill in the guest name and dates.");
@@ -156,28 +180,43 @@ async function confirmAdvanceBooking() {
         return alert("Check-out date must be after check-in date.");
     }
 
-    // --- GENERATE UNIQUE BOOKING REFERENCE ---
-    // Creates a random string like 'HLM-8X4KF9'
+    // 2. Generate ONE Unique Booking Reference for the whole group
     const uniqueRef = "HLM-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    
+    const saveBtn = document.getElementById("advSaveBtn");
+    saveBtn.innerText = "Saving...";
+    saveBtn.disabled = true;
 
     try {
-        await db.collection("reservations").add({
-            roomNumber: pendingAdvRoomId, 
-            roomType: pendingAdvRoomType,
-            guestName: guestName,
-            contact: contact,
-            checkIn: checkIn,
-            checkOut: checkOut,
-            status: "CONFIRMED", 
-            source: "Front Desk Walk-in Booking",
-            bookingRef: uniqueRef, // SAVE TO DATABASE
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        // 3. Save each selected room to the calendar using a Batch write
+        const batch = db.batch();
+        
+        checkboxes.forEach(cb => {
+            const roomId = cb.value;
+            const roomType = cb.getAttribute("data-type");
+            const newResRef = db.collection("reservations").doc();
+            
+            batch.set(newResRef, {
+                roomNumber: roomId, 
+                roomType: roomType,
+                guestName: guestName,
+                contact: contact,
+                checkIn: checkIn,
+                checkOut: checkOut,
+                status: "CONFIRMED", 
+                source: "Front Desk Multi-Room Booking",
+                bookingRef: uniqueRef, 
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
         });
 
-        // Show the reference number to the front desk staff
-        alert(`Success! Booking saved for ${guestName}.\n\nBooking Reference: ${uniqueRef}`);
+        await batch.commit();
+
+        alert(`Success! Group Booking saved for ${guestName}.\n\nBooking Reference: ${uniqueRef}\nRooms Reserved: ${checkboxes.length}`);
+        
         closeAdvanceBookingModal();
         
+        // Refresh the calendar to show the new green blocks
         if (typeof loadBookingCalendar === "function") {
             loadBookingCalendar();
         }
@@ -185,6 +224,9 @@ async function confirmAdvanceBooking() {
     } catch (error) {
         console.error("Error saving booking:", error);
         alert("Failed to save advance booking. Check permissions.");
+    } finally {
+        saveBtn.innerText = "📅 Save Reservation";
+        saveBtn.disabled = false;
     }
 }
 
@@ -812,26 +854,66 @@ function finishRoomMaintenance(roomId) {
 
 // --- CALENDAR BOOKING DETAILS & CANCELLATION ---
 
+// --- CALENDAR BOOKING DETAILS & CANCELLATION ---
+
 function openBookingDetails(resId) {
     const res = window.currentCalendarReservations.find(r => r.id === resId);
     if (!res) return;
 
     // Handle older bookings that might not have a reference number yet
-    const refDisplay = res.bookingRef ? res.bookingRef : "N/A";
+    const refDisplay = res.bookingRef ? res.bookingRef : res.reference ? res.reference : "N/A";
 
     const content = `
         <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; border: 1px dashed #557a46; margin-bottom: 15px; text-align: center;">
             <span style="font-size: 11px; color: #557a46; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Booking Reference</span><br>
             <span style="font-size: 20px; color: #2b4227; font-weight: bold; letter-spacing: 2px;">${refDisplay}</span>
         </div>
-        <p style="margin: 5px 0;"><strong>Guest Name:</strong> <span style="color:#2b4227;">${res.guestName}</span></p>
-        <p style="margin: 5px 0;"><strong>Contact No:</strong> ${res.contact || 'N/A'}</p>
-        <p style="margin: 5px 0;"><strong>Assigned Room:</strong> Room ${res.roomNumber}</p>
-        <div style="border-top: 1px dashed #ccc; margin: 10px 0; padding-top: 10px;">
-            <p style="margin: 5px 0;"><strong>Check-In:</strong> ${res.checkIn}</p>
-            <p style="margin: 5px 0;"><strong>Check-Out:</strong> ${res.checkOut}</p>
+        
+        <div style="margin-bottom: 20px;">
+            <strong>Guest Name:</strong> ${res.guestName}<br>
+            <strong>Contact No:</strong> ${res.contact || 'N/A'}<br>
+            <strong>Dates:</strong> ${res.checkIn} to ${res.checkOut}
         </div>
-        <p style="margin: 5px 0;"><strong>Status:</strong> <span style="background: #e8f5e9; color: #557a46; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${res.status}</span></p>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;">
+            <thead>
+                <tr style="border-bottom: 2px solid #2b4227; font-weight: bold; color: #2b4227;">
+                    <th style="padding: 8px 0; text-align: left;">Description</th>
+                    <th style="padding: 8px 0; text-align: center;">Qty</th>
+                    <th style="padding: 8px 0; text-align: right;">Unit Price</th>
+                    <th style="padding: 8px 0; text-align: right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- ROOM ROW -->
+                <tr style="border-bottom: 1px dashed #ccc;">
+                    <td style="padding: 10px 0;">
+                        <strong>${res.roomType || 'Standard Room'}</strong><br>
+                        <span style="font-size: 12px; color: #666;">Night(s) Stay</span>
+                    </td>
+                    <td style="padding: 10px 0; text-align: center;">${res.roomQty || '1'} Room(s)</td>
+                    <td style="padding: 10px 0; text-align: right;">--</td>
+                    <td style="padding: 10px 0; text-align: right;">--</td>
+                </tr>
+
+                <!-- ADD-ONS ROW -->
+                <tr style="border-bottom: 1px dashed #ccc;">
+                    <td style="padding: 10px 0;"><strong>${res.addons || 'No Extras'}</strong></td>
+                    <td style="padding: 10px 0; text-align: center;">--</td>
+                    <td style="padding: 10px 0; text-align: right;">--</td>
+                    <td style="padding: 10px 0; text-align: right;">--</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <!-- GRAND TOTAL -->
+                <tr style="font-size: 18px; font-weight: bold;">
+                    <td colspan="3" style="padding: 15px 0; text-align: right; color: #2b4227;">GRAND TOTAL:</td>
+                    <td style="padding: 15px 0; text-align: right; color: #bd4b4b;">${res.estimatedTotal || 'TBD'}</td>
+                </tr>
+            </tfoot>
+        </table>
+        
+        <p style="margin: 15px 0 5px 0; text-align: center;"><strong>Status:</strong> <span style="background: #e8f5e9; color: #557a46; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${res.status}</span></p>
     `;
     
     document.getElementById("bookingDetailsContent").innerHTML = content;

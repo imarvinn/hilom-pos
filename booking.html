@@ -65,14 +65,20 @@
                     <input type="text" id="contact" placeholder="e.g. 0917-123-4567" required>
                 </div>
                 
-                <div class="form-group">
-                    <label>Room Preference</label>
-                    <select id="roomType" required>
-                        <option value="" disabled selected>Select a room type...</option>
-                        <option value="Deluxe">Deluxe Room</option>
-                        <option value="Family">Family Room</option>
-                        <option value="Shoreline">Shoreline Room</option>
-                    </select>
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <div class="form-group" style="flex: 2;">
+                        <label>Room Preference</label>
+                        <select id="roomType" required>
+                            <option value="" disabled selected>Select a room type...</option>
+                            <option value="Deluxe">Deluxe Room</option>
+                            <option value="Family">Family Room</option>
+                            <option value="Shoreline">Shoreline Room</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>No. of Rooms</label>
+                        <input type="number" id="roomQty" value="1" min="1" max="10" required>
+                    </div>
                 </div>
 
                 <div class="date-group">
@@ -180,24 +186,37 @@
 
         function calculateTotal() {
             const roomType = document.getElementById("roomType").value;
+            const roomQty = parseInt(document.getElementById("roomQty").value) || 1;
             const checkIn = document.getElementById("checkIn").value;
             const checkOut = document.getElementById("checkOut").value;
+            
             if(!roomType || !checkIn || !checkOut) return;
             const inDate = new Date(checkIn); const outDate = new Date(checkOut);
             if (outDate <= inDate) return; 
+            
             const nights = Math.ceil((outDate - inDate) / (1000 * 3600 * 24));
             const baseRate = roomRates[roomType];
-            let roomTotal = baseRate * nights;
+            
+            // Multiply rate by nights AND number of rooms
+            let roomTotal = (baseRate * nights) * roomQty;
+            
             const addonSelect = document.getElementById("addonSelect");
             const selectedOption = addonSelect.options[addonSelect.selectedIndex];
             const addonPrice = parseFloat(selectedOption.getAttribute("data-price"));
+            
             let addonsTotal = 0;
-            if (addonPrice > 0) addonsTotal = (selectedOption.value === "Airport Transfer") ? addonPrice : (addonPrice * nights);
+            if (addonPrice > 0) {
+                // One-time fees (Transfer) vs Daily fees (Extra Bed)
+                addonsTotal = (selectedOption.value === "Airport Transfer") ? addonPrice : (addonPrice * nights);
+            }
+            
             const grandTotal = roomTotal + addonsTotal;
             document.getElementById("priceEstimate").innerText = `₱${grandTotal.toLocaleString('en-PH', {minimumFractionDigits: 2})}`;
-            document.getElementById("priceBreakdown").innerText = `${nights} night(s) at ₱${baseRate.toLocaleString()} + Add-ons`;
+            document.getElementById("priceBreakdown").innerText = `${roomQty} Room(s) x ${nights} Night(s) at ₱${baseRate.toLocaleString()} + Add-ons`;
         }
 
+        // Add listener for the new room quantity field
+        document.getElementById("roomQty").addEventListener("input", calculateTotal);
         document.getElementById("roomType").addEventListener("change", calculateTotal);
         document.getElementById("checkIn").addEventListener("change", calculateTotal);
         document.getElementById("checkOut").addEventListener("change", calculateTotal);
@@ -228,6 +247,7 @@
                     guestName: document.getElementById("guestName").value.trim(),
                     contact: document.getElementById("contact").value.trim(),
                     roomType: document.getElementById("roomType").value,
+                    roomQty: document.getElementById("roomQty").value,
                     checkInDate: checkIn,
                     checkOutDate: checkOut,
                     addons: document.getElementById("addonSelect").value,
