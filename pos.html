@@ -535,6 +535,11 @@
         <!-- ROW 2 -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px;">
             <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label style="font-size: 12px; color: #555; font-weight: bold;">Email Address</label>
+                <input type="email" id="newStaffEmail" placeholder="e.g. staff@hilom.com" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin: 0;">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 5px;">
                 <label style="font-size: 12px; color: #555; font-weight: bold;">Contact Number</label>
                 <input type="text" id="newStaffContact" placeholder="e.g. 0917-123-4567" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin: 0;">
             </div>
@@ -545,7 +550,7 @@
             </div>
             
             <div style="display: flex; flex-direction: column; gap: 5px;">
-                <label style="font-size: 12px; color: #555; font-weight: bold;">Emergency Contact (Name & No.)</label>
+                <label style="font-size: 12px; color: #555; font-weight: bold;">Emergency Contact</label>
                 <input type="text" id="newStaffEmergency" placeholder="e.g. Maria (0917...)" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin: 0;">
             </div>
         </div>
@@ -1392,7 +1397,7 @@ function createProductCard(product) {
             setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
         }
 
-        let currentEditStaffId = null;
+       let currentEditStaffId = null;
 
         // --- EDIT STAFF UI ---
         async function editStaffMember(staffId) {
@@ -1403,6 +1408,7 @@ function createProductCard(product) {
                     document.getElementById("newStaffName").value = data.name || "";
                     document.getElementById("newStaffRole").value = data.role || "Front Desk";
                     document.getElementById("newStaffPin").value = data.pinCode || "";
+                    document.getElementById("newStaffEmail").value = data.email || ""; // NEW: Fills the email
                     document.getElementById("newStaffContact").value = data.contact || "";
                     document.getElementById("newStaffAddress").value = data.address || "";
                     document.getElementById("newStaffEmergency").value = data.emergencyContact || "";
@@ -1413,7 +1419,6 @@ function createProductCard(product) {
                     document.getElementById("staffSubmitBtn").style.background = "#4a6fa5";
                     document.getElementById("cancelEditStaffBtn").style.display = "block";
                     
-                    // Smooth scroll up to the form
                     document.getElementById("newStaffName").scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             } catch (error) {
@@ -1427,6 +1432,7 @@ function createProductCard(product) {
             document.getElementById("newStaffName").value = "";
             document.getElementById("newStaffRole").value = "Front Desk";
             document.getElementById("newStaffPin").value = "";
+            document.getElementById("newStaffEmail").value = ""; // NEW: Clears the email
             document.getElementById("newStaffContact").value = "";
             document.getElementById("newStaffAddress").value = "";
             document.getElementById("newStaffEmergency").value = "";
@@ -1436,11 +1442,12 @@ function createProductCard(product) {
             document.getElementById("cancelEditStaffBtn").style.display = "none";
         }
 
-        // --- ADD OR UPDATE STAFF (REPLACES YOUR OLD addStaffMember) ---
+        // --- ADD OR UPDATE STAFF ---
         async function addStaffMember() {
             const name = document.getElementById("newStaffName").value.trim();
             const role = document.getElementById("newStaffRole").value;
             const pin = document.getElementById("newStaffPin").value.trim();
+            const email = document.getElementById("newStaffEmail").value.trim() || "No Email"; // NEW: Captures the email
             const contact = document.getElementById("newStaffContact").value.trim() || "N/A";
             const address = document.getElementById("newStaffAddress").value.trim() || "N/A";
             const emergency = document.getElementById("newStaffEmergency").value.trim() || "N/A";
@@ -1458,15 +1465,15 @@ function createProductCard(product) {
                 }
 
                 if (currentEditStaffId) {
-                    // Update Existing Record
+                    // Update Existing Record (Now includes email)
                     await db.collection("staff").doc(currentEditStaffId).update({
-                        name: name, role: role, pinCode: pin, contact: contact, address: address, emergencyContact: emergency
+                        name: name, role: role, pinCode: pin, email: email, contact: contact, address: address, emergencyContact: emergency
                     });
                     alert(`Success! ${name}'s information has been updated.`);
                 } else {
-                    // Add New Record
+                    // Add New Record (Now includes email)
                     await db.collection("staff").add({
-                        name: name, role: role, pinCode: pin, contact: contact, address: address, emergencyContact: emergency, status: "CLOCKED_OUT", dateHired: firebase.firestore.FieldValue.serverTimestamp()
+                        name: name, role: role, pinCode: pin, email: email, contact: contact, address: address, emergencyContact: emergency, status: "CLOCKED_OUT", dateHired: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     alert(`Success! ${name} has been added to the system.`);
                 }
