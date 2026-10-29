@@ -369,33 +369,50 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
 }
 
 /* --- PRINT BOOKING DETAILS INVOICE --- */
-    body.print-booking .modal-overlay {
-        display: none !important; /* Hide all other modals */
-    }
+    body.print-booking .modal-overlay { display: none !important; }
     
     body.print-booking #bookingDetailsModal {
-        display: block !important; /* Force this specific modal to show */
+        display: block !important;
         position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
+        top: 0 !important; left: 0 !important;
+        width: 100% !important; height: auto !important;
         background: white !important;
     }
     
+    /* Expands the modal to look like an official A4 document */
     body.print-booking #bookingDetailsModal .modal-content {
         box-shadow: none !important;
         border: none !important;
-        margin: 0 !important;
-        padding: 20px !important;
+        margin: 0 auto !important;
+        padding: 40px !important;
         width: 100% !important;
-        max-width: 100% !important;
+        max-width: 700px !important; 
     }
+
+    /* Shows the logo header, hides the standard screen title */
+    body.print-booking .print-booking-header { display: block !important; }
+    body.print-booking .screen-booking-title { display: none !important; }
     
+    /* Removes the gray box styling for a clean paper look */
+    body.print-booking #bookingDetailsContent {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+
     body.print-booking .main-content, 
-    body.print-booking .sidebar {
-        display: none !important; /* Hide the background dashboard */
-    }
+    body.print-booking .sidebar { display: none !important; }
     
-    body.print-booking #bookingDetailsModal button {
-        display: none !important; /* Hide the print/close buttons */
+    body.print-booking #bookingDetailsModal button { display: none !important; }
+    
+    /* Auto-inject a professional footer message on the printout */
+    body.print-booking #bookingDetailsModal .modal-content::after {
+        content: "Thank you for choosing Hilom Resort. Please present this confirmation document to the Front Desk upon arrival.";
+        display: block;
+        margin-top: 50px;
+        padding-top: 20px;
+        border-top: 1px solid #ccc;
+        text-align: center;
+        font-size: 13px;
+        color: #555;
     }

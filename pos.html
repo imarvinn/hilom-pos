@@ -721,13 +721,24 @@
    <!-- BOOKING DETAILS & CANCEL MODAL -->
     <div id="bookingDetailsModal" class="modal-overlay hidden" style="z-index: 2600;">
         <div class="modal-content" style="max-width: 400px; text-align: left;">
-            <h2 style="border-bottom: none; color: #2b4227; margin-top: 0; margin-bottom: 5px;">Booking Details</h2>
+            
+            <!-- NEW: HIDDEN PRINT HEADER -->
+            <div class="print-booking-header" style="display: none; text-align: center; border-bottom: 2px solid #2b4227; padding-bottom: 20px; margin-bottom: 20px;">
+                <img src="hilom.png" alt="Hilom Logo" style="height: 70px; object-fit: contain; margin-bottom: 10px;">
+                <div style="font-size: 13px; color: #555; line-height: 1.5;">
+                    Brgy. Dumanhog, Siquijor Island, Siquijor, 6225<br>
+                    Email: hilomresort@gmail.com | Phone: +63 928 402 7378
+                </div>
+                <h2 style="margin: 20px 0 0 0; color: #2b4227; font-size: 22px; letter-spacing: 2px;">BOOKING CONFIRMATION</h2>
+            </div>
+
+            <!-- ADDED CLASS 'screen-booking-title' TO THIS EXISTING H2 -->
+            <h2 class="screen-booking-title" style="border-bottom: none; color: #2b4227; margin-top: 0; margin-bottom: 5px;">Booking Details</h2>
             
             <!-- Details will be injected here by JavaScript -->
             <div id="bookingDetailsContent" style="margin-top: 15px; font-size: 15px; color: #333; line-height: 1.8; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #e0e5e0;">
             </div>
 
-            <!-- REPLACE THIS BOTTOM DIV WITH THE CODE BELOW -->
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button class="delete-btn" style="flex: 2; padding: 12px; font-size: 15px;" id="cancelBookingBtn">❌ Cancel Booking</button>
                 <button class="save-btn" style="flex: 1; padding: 12px; font-size: 15px; background: #888;" onclick="closeBookingDetailsModal()">Close</button>
