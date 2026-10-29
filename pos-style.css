@@ -368,27 +368,34 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
     background-color: #3b5985;
 }
 
-@media print {
-    /* Hide everything on the POS screen */
-    body * {
-        visibility: hidden;
+/* --- PRINT BOOKING DETAILS INVOICE --- */
+    body.print-booking .modal-overlay {
+        display: none !important; /* Hide all other modals */
     }
     
-    /* Show ONLY the booking details modal */
-    #bookingDetailsModal, #bookingDetailsModal * {
-        visibility: visible;
+    body.print-booking #bookingDetailsModal {
+        display: block !important; /* Force this specific modal to show */
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        background: white !important;
     }
     
-    /* Position the modal at the top left of the paper */
-    #bookingDetailsModal {
-        position: absolute;
-        left: 0;
-        top: 0;
-        background: white;
+    body.print-booking #bookingDetailsModal .modal-content {
+        box-shadow: none !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 20px !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
-
-    /* Hide the buttons on the printed paper */
-    #bookingDetailsModal button {
-        display: none !important;
+    
+    body.print-booking .main-content, 
+    body.print-booking .sidebar {
+        display: none !important; /* Hide the background dashboard */
     }
-}
+    
+    body.print-booking #bookingDetailsModal button {
+        display: none !important; /* Hide the print/close buttons */
+    }

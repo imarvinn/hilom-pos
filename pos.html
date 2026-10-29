@@ -1970,10 +1970,12 @@ function loadAuditLogs() {
 }
 
 // Trigger Print from Booking Details Modal
-document.getElementById("printInvoiceBtn").addEventListener("click", () => {
-    window.print();
-});
-
+    document.getElementById("printInvoiceBtn").addEventListener("click", () => {
+        document.body.classList.add("print-booking");
+        window.print();
+        // Remove the class right after printing so normal POS prints aren't affected
+        setTimeout(() => { document.body.classList.remove("print-booking"); }, 500);
+    });
   </script>
 
   <!-- Document Preview Modal -->
