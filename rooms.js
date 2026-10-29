@@ -84,13 +84,16 @@ let pendingWalkInRoomNumber = null;
 let pendingWalkInRate = null;
 let pendingWalkInType = null;
 
+// --- 1. CHECK-IN (MULTI-ROOM MASTER FOLIO) ---
+
 async function checkInRoom(clickedRoomId, roomRate, roomType) {
     const checklistContainer = document.getElementById("walkInRoomChecklist");
     checklistContainer.innerHTML = "<p style='color:#888; font-size:12px;'>Loading available rooms...</p>";
     
-    // Clear old inputs
+    // Clear old inputs (This is where the error was happening!)
     document.getElementById("walkInName").value = "";
     document.getElementById("walkInNights").value = "1";
+    document.getElementById("walkInExtraBeds").value = "0"; // <-- NEWLY ADDED
     document.getElementById("walkInInclusions").value = "";
     document.getElementById("walkInAge").value = "";
     document.getElementById("walkInContact").value = "";

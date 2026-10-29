@@ -698,7 +698,6 @@
         <div class="modal-content" style="max-width: 400px; text-align: left;">
             <h2 style="border-bottom: none; color: #2b4227; margin-top: 0; margin-bottom: 5px;">Guest Registration</h2>
             
-            <!-- NEW: Multi-Room Checklist for Check-In -->
             <p style="color: #666; font-size: 14px; margin-top: 0; margin-bottom: 10px;">Select Rooms for Check-In:</p>
             <div id="walkInRoomChecklist" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 4px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
                 <!-- Room checkboxes injected here -->
@@ -713,13 +712,18 @@
                         <input type="number" id="walkInNights" required style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;" value="1" min="1">
                     </div>
                     <div style="flex: 1;">
-                        <label style="font-size: 11px; color:#666; font-weight:bold;">Extra Beds (₱800)</label>
+                        <label style="font-size: 11px; color:#666; font-weight:bold;">Extra Beds</label>
                         <input type="number" id="walkInExtraBeds" value="0" min="0" style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
                     </div>
                     <div style="flex: 2;">
                         <label style="font-size: 11px; color:#666; font-weight:bold;">Inclusions</label>
                         <input type="text" id="walkInInclusions" placeholder="e.g. Free Breakfast" style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
                     </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <input type="number" id="walkInAge" placeholder="Age" style="flex: 1; min-width: 0; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                    <input type="text" id="walkInContact" placeholder="Contact No." style="flex: 2; min-width: 0; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
                 </div>
                 
                 <input type="email" id="walkInEmail" placeholder="Email Address (Optional)" style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
