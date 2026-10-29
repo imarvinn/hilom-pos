@@ -53,9 +53,9 @@ async function verifyPin() {
         
         showToast(`System unlocked by ${managerName}`);
 
-        // If you have logic that hides/shows the sidebar buttons when locked, 
-        // trigger the unlock logic here (e.g., revealing the nav buttons)
+        // FORCE ALL SIDEBAR TABS TO REVEAL THEMSELVES
         document.querySelectorAll('.sidebar .nav-btn').forEach(btn => {
+            btn.style.display = "block"; // THIS IS THE FIX
             btn.style.pointerEvents = "auto";
             btn.style.opacity = "1";
         });
