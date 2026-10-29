@@ -929,21 +929,24 @@ function closeBookingDetailsModal() {
 
 async function confirmCancelBooking(resId) {
     // 1. Prompt for Security PIN
-    const pin = prompt("🔒 SECURITY CHECK: Enter a Manager PIN to cancel this reservation:");
+    const pin = prompt("🔒 SECURITY CHECK: Enter a Manager or Master PIN to cancel this reservation:");
     if (!pin) return;
 
     try {
-        // 2. Verify PIN and Role in the database
-        const staffQuery = await db.collection("staff").where("pinCode", "==", pin).where("role", "==", "Manager").get();
+        // 2. Verify PIN and Role in the database (Now allows Master and Manager)
+        const staffQuery = await db.collection("staff")
+            .where("pinCode", "==", pin)
+            .where("role", "in", ["Manager", "Master"])
+            .get();
         
         if (staffQuery.empty) {
-            return alert("❌ ACCESS DENIED: Invalid PIN or you do not have Manager privileges.");
+            return alert("❌ ACCESS DENIED: Invalid PIN or you do not have Manager/Master privileges. (Check your PIN in the Time Clock > Staff Information Sheet)");
         }
         
         const managerName = staffQuery.docs[0].data().name;
 
         // 3. Final Confirmation
-        if (!confirm(`Manager ${managerName} verified.\n\nAre you absolutely sure you want to cancel this booking? The room will immediately become available for these dates.`)) {
+        if (!confirm(`Authorized as ${managerName}.\n\nAre you absolutely sure you want to cancel this booking? The room will immediately become available for these dates.`)) {
             return;
         }
 
