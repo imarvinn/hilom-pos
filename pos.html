@@ -523,7 +523,10 @@
             <input type="text" id="newStaffAddress" placeholder="Home Address" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
             <input type="text" id="newStaffEmergency" placeholder="Emergency Contact Name & No." style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
         </div>
-        <button onclick="addStaffMember()" style="background: #557a46; color: white; border: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; width: 100%;">+ Register Staff Member</button>
+        <div style="display: flex; gap: 10px;">
+            <button id="staffSubmitBtn" onclick="addStaffMember()" style="background: #557a46; color: white; border: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 2;">+ Register Staff Member</button>
+            <button id="cancelEditStaffBtn" onclick="resetStaffForm()" style="background: #888; color: white; border: none; padding: 12px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; display: none;">Cancel Edit</button>
+        </div>
     </div>
 
     <!-- Staff Data Table -->
@@ -1361,6 +1364,51 @@ function createProductCard(product) {
             setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
         }
 
+        let currentEditStaffId = null;
+
+        // --- EDIT STAFF UI ---
+        async function editStaffMember(staffId) {
+            try {
+                const doc = await db.collection("staff").doc(staffId).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    document.getElementById("newStaffName").value = data.name || "";
+                    document.getElementById("newStaffRole").value = data.role || "Front Desk";
+                    document.getElementById("newStaffPin").value = data.pinCode || "";
+                    document.getElementById("newStaffContact").value = data.contact || "";
+                    document.getElementById("newStaffAddress").value = data.address || "";
+                    document.getElementById("newStaffEmergency").value = data.emergencyContact || "";
+                    
+                    currentEditStaffId = staffId;
+                    
+                    document.getElementById("staffSubmitBtn").innerText = "Update Staff Member";
+                    document.getElementById("staffSubmitBtn").style.background = "#4a6fa5";
+                    document.getElementById("cancelEditStaffBtn").style.display = "block";
+                    
+                    // Smooth scroll up to the form
+                    document.getElementById("newStaffName").scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            } catch (error) {
+                console.error("Error fetching staff details:", error);
+            }
+        }
+
+        // --- RESET FORM ---
+        function resetStaffForm() {
+            currentEditStaffId = null;
+            document.getElementById("newStaffName").value = "";
+            document.getElementById("newStaffRole").value = "Front Desk";
+            document.getElementById("newStaffPin").value = "";
+            document.getElementById("newStaffContact").value = "";
+            document.getElementById("newStaffAddress").value = "";
+            document.getElementById("newStaffEmergency").value = "";
+            
+            document.getElementById("staffSubmitBtn").innerText = "+ Register Staff Member";
+            document.getElementById("staffSubmitBtn").style.background = "#557a46";
+            document.getElementById("cancelEditStaffBtn").style.display = "none";
+        }
+
+        // --- ADD OR UPDATE STAFF (REPLACES YOUR OLD addStaffMember) ---
         async function addStaffMember() {
             const name = document.getElementById("newStaffName").value.trim();
             const role = document.getElementById("newStaffRole").value;
@@ -1372,17 +1420,32 @@ function createProductCard(product) {
             if (!name || pin.length !== 4 || isNaN(pin)) return alert("Please enter a valid name and a 4-digit numeric PIN.");
 
             try {
+                // Ensure PIN isn't taken by SOMEONE ELSE
                 const pinCheck = await db.collection("staff").where("pinCode", "==", pin).get();
-                if (!pinCheck.empty) return alert("This PIN is already being used. Please choose a different 4-digit PIN for security.");
+                if (!pinCheck.empty) {
+                    const isPinTaken = pinCheck.docs.some(doc => doc.id !== currentEditStaffId);
+                    if (isPinTaken) {
+                        return alert("This PIN is already being used. Please choose a different 4-digit PIN for security.");
+                    }
+                }
 
-                await db.collection("staff").add({
-                    name: name, role: role, pinCode: pin, contact: contact, address: address, emergencyContact: emergency, status: "CLOCKED_OUT", dateHired: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                alert(`Success! ${name} has been added to the system.`);
-                document.getElementById("newStaffName").value = ""; document.getElementById("newStaffPin").value = ""; document.getElementById("newStaffContact").value = ""; document.getElementById("newStaffAddress").value = ""; document.getElementById("newStaffEmergency").value = "";
+                if (currentEditStaffId) {
+                    // Update Existing Record
+                    await db.collection("staff").doc(currentEditStaffId).update({
+                        name: name, role: role, pinCode: pin, contact: contact, address: address, emergencyContact: emergency
+                    });
+                    alert(`Success! ${name}'s information has been updated.`);
+                } else {
+                    // Add New Record
+                    await db.collection("staff").add({
+                        name: name, role: role, pinCode: pin, contact: contact, address: address, emergencyContact: emergency, status: "CLOCKED_OUT", dateHired: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    alert(`Success! ${name} has been added to the system.`);
+                }
+                
+                resetStaffForm();
             } catch (error) {
-                console.error("Error adding staff:", error); alert("Failed to add staff member.");
+                console.error("Error saving staff:", error); alert("Failed to save staff member.");
             }
         }
 
@@ -1412,7 +1475,12 @@ function createProductCard(product) {
                         <td style="padding: 12px; color: #555;">${data.contact || "N/A"}</td>
                         <td style="padding: 12px; color: #555;">${data.address || "N/A"}</td>
                         <td style="padding: 12px; color: #bd4b4b; font-weight: bold; font-size: 12px;">${data.emergencyContact || "N/A"}</td>
-                        <td style="padding: 12px; text-align: center;"><button onclick="deleteStaffMember('${doc.id}', '${data.name}')" style="background: transparent; color: #bd4b4b; border: 1px solid #bd4b4b; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer;">Remove</button></td>
+                       <td style="padding: 12px; text-align: center;">
+                            <div style="display: flex; gap: 5px; justify-content: center;">
+                                <button onclick="editStaffMember('${doc.id}')" style="background: transparent; color: #4a6fa5; border: 1px solid #4a6fa5; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer;">Edit</button>
+                                <button onclick="deleteStaffMember('${doc.id}', '${data.name}')" style="background: transparent; color: #bd4b4b; border: 1px solid #bd4b4b; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer;">Remove</button>
+                            </div>
+                        </td>
                     `;
                     tableBody.appendChild(tr);
                 });
