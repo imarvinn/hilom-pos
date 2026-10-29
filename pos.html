@@ -740,20 +740,32 @@
 
     <!-- ADVANCE BOOKING MODAL -->
     <div id="advanceBookingModal" class="modal-overlay hidden" style="z-index: 2600;">
-        <div class="modal-content" style="max-width: 400px; text-align: left;">
+        <!-- Increased max-width to 450px for breathing room -->
+        <div class="modal-content" style="max-width: 450px; text-align: left;">
             <h2 style="border-bottom: none; color: #2b4227; margin-top: 0; margin-bottom: 5px;">Advance Booking</h2>
             
-            <!-- NEW: Multi-Room Checklist Container -->
             <p style="color: #666; font-size: 14px; margin-top: 0; margin-bottom: 10px;">Select Rooms to Reserve:</p>
             <div id="advRoomChecklist" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 4px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
                 <!-- Room checkboxes will be injected here by JavaScript -->
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Guest Name Row -->
                 <input type="text" id="advGuestName" placeholder="Guest Name (Required)" required style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
                 
-                <input type="text" id="advContact" placeholder="Contact No." style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                <!-- Contact & Extra Beds Row -->
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <div style="flex: 2;">
+                        <label style="font-size: 12px; color: #666; font-weight: bold;">Contact No.</label>
+                        <input type="text" id="advContact" placeholder="e.g. 0917-123-4567" style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px; color: #666; font-weight: bold;">Extra Beds (₱800)</label>
+                        <input type="number" id="advExtraBeds" value="0" min="0" style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                    </div>
+                </div>
 
+                <!-- Dates Row -->
                 <div style="display: flex; gap: 10px; width: 100%;">
                     <div style="flex: 1;">
                         <label style="font-size: 12px; color: #666; font-weight: bold;">Check-In</label>
@@ -763,15 +775,10 @@
                         <label style="font-size: 12px; color: #666; font-weight: bold;">Check-Out</label>
                         <input type="date" id="advCheckOut" required style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
                     </div>
-                    <div style="flex: 1;">
-                        <label style="font-size: 12px; color: #666; font-weight: bold;">Extra Beds</label>
-                        <input type="number" id="advExtraBeds" value="0" min="0" style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
-                    </div>
                 </div>
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <!-- Added an ID to the save button for state management -->
                 <button id="advSaveBtn" class="add-btn" style="flex: 2; padding: 12px; background: #4a6fa5; font-size: 15px;" onclick="confirmAdvanceBooking()">📅 Save Reservation</button>
                 <button class="delete-btn" style="flex: 1; padding: 12px; font-size: 15px;" onclick="closeAdvanceBookingModal()">Cancel</button>
             </div>
