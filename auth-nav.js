@@ -25,15 +25,44 @@ document.querySelectorAll('.view-section').forEach(el => {
     }
 }
 
-function verifyPin() {
-    if (document.getElementById('adminPin').value === ADMIN_PIN) {
-        isAdminUnlocked = true;
-        closePinModal();
-        showToast("Admin access granted.");
-        switchView(pendingViewId, pendingNavElement);
-    } else {
-        showToast("Incorrect PIN.");
-        document.getElementById('adminPin').value = '';
+async function verifyPin() {
+    const pinInput = document.getElementById("adminPin").value.trim();
+    
+    if (!pinInput) {
+        return alert("Please enter a PIN.");
+    }
+
+    try {
+        // Check the Staff Directory for a matching PIN with Manager or Master privileges
+        const staffQuery = await db.collection("staff")
+            .where("pinCode", "==", pinInput)
+            .where("role", "in", ["Manager", "Master"])
+            .get();
+        
+        if (staffQuery.empty) {
+            document.getElementById("adminPin").value = ""; // clear the input
+            return alert("❌ ACCESS DENIED: Invalid PIN or you do not have Manager/Master privileges.");
+        }
+        
+        // If it matches, unlock the system
+        const managerName = staffQuery.docs[0].data().name;
+        
+        // Hide the lock modal
+        document.getElementById("pinModal").classList.add("hidden");
+        document.getElementById("adminPin").value = ""; // clear it for next time
+        
+        showToast(`System unlocked by ${managerName}`);
+
+        // If you have logic that hides/shows the sidebar buttons when locked, 
+        // trigger the unlock logic here (e.g., revealing the nav buttons)
+        document.querySelectorAll('.sidebar .nav-btn').forEach(btn => {
+            btn.style.pointerEvents = "auto";
+            btn.style.opacity = "1";
+        });
+        
+    } catch (error) {
+        console.error("Error verifying PIN:", error);
+        alert("Database error verifying PIN.");
     }
 }
 
