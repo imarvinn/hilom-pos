@@ -51,6 +51,10 @@ async function verifyPin() {
             return alert("❌ ACCESS DENIED: Invalid PIN or your account doesn't have Manager privileges.");
         }
         
+        // --- THE MISSING MASTER SWITCH ---
+        // This tells the switchView() function you are officially allowed inside
+        isAdminUnlocked = true; 
+        
         const pinElement = document.getElementById("adminPin");
         if (pinElement) {
             pinElement.value = ""; 
@@ -61,7 +65,6 @@ async function verifyPin() {
             if (mainModal) mainModal.classList.add("hidden");
         }
         
-        // STRICT SCOPE: Only target navigation buttons explicitly inside the sidebar
         const allSidebarTabs = document.querySelectorAll('.sidebar .nav-btn, .sidebar li');
         
         allSidebarTabs.forEach(tab => {
@@ -80,7 +83,21 @@ async function verifyPin() {
             }
         }
         
+        // Reveal the bottom lock and change PIN buttons
+        const lockBtn = document.getElementById("lockBtn");
+        const changePinBtn = document.getElementById("changePinBtn");
+        if (lockBtn) lockBtn.classList.remove("hidden");
+        if (changePinBtn) changePinBtn.classList.remove("hidden");
+        
         alert(`✅ System unlocked by ${authorizedUser.name || "Admin"}`);
+        
+        // Automatically route the user to the tab they were trying to open
+        if (typeof pendingViewId !== "undefined" && pendingViewId) {
+            switchView(pendingViewId, pendingNavElement);
+            // Clear the memory so it doesn't loop
+            pendingViewId = null;
+            pendingNavElement = null;
+        }
         
     } catch (error) {
         console.error("Error verifying PIN:", error);
