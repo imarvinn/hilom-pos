@@ -67,24 +67,29 @@ async function verifyPin() {
             if (mainModal) mainModal.classList.add("hidden");
         }
         
-        // 3. FORCE ALL TABS TO REVEAL
-        const adminTabs = ["navFrontDesk", "navPos", "navKitchen", "navInv", "navMenu", "navSales", "navTimeClock", "changePinBtn", "lockBtn"];
+       // 3. FORCE ALL TABS TO REVEAL (BRUTE-FORCE OVERRIDE)
+        // This targets the CSS classes in your sidebar instead of guessing exact IDs
         
-        adminTabs.forEach(tabId => {
-            const tab = document.getElementById(tabId);
-            if (tab) {
-                tab.style.display = "block";
-                tab.style.pointerEvents = "auto";
-                tab.style.opacity = "1";
-                tab.classList.remove("hidden");
-            }
+        // Grab literally everything inside your sidebar navigation
+        const allSidebarTabs = document.querySelectorAll('.sidebar li, .sidebar a, .sidebar div, .nav-btn, [style*="display: none"]');
+        
+        allSidebarTabs.forEach(tab => {
+            // Force override any CSS hiding it
+            tab.style.display = "block"; 
+            tab.style.visibility = "visible";
+            tab.style.pointerEvents = "auto";
+            tab.style.opacity = "1";
+            tab.classList.remove("hidden");
         });
 
-        // Reveal IT Audit Log if they are Master/IT
+        // Specific check for the Audit tab if it exists
         const roleStr = String(authorizedUser.role).toLowerCase();
-        if (roleStr.includes("master") || roleStr.includes("it")) {
-            const auditTab = document.getElementById("navAudit");
-            if (auditTab) auditTab.style.display = "block";
+        if (!roleStr.includes("master") && !roleStr.includes("it")) {
+            // If they aren't Master/IT, hide the audit log again just in case it got revealed
+            const auditTab = document.getElementById("navAudit") || document.getElementById("auditTab");
+            if (auditTab) {
+                auditTab.style.display = "none";
+            }
         }
         
         alert(`✅ System unlocked by ${authorizedUser.name || "Admin"}`);
