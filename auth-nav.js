@@ -33,48 +33,65 @@ async function verifyPin() {
     }
 
     try {
-        // Check the Staff Directory for Manager, Master, or IT privileges
-        const staffQuery = await db.collection("staff")
-            .where("pinCode", "==", pinInput)
-            .where("role", "in", ["Manager", "Master", "IT"])
-            .get();
+        // 1. BULLETPROOF CHECK: Fetch all staff and compare manually in JavaScript.
+        // This guarantees it works whether the database saved your PIN as a String OR a Number.
+        const staffQuery = await db.collection("staff").get();
+        let authorizedUser = null;
+
+        staffQuery.forEach(doc => {
+            const data = doc.data();
+            // Force both to be strings so they match perfectly
+            if (String(data.pinCode) === pinInput) {
+                const role = String(data.role).toLowerCase();
+                // Check if the role contains admin keywords
+                if (role.includes("manager") || role.includes("master") || role.includes("it")) {
+                    authorizedUser = data;
+                }
+            }
+        });
         
-        if (staffQuery.empty) {
-            document.getElementById("adminPin").value = ""; // clear the input
-            return alert("❌ ACCESS DENIED: Invalid PIN or you do not have Admin privileges.");
+        if (!authorizedUser) {
+            document.getElementById("adminPin").value = ""; 
+            return alert("❌ ACCESS DENIED: Invalid PIN or your account doesn't have Manager privileges.");
         }
         
-        const managerData = staffQuery.docs[0].data();
-        const managerName = managerData.name;
-        const managerRole = managerData.role;
+        // 2. FORCE CLOSE THE MODAL (Bypasses duplicate HTML IDs)
+        const pinElement = document.getElementById("adminPin");
+        if (pinElement) {
+            pinElement.value = ""; // clear for next time
+            const modal = pinElement.closest('.modal-overlay');
+            if (modal) modal.classList.add("hidden");
+            
+            // Backup close just in case
+            const mainModal = document.getElementById("pinModal");
+            if (mainModal) mainModal.classList.add("hidden");
+        }
         
-        // Hide the lock modal
-        document.getElementById("pinModal").classList.add("hidden");
-        document.getElementById("adminPin").value = ""; 
-        
-        // BULLETPROOF TAB REVEAL: Target the exact IDs of all hidden Admin tabs
+        // 3. FORCE ALL TABS TO REVEAL
         const adminTabs = ["navFrontDesk", "navPos", "navKitchen", "navInv", "navMenu", "navSales", "navTimeClock", "changePinBtn", "lockBtn"];
         
         adminTabs.forEach(tabId => {
             const tab = document.getElementById(tabId);
             if (tab) {
                 tab.style.display = "block";
+                tab.style.pointerEvents = "auto";
+                tab.style.opacity = "1";
                 tab.classList.remove("hidden");
             }
         });
 
-        // Only reveal the IT Audit Log tab for Master or IT roles
-        if (managerRole === "Master" || managerRole === "IT") {
+        // Reveal IT Audit Log if they are Master/IT
+        const roleStr = String(authorizedUser.role).toLowerCase();
+        if (roleStr.includes("master") || roleStr.includes("it")) {
             const auditTab = document.getElementById("navAudit");
             if (auditTab) auditTab.style.display = "block";
         }
         
-        // Safe success message (Replaces the 'showToast' line that may have caused the crash)
-        alert(`System unlocked by ${managerName}`);
+        alert(`✅ System unlocked by ${authorizedUser.name || "Admin"}`);
         
     } catch (error) {
         console.error("Error verifying PIN:", error);
-        alert("Database error verifying PIN.");
+        alert("Database error verifying PIN. Check your connection.");
     }
 }
 
