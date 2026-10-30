@@ -33,17 +33,13 @@ async function verifyPin() {
     }
 
     try {
-        // 1. BULLETPROOF CHECK: Fetch all staff and compare manually in JavaScript.
-        // This guarantees it works whether the database saved your PIN as a String OR a Number.
         const staffQuery = await db.collection("staff").get();
         let authorizedUser = null;
 
         staffQuery.forEach(doc => {
             const data = doc.data();
-            // Force both to be strings so they match perfectly
             if (String(data.pinCode) === pinInput) {
                 const role = String(data.role).toLowerCase();
-                // Check if the role contains admin keywords
                 if (role.includes("manager") || role.includes("master") || role.includes("it")) {
                     authorizedUser = data;
                 }
@@ -55,26 +51,20 @@ async function verifyPin() {
             return alert("❌ ACCESS DENIED: Invalid PIN or your account doesn't have Manager privileges.");
         }
         
-        // 2. FORCE CLOSE THE MODAL (Bypasses duplicate HTML IDs)
         const pinElement = document.getElementById("adminPin");
         if (pinElement) {
-            pinElement.value = ""; // clear for next time
+            pinElement.value = ""; 
             const modal = pinElement.closest('.modal-overlay');
             if (modal) modal.classList.add("hidden");
             
-            // Backup close just in case
             const mainModal = document.getElementById("pinModal");
             if (mainModal) mainModal.classList.add("hidden");
         }
         
-       // 3. FORCE ALL TABS TO REVEAL (BRUTE-FORCE OVERRIDE)
-        // This targets the CSS classes in your sidebar instead of guessing exact IDs
-        
-        // Grab literally everything inside your sidebar navigation
-        const allSidebarTabs = document.querySelectorAll('.sidebar li, .sidebar a, .sidebar div, .nav-btn, [style*="display: none"]');
+        // STRICT SCOPE: Only target navigation buttons explicitly inside the sidebar
+        const allSidebarTabs = document.querySelectorAll('.sidebar .nav-btn, .sidebar li');
         
         allSidebarTabs.forEach(tab => {
-            // Force override any CSS hiding it
             tab.style.display = "block"; 
             tab.style.visibility = "visible";
             tab.style.pointerEvents = "auto";
@@ -82,10 +72,8 @@ async function verifyPin() {
             tab.classList.remove("hidden");
         });
 
-        // Specific check for the Audit tab if it exists
         const roleStr = String(authorizedUser.role).toLowerCase();
         if (!roleStr.includes("master") && !roleStr.includes("it")) {
-            // If they aren't Master/IT, hide the audit log again just in case it got revealed
             const auditTab = document.getElementById("navAudit") || document.getElementById("auditTab");
             if (auditTab) {
                 auditTab.style.display = "none";
