@@ -33,32 +33,44 @@ async function verifyPin() {
     }
 
     try {
-        // Check the Staff Directory for a matching PIN with Manager or Master privileges
+        // Check the Staff Directory for Manager, Master, or IT privileges
         const staffQuery = await db.collection("staff")
             .where("pinCode", "==", pinInput)
-            .where("role", "in", ["Manager", "Master"])
+            .where("role", "in", ["Manager", "Master", "IT"])
             .get();
         
         if (staffQuery.empty) {
             document.getElementById("adminPin").value = ""; // clear the input
-            return alert("❌ ACCESS DENIED: Invalid PIN or you do not have Manager/Master privileges.");
+            return alert("❌ ACCESS DENIED: Invalid PIN or you do not have Admin privileges.");
         }
         
-        // If it matches, unlock the system
-        const managerName = staffQuery.docs[0].data().name;
+        const managerData = staffQuery.docs[0].data();
+        const managerName = managerData.name;
+        const managerRole = managerData.role;
         
         // Hide the lock modal
         document.getElementById("pinModal").classList.add("hidden");
-        document.getElementById("adminPin").value = ""; // clear it for next time
+        document.getElementById("adminPin").value = ""; 
         
-        showToast(`System unlocked by ${managerName}`);
-
-        // FORCE ALL SIDEBAR TABS TO REVEAL THEMSELVES
-        document.querySelectorAll('.sidebar .nav-btn').forEach(btn => {
-            btn.style.display = "block"; // THIS IS THE FIX
-            btn.style.pointerEvents = "auto";
-            btn.style.opacity = "1";
+        // BULLETPROOF TAB REVEAL: Target the exact IDs of all hidden Admin tabs
+        const adminTabs = ["navFrontDesk", "navPos", "navKitchen", "navInv", "navMenu", "navSales", "navTimeClock", "changePinBtn", "lockBtn"];
+        
+        adminTabs.forEach(tabId => {
+            const tab = document.getElementById(tabId);
+            if (tab) {
+                tab.style.display = "block";
+                tab.classList.remove("hidden");
+            }
         });
+
+        // Only reveal the IT Audit Log tab for Master or IT roles
+        if (managerRole === "Master" || managerRole === "IT") {
+            const auditTab = document.getElementById("navAudit");
+            if (auditTab) auditTab.style.display = "block";
+        }
+        
+        // Safe success message (Replaces the 'showToast' line that may have caused the crash)
+        alert(`System unlocked by ${managerName}`);
         
     } catch (error) {
         console.error("Error verifying PIN:", error);
