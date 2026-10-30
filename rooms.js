@@ -23,7 +23,7 @@ function loadRoomRack() {
             if (room.status === "OCCUPIED") { borderColor = "#c62828"; bgColor = "#ffebee"; }
             else if (room.status === "MAINTENANCE") { borderColor = "#d4a373"; bgColor = "#fff3cd"; }
             
-          // --- DYNAMIC ACTION BUTTONS & VISUAL HIERARCHY ---
+            // --- DYNAMIC ACTION BUTTONS & VISUAL HIERARCHY ---
             let primaryActions = "";
             let secondaryActions = "";
 
@@ -80,22 +80,15 @@ function loadRoomRack() {
     });
 }
 
-// --- 1. CHECK-IN (CREATES FOLIO LEDGER & SAVES CRM DATA) ---
-let pendingWalkInRoomId = null;
-let pendingWalkInRoomNumber = null;
-let pendingWalkInRate = null;
-let pendingWalkInType = null;
-
 // --- 1. CHECK-IN (MULTI-ROOM MASTER FOLIO) ---
-
 async function checkInRoom(clickedRoomId, roomRate, roomType) {
     const checklistContainer = document.getElementById("walkInRoomChecklist");
     checklistContainer.innerHTML = "<p style='color:#888; font-size:12px;'>Loading available rooms...</p>";
     
-    // Clear old inputs (This is where the error was happening!)
+    // Clear old inputs
     document.getElementById("walkInName").value = "";
     document.getElementById("walkInNights").value = "1";
-    document.getElementById("walkInExtraBeds").value = "0"; // <-- NEWLY ADDED
+    document.getElementById("walkInExtraBeds").value = "0"; 
     document.getElementById("walkInInclusions").value = "";
     document.getElementById("walkInAge").value = "";
     document.getElementById("walkInContact").value = "";
@@ -129,128 +122,8 @@ async function checkInRoom(clickedRoomId, roomRate, roomType) {
     }
 }
 
-
-// --- ADVANCE BOOKING LOGIC (MULTI-ROOM) ---
-
-async function openAdvanceBookingModal(clickedRoomId, rate, type) {
-    const checklistContainer = document.getElementById("advRoomChecklist");
-    checklistContainer.innerHTML = "<p style='color:#888; font-size:12px;'>Loading rooms...</p>";
-    
-    // Reset Form
-    document.getElementById("advGuestName").value = "";
-    document.getElementById("advContact").value = "";
-    document.getElementById("advCheckIn").value = "";
-    document.getElementById("advCheckOut").value = "";
-    
-    // Prevent booking in the past
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById("advCheckIn").setAttribute('min', today);
-    document.getElementById("advCheckOut").setAttribute('min', today);
-
-    document.getElementById("advanceBookingModal").classList.remove("hidden");
-
-    // Fetch all rooms from Firebase to build the checklist
-    try {
-        const snapshot = await db.collection("rooms").orderBy("roomNumber", "asc").get();
-        checklistContainer.innerHTML = "";
-        
-        snapshot.forEach(doc => {
-            const room = doc.data();
-            const isClicked = doc.id === clickedRoomId;
-            
-            checklistContainer.innerHTML += `
-                <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; padding: 6px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;">
-                    <input type="checkbox" class="adv-room-checkbox" value="${doc.id}" data-type="${room.roomType}" ${isClicked ? "checked" : ""}>
-                    <strong>Room ${doc.id}</strong> <span style="color:#666; font-size:12px;">(${room.roomType})</span>
-                </label>
-            `;
-        });
-    } catch(e) {
-        console.error(e);
-        checklistContainer.innerHTML = "<p style='color:red;'>Error loading rooms.</p>";
-    }
-}
-
 function closeWalkInModal() {
     document.getElementById("walkInModal").classList.add("hidden");
-}
-
-function closeAdvanceBookingModal() {
-    document.getElementById("advanceBookingModal").classList.add("hidden");
-}
-
-const extraBeds = parseInt(document.getElementById("advExtraBeds").value) || 0;
-async function confirmAdvanceBooking() {
-    const guestName = sanitizeHTML(document.getElementById("advGuestName").value.trim());
-    const contact = sanitizeHTML(document.getElementById("advContact").value.trim());
-    const checkIn = document.getElementById("advCheckIn").value;
-    const checkOut = document.getElementById("advCheckOut").value;
-
-    // 1. Gather all selected checkboxes
-    const checkboxes = document.querySelectorAll(".adv-room-checkbox:checked");
-    if (checkboxes.length === 0) {
-        return alert("Please select at least one room for this booking.");
-    }
-
-    if (!guestName || !checkIn || !checkOut) {
-        return alert("Please fill in the guest name and dates.");
-    }
-    
-    if (new Date(checkOut) <= new Date(checkIn)) {
-        return alert("Check-out date must be after check-in date.");
-    }
-
-    // 2. Generate ONE Unique Booking Reference for the whole group
-    const uniqueRef = "HLM-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-    
-    const saveBtn = document.getElementById("advSaveBtn");
-    saveBtn.innerText = "Saving...";
-    saveBtn.disabled = true;
-
-    try {
-        // 3. Save each selected room to the calendar using a Batch write
-        const batch = db.batch();
-        
-        checkboxes.forEach(cb => {
-            const roomId = cb.value;
-            const roomType = cb.getAttribute("data-type");
-            const newResRef = db.collection("reservations").doc();
-            
-            batch.set(newResRef, {
-                roomNumber: roomId, 
-                roomType: roomType,
-                guestName: guestName,
-                contact: contact,
-                checkIn: checkIn,
-                checkOut: checkOut,
-                status: "CONFIRMED", 
-                source: "Front Desk Multi-Room Booking",
-                bookingRef: uniqueRef, 
-                extraBeds: extraBeds,
-                addons: extraBeds > 0 ? `${extraBeds}x Extra Bed(s)` : "None",
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                
-            });
-        });
-
-        await batch.commit();
-
-        alert(`Success! Group Booking saved for ${guestName}.\n\nBooking Reference: ${uniqueRef}\nRooms Reserved: ${checkboxes.length}`);
-        
-        closeAdvanceBookingModal();
-        
-        // Refresh the calendar to show the new green blocks
-        if (typeof loadBookingCalendar === "function") {
-            loadBookingCalendar();
-        }
-
-    } catch (error) {
-        console.error("Error saving booking:", error);
-        alert("Failed to save advance booking. Check permissions.");
-    } finally {
-        saveBtn.innerText = "📅 Save Reservation";
-        saveBtn.disabled = false;
-    }
 }
 
 async function confirmWalkInCheckIn() {
@@ -284,7 +157,7 @@ async function confirmWalkInCheckIn() {
     expectedCheckOut.setDate(expectedCheckOut.getDate() + nights);
     expectedCheckOut.setHours(12, 0, 0, 0); 
 
-    // 5. Compute combined totals and string room names together (e.g. "F1, F2")
+    // 5. Compute combined totals and string room names together
     let combinedRate = 0;
     let roomIdsArr = [];
     let roomTypesArr = [];
@@ -296,11 +169,7 @@ async function confirmWalkInCheckIn() {
     });
 
     const combinedRoomString = roomIdsArr.join(", ");
-    
-    // Grabs unique room types (e.g. "Deluxe, Shoreline")
     const combinedTypeString = [...new Set(roomTypesArr)].join(", "); 
-
-    // Calculate extra bed costs (Qty * Price * Nights)
     const extraBedCost = extraBeds * 800 * nights;
 
     const btn = document.getElementById("walkInSaveBtn");
@@ -312,7 +181,6 @@ async function confirmWalkInCheckIn() {
     const batch = db.batch();
     const folioRef = db.collection("folios").doc();
 
-    // Automatically create a POS order for the extra beds if they added any
     let initialPosOrders = [];
     if (extraBeds > 0) {
         initialPosOrders.push({
@@ -335,9 +203,9 @@ async function confirmWalkInCheckIn() {
         roomQty: checkboxes.length,
         extraBeds: extraBeds,
         roomChargesTotal: combinedRate * nights,
-        posChargesTotal: extraBedCost, // Adds the extra bed total to POS charges
+        posChargesTotal: extraBedCost, 
         posOrders: initialPosOrders,
-        grandTotal: (combinedRate * nights) + extraBedCost, // Updates Grand Total
+        grandTotal: (combinedRate * nights) + extraBedCost,
         status: "OPEN"
     });
 
@@ -369,9 +237,125 @@ async function confirmWalkInCheckIn() {
         }
     }
 }
-// --- 2. UPDATE THIS: VIEW & SETTLE FOLIO ---
+
+
+// --- ADVANCE BOOKING LOGIC (MULTI-ROOM) ---
+async function openAdvanceBookingModal(clickedRoomId, rate, type) {
+    const checklistContainer = document.getElementById("advRoomChecklist");
+    checklistContainer.innerHTML = "<p style='color:#888; font-size:12px;'>Loading rooms...</p>";
+    
+    document.getElementById("advGuestName").value = "";
+    document.getElementById("advContact").value = "";
+    document.getElementById("advCheckIn").value = "";
+    document.getElementById("advCheckOut").value = "";
+    
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("advCheckIn").setAttribute('min', today);
+    document.getElementById("advCheckOut").setAttribute('min', today);
+
+    document.getElementById("advanceBookingModal").classList.remove("hidden");
+
+    try {
+        const snapshot = await db.collection("rooms").orderBy("roomNumber", "asc").get();
+        checklistContainer.innerHTML = "";
+        
+        snapshot.forEach(doc => {
+            const room = doc.data();
+            const isClicked = doc.id === clickedRoomId;
+            
+            checklistContainer.innerHTML += `
+                <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; padding: 6px; background: #f9f9f9; border-radius: 4px; border: 1px solid #eee;">
+                    <input type="checkbox" class="adv-room-checkbox" value="${doc.id}" data-type="${room.roomType}" ${isClicked ? "checked" : ""}>
+                    <strong>Room ${doc.id}</strong> <span style="color:#666; font-size:12px;">(${room.roomType})</span>
+                </label>
+            `;
+        });
+    } catch(e) {
+        console.error(e);
+        checklistContainer.innerHTML = "<p style='color:red;'>Error loading rooms.</p>";
+    }
+}
+
+function closeAdvanceBookingModal() {
+    document.getElementById("advanceBookingModal").classList.add("hidden");
+}
+
+async function confirmAdvanceBooking() {
+    const guestName = sanitizeHTML(document.getElementById("advGuestName").value.trim());
+    const contact = sanitizeHTML(document.getElementById("advContact").value.trim());
+    const checkIn = document.getElementById("advCheckIn").value;
+    const checkOut = document.getElementById("advCheckOut").value;
+    const extraBeds = parseInt(document.getElementById("advExtraBeds").value) || 0;
+
+    const checkboxes = document.querySelectorAll(".adv-room-checkbox:checked");
+    if (checkboxes.length === 0) {
+        return alert("Please select at least one room for this booking.");
+    }
+
+    if (!guestName || !checkIn || !checkOut) {
+        return alert("Please fill in the guest name and dates.");
+    }
+    
+    if (new Date(checkOut) <= new Date(checkIn)) {
+        return alert("Check-out date must be after check-in date.");
+    }
+
+    const uniqueRef = "HLM-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+    
+    const saveBtn = document.getElementById("advSaveBtn");
+    saveBtn.innerText = "Saving...";
+    saveBtn.disabled = true;
+
+    try {
+        const batch = db.batch();
+        
+        checkboxes.forEach(cb => {
+            const roomId = cb.value;
+            const roomType = cb.getAttribute("data-type");
+            const newResRef = db.collection("reservations").doc();
+            
+            batch.set(newResRef, {
+                roomNumber: roomId, 
+                roomType: roomType,
+                guestName: guestName,
+                contact: contact,
+                checkIn: checkIn,
+                checkOut: checkOut,
+                status: "CONFIRMED", 
+                source: "Front Desk Multi-Room Booking",
+                bookingRef: uniqueRef, 
+                extraBeds: extraBeds,
+                addons: extraBeds > 0 ? `${extraBeds}x Extra Bed(s)` : "None",
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        });
+
+        await batch.commit();
+
+        alert(`Success! Group Booking saved for ${guestName}.\n\nBooking Reference: ${uniqueRef}\nRooms Reserved: ${checkboxes.length}`);
+        
+        closeAdvanceBookingModal();
+        
+        if (typeof loadBookingCalendar === "function") {
+            loadBookingCalendar();
+        }
+
+    } catch (error) {
+        console.error("Error saving booking:", error);
+        alert("Failed to save advance booking. Check permissions.");
+    } finally {
+        saveBtn.innerText = "📅 Save Reservation";
+        saveBtn.disabled = false;
+    }
+}
+
+
+// --- 2. VIEW & SETTLE FOLIO ---
 async function openFolioModal(roomId, folioId) {
     if(!folioId) return showToast("No active folio found.");
+    
+    // SAFETY LOCK: Save the ID globally so checkout never crashes
+    window.activeFolioId = folioId;
     activeFolioRoomId = roomId;
     
     try {
@@ -383,7 +367,6 @@ async function openFolioModal(roomId, folioId) {
         const checkInStr = new Date(activeFolioData.checkInTime).toLocaleString('en-US', dateOptions);
         const checkOutStr = activeFolioData.expectedCheckOut ? new Date(activeFolioData.expectedCheckOut).toLocaleString('en-US', dateOptions) : 'TBD';
         
-        // Adds the inclusions to the header UI
         let inclusionsText = activeFolioData.inclusions && activeFolioData.inclusions !== "None" 
             ? `<br><span style="color:#557a46;"><strong>Inclusions:</strong> ${activeFolioData.inclusions}</span>` 
             : "";
@@ -430,50 +413,7 @@ function closeFolioModal() {
     activeFolioData = null; activeFolioRoomId = null;
 }
 
-// --- PAY & CHECKOUT ROOM ---
-async function processFolioCheckout() {
-    if (!activeFolioData) return;
-    if (!confirm(`Complete checkout and record payment of ₱${activeFolioData.grandTotal.toFixed(2)} for Room ${activeFolioRoomId}?`)) return;
-
-    const batch = db.batch();
-    const folioRef = db.collection("folios").doc(activeFolioData.id);
-    const roomRef = db.collection("rooms").doc(activeFolioRoomId);
-    
-    // Generate Invoice for Sales Report
-    const configRef = db.collection('config').doc('system');
-    const configDoc = await configRef.get();
-    let invNum = configDoc.exists ? (configDoc.data().invoiceCount || 1) : 1;
-    let currentGT = configDoc.exists ? (configDoc.data().grandTotal || 0) : 0;
-    let invString = "INV-" + String(invNum).padStart(6, '0');
-
-    // 1. Log payment into standard Sales Report
-    const saleRef = db.collection("sales").doc();
-    batch.set(saleRef, {
-        invoiceNo: invString,
-        tableNo: `Room ${activeFolioRoomId}`,
-        itemName: "Room Folio Checkout",
-        grossAmount: activeFolioData.grandTotal,
-        netAmount: activeFolioData.grandTotal,
-        totalCost: 0, 
-        paymentMethod: "Cash",
-        status: 'COMPLETED',
-        archived: false,
-        timestamp: new Date()
-    });
-
-    // 2. Close Folio & Clear Room
-    batch.update(folioRef, { status: "CLOSED", closedAt: new Date().toISOString(), invoiceNo: invString });
-    batch.update(roomRef, { status: "AVAILABLE", currentFolioId: null, currentGuestName: null });
-    batch.update(configRef, { invoiceCount: invNum + 1, grandTotal: currentGT + activeFolioData.grandTotal });
-
-    try {
-        await batch.commit();
-        showToast(`Room ${activeFolioRoomId} checked out successfully!`);
-        closeFolioModal();
-    } catch(e) { console.error(e); showToast("Error processing checkout."); }
-}
-
-// --- 3. UPDATE THIS: PRINT FOLIO INVOICE ---
+// --- 3. PRINT FOLIO INVOICE ---
 function printFolioInvoice() {
     if (!activeFolioData) return showToast("No active folio to print.");
 
@@ -499,7 +439,6 @@ function printFolioInvoice() {
         roomTitleEl.innerText = `Room ${activeFolioData.roomId} - ${activeFolioData.roomType || "Stay"}`;
     }
     
-    // NEW: Inject the Inclusions text directly under the room rate on the invoice
     let rateText = `₱${activeFolioData.dailyRate.toFixed(2)} x ${activeFolioData.nights} night(s)`;
     if (activeFolioData.inclusions && activeFolioData.inclusions !== "None") {
         rateText += `<br><span style="color:#557a46; font-style:italic; font-weight:bold;">+ ${activeFolioData.inclusions}</span>`;
@@ -537,6 +476,7 @@ function printFolioInvoice() {
     setTimeout(() => { window.print(); document.body.classList.remove("print-folio"); }, 250);
 }
 
+// --- ROOM MANAGEMENT ---
 function addNewRoom() {
     const roomNumber = sanitizeHTML(document.getElementById("newRoomNumber").value.trim());
     const roomType = sanitizeHTML(document.getElementById("newRoomType").value.trim());
@@ -557,18 +497,15 @@ function deleteRoom(roomId) {
     if (confirm(`Are you sure you want to delete Room ${roomId}?`)) db.collection("rooms").doc(roomId).delete();
 }
 
-
 function editRoomRate(roomId, currentRate) {
-    // Prompt the manager for the new price
     const newRateStr = prompt(`Enter new daily rate for Room ${roomId}:`, currentRate);
-    if (!newRateStr) return; // Cancelled
+    if (!newRateStr) return; 
     
     const newRate = parseFloat(newRateStr);
     if (isNaN(newRate) || newRate < 0) {
         return alert("Please enter a valid numeric amount.");
     }
     
-    // Update Firebase
     db.collection("rooms").doc(roomId).update({ 
         dailyRate: newRate,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -584,26 +521,19 @@ function editRoomRate(roomId, currentRate) {
 
 
 // --- ADD EXTRA CUSTOM CHARGE TO FOLIO ---
-
-// 1. Open the custom modal
 function addFolioCharge() {
     if (!activeFolioData || !activeFolioRoomId) return;
     
-    // Clear previous inputs & default Qty to 1
     document.getElementById("extraChargeDesc").value = "";
     document.getElementById("extraChargeAmount").value = "";
     document.getElementById("extraChargeQty").value = "1";
-    
-    // Show the modal
     document.getElementById("extraChargeModal").classList.remove("hidden");
 }
 
-// 2. Close the modal
 function closeExtraChargeModal() {
     document.getElementById("extraChargeModal").classList.add("hidden");
 }
 
-// 3. Process the data
 async function confirmExtraCharge() {
     const chargeName = sanitizeHTML(document.getElementById("extraChargeDesc").value.trim());
     const qty = parseInt(document.getElementById("extraChargeQty").value) || 1;
@@ -613,11 +543,8 @@ async function confirmExtraCharge() {
         return showToast("Please enter a valid description, quantity, and price.");
     }
 
-    // Calculate the total cost for this line item
     const totalAmount = unitPrice * qty;
     const displaySummary = `Front Desk: ${qty}x ${chargeName}`;
-
-    // Close the popup window
     closeExtraChargeModal();
 
     const folioRef = db.collection("folios").doc(activeFolioData.id);
@@ -635,7 +562,6 @@ async function confirmExtraCharge() {
 
         showToast(`₱${totalAmount.toFixed(2)} charged to Room ${activeFolioRoomId} for ${qty}x ${chargeName}!`);
         
-        // Refresh the UI
         const savedRoomId = activeFolioRoomId;
         const savedFolioId = activeFolioData.id;
         closeFolioModal();
@@ -647,56 +573,8 @@ async function confirmExtraCharge() {
     }
 }
 
-// --- 1. OPEN THE PAYMENT MODAL ---
-function initiateFolioCheckout() {
-    if (!activeFolioData) return showToast("No active folio selected.");
-    
-    // Set the grand total text
-    document.getElementById("paymentTotalDue").innerText = `₱${activeFolioData.grandTotal.toFixed(2)}`;
-    
-    // Reset form fields
-    document.getElementById("paymentMethod").value = "Cash";
-    document.getElementById("cashTendered").value = "";
-    document.getElementById("paymentChange").innerText = "₱0.00";
-    toggleCashInput();
 
-    // Hide the main folio view and show the payment screen
-    document.getElementById("folioModal").classList.add("hidden"); 
-    document.getElementById("folioPaymentModal").style.display = "flex";
-}
-
-// --- 2. HIDE/SHOW CASH INPUT BASED ON PAYMENT METHOD ---
-function toggleCashInput() {
-    const method = document.getElementById("paymentMethod").value;
-    const cashSection = document.getElementById("cashInputSection");
-    
-    if (method === "Cash") {
-        cashSection.style.display = "block";
-    } else {
-        // Hide cash inputs if using GCash/Card, because exact amount is usually transferred
-        cashSection.style.display = "none";
-    }
-}
-
-// --- 3. LIVE CALCULATE CHANGE ---
-function calculateChange() {
-    const totalDue = activeFolioData.grandTotal;
-    const tendered = parseFloat(document.getElementById("cashTendered").value) || 0;
-    
-    let change = tendered - totalDue;
-    if (change < 0) change = 0; // Prevent negative change from showing
-    
-    document.getElementById("paymentChange").innerText = `₱${change.toFixed(2)}`;
-}
-
-// --- 4. CANCEL PAYMENT (GO BACK) ---
-function closePaymentModal() {
-    document.getElementById("folioPaymentModal").style.display = "none";
-    document.getElementById("folioModal").classList.remove("hidden"); // Go back to folio details
-}
-
-
-
+// --- WEB RESERVATIONS ---
 function listenForWebReservations() {
     db.collection("web_reservations").onSnapshot((snapshot) => {
         const panel = document.getElementById("webReservationsPanel");
@@ -708,7 +586,6 @@ function listenForWebReservations() {
         
         snapshot.forEach((doc) => {
             const data = doc.data();
-            // Local memory filter bypasses missing index blocks
             if (data.status === "PENDING") {
                 pendingDocs.push({ id: doc.id, ...data });
             }
@@ -752,7 +629,6 @@ function listenForWebReservations() {
             list.appendChild(card);
         });
    }, (error) => {
-        // Ignore permission-denied errors that happen naturally during logout transitions
         if (error.code === "permission-denied") return;
         console.error("Listener error:", error);
     });
@@ -762,12 +638,10 @@ async function approveWebReservation(resId, guestName, roomType, nights, checkIn
     const roomId = prompt(`Assign ${guestName} (requested ${roomType}) to which Room ID? (e.g., Room 1)`);
     if (!roomId) return;
     
-    // --- ADD THIS SAFETY CHECK ---
     const roomCheck = await db.collection("rooms").doc(roomId).get();
     if (!roomCheck.exists) {
         return alert(`Error: "${roomId}" does not exist in your database. Please check your spelling and try again.`);
     }
-    // -----------------------------
     
     const rateStr = prompt(`Enter daily rate for ${roomId}:`, "1500");
     if (!rateStr) return;
@@ -775,16 +649,14 @@ async function approveWebReservation(resId, guestName, roomType, nights, checkIn
 
     const inclusions = prompt(`Enter inclusions (e.g., Free Breakfast) or leave blank:`, "None");
 
-    // Format dates mathematically to match your folio ledger standards
     let checkInDate = new Date(checkInStr);
-    checkInDate.setHours(14, 0, 0, 0); // Sets default check-in time to 2:00 PM
+    checkInDate.setHours(14, 0, 0, 0); 
     let expectedCheckOut = new Date(checkOutStr);
-    expectedCheckOut.setHours(12, 0, 0, 0); // Sets default check-out time to 12:00 PM
+    expectedCheckOut.setHours(12, 0, 0, 0); 
 
     const batch = db.batch();
     const folioRef = db.collection("folios").doc();
 
-    // 1. Create the Folio Ledger
     batch.set(folioRef, {
         roomId: roomId,
         roomType: roomType, 
@@ -801,14 +673,12 @@ async function approveWebReservation(resId, guestName, roomType, nights, checkIn
         status: "OPEN" 
     });
 
-    // 2. Lock the physical room in the rack
     batch.update(db.collection("rooms").doc(roomId), {
         status: "OCCUPIED",
         currentGuestName: guestName,
         currentFolioId: folioRef.id
     });
 
-    // 3. Update Web Reservation status so it clears from the notifications panel
     batch.update(db.collection("web_reservations").doc(resId), {
         status: "CONFIRMED",
         assignedRoom: roomId
@@ -821,7 +691,6 @@ async function approveWebReservation(resId, guestName, roomType, nights, checkIn
     catch(e) { console.error(e); showToast("Error approving reservation."); }
 }
 
-// --- 3. REJECT RESERVATION FUNCTION ---
 async function rejectWebReservation(resId) {
     if(!confirm("Are you sure you want to decline and delete this online reservation request?")) return;
     try {
@@ -830,6 +699,8 @@ async function rejectWebReservation(resId) {
     } catch(e) { console.error(e); }
 }
 
+
+// --- MISC FRONT DESK FUNCTIONS ---
 function switchSalesTab(tabName) {
     const posContainer = document.getElementById("posSalesContainer");
     const roomContainer = document.getElementById("roomSalesContainer");
@@ -852,7 +723,7 @@ function switchSalesTab(tabName) {
         btnPos.style.color = "#333";
     }
 }
-// --- NEW: MAINTENANCE TOGGLES ---
+
 function setRoomMaintenance(roomId) {
     if(confirm(`Mark Room ${roomId} as under maintenance? It will not be available for check-in.`)) {
         db.collection("rooms").doc(roomId).update({ status: "MAINTENANCE" })
@@ -869,15 +740,12 @@ function finishRoomMaintenance(roomId) {
     }
 }
 
-// --- CALENDAR BOOKING DETAILS & CANCELLATION ---
 
 // --- CALENDAR BOOKING DETAILS & CANCELLATION ---
-
 function openBookingDetails(resId) {
     const res = window.currentCalendarReservations.find(r => r.id === resId);
     if (!res) return;
 
-    // Handle older bookings that might not have a reference number yet
     const refDisplay = res.bookingRef ? res.bookingRef : res.reference ? res.reference : "N/A";
 
     const content = `
@@ -902,7 +770,6 @@ function openBookingDetails(resId) {
                 </tr>
             </thead>
             <tbody>
-                <!-- ROOM ROW -->
                 <tr style="border-bottom: 1px dashed #ccc;">
                     <td style="padding: 10px 0;">
                         <strong>${res.roomType || 'Standard Room'}</strong><br>
@@ -912,8 +779,6 @@ function openBookingDetails(resId) {
                     <td style="padding: 10px 0; text-align: right;">--</td>
                     <td style="padding: 10px 0; text-align: right;">--</td>
                 </tr>
-
-                <!-- ADD-ONS ROW -->
                 <tr style="border-bottom: 1px dashed #ccc;">
                     <td style="padding: 10px 0;"><strong>${res.addons || 'No Extras'}</strong></td>
                     <td style="padding: 10px 0; text-align: center;">--</td>
@@ -922,7 +787,6 @@ function openBookingDetails(resId) {
                 </tr>
             </tbody>
             <tfoot>
-                <!-- GRAND TOTAL -->
                 <tr style="font-size: 18px; font-weight: bold;">
                     <td colspan="3" style="padding: 15px 0; text-align: right; color: #2b4227;">GRAND TOTAL:</td>
                     <td style="padding: 15px 0; text-align: right; color: #bd4b4b;">${res.estimatedTotal || 'TBD'}</td>
@@ -934,9 +798,7 @@ function openBookingDetails(resId) {
     `;
     
     document.getElementById("bookingDetailsContent").innerHTML = content;
-    
     document.getElementById("cancelBookingBtn").onclick = () => confirmCancelBooking(res.id);
-    
     document.getElementById("bookingDetailsModal").classList.remove("hidden");
 }
 
@@ -945,12 +807,10 @@ function closeBookingDetailsModal() {
 }
 
 async function confirmCancelBooking(resId) {
-    // 1. Prompt for Security PIN
     const pin = prompt("🔒 SECURITY CHECK: Enter a Manager or Master PIN to cancel this reservation:");
     if (!pin) return;
 
     try {
-        // 2. Verify PIN and Role in the database (Now allows Master and Manager)
         const staffQuery = await db.collection("staff")
             .where("pinCode", "==", pin)
             .where("role", "in", ["Manager", "Master"])
@@ -962,12 +822,10 @@ async function confirmCancelBooking(resId) {
         
         const managerName = staffQuery.docs[0].data().name;
 
-        // 3. Final Confirmation
         if (!confirm(`Authorized as ${managerName}.\n\nAre you absolutely sure you want to cancel this booking? The room will immediately become available for these dates.`)) {
             return;
         }
 
-        // 4. Update the database to remove it from the calendar
         await db.collection("reservations").doc(resId).update({
             status: "CANCELLED",
             cancelledAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -977,7 +835,6 @@ async function confirmCancelBooking(resId) {
         alert("✅ Booking cancelled successfully.");
         closeBookingDetailsModal();
         
-        // Refresh the calendar to clear the green blocks
         if (typeof loadBookingCalendar === "function") {
             loadBookingCalendar();
         }
@@ -988,25 +845,26 @@ async function confirmCancelBooking(resId) {
     }
 }
 
-// --- FOLIO PAYMENT & VALIDATION LOGIC ---
 
+// --- FOLIO PAYMENT & SETTLEMENT LOGIC ---
 let currentCheckoutFolioId = null;
 let currentCheckoutTotal = 0;
 
-// Opens the payment modal from the Folio Screen
 function initiateFolioCheckout() {
     const rawTotal = document.getElementById("folioGrandTotal").innerText.replace(/[^\d.-]/g, '');
     currentCheckoutTotal = parseFloat(rawTotal) || 0;
     
-    // We assume window.activeFolioId is set when the folio is opened
     currentCheckoutFolioId = window.activeFolioId; 
+
+    if (!currentCheckoutFolioId || currentCheckoutFolioId === "undefined") {
+        return alert("Error: System lost the Folio ID. Please close this window and click 'View Folio' again.");
+    }
 
     document.getElementById("folioPaymentTotalDue").innerText = `₱${currentCheckoutTotal.toFixed(2)}`;
     document.getElementById("folioCashTendered").value = "";
     document.getElementById("folioRefNumber").value = "";
     document.getElementById("folioPaymentChange").innerText = "₱0.00";
     
-    // Reset inputs
     document.getElementById("folioPayMethod").value = "Cash";
     toggleFolioPaymentInputs();
     
@@ -1017,7 +875,6 @@ function closeFolioPaymentModal() {
     document.getElementById("folioPaymentModal").style.display = "none";
 }
 
-// Toggles between Cash Inputs and Reference Number based on dropdown
 function toggleFolioPaymentInputs() {
     const method = document.getElementById("folioPayMethod").value;
     const cashSec = document.getElementById("folioCashInputSection");
@@ -1032,7 +889,6 @@ function toggleFolioPaymentInputs() {
     }
 }
 
-// Calculates change dynamically as they type
 function calculateFolioChange() {
     const tendered = parseFloat(document.getElementById("folioCashTendered").value) || 0;
     let change = tendered - currentCheckoutTotal;
@@ -1040,14 +896,12 @@ function calculateFolioChange() {
     document.getElementById("folioPaymentChange").innerText = `₱${change.toFixed(2)}`;
 }
 
-// Executes the Checkout Process
 async function confirmFolioCheckout() {
     const method = document.getElementById("folioPayMethod").value;
     let tendered = 0;
     let change = 0;
     let refNum = "N/A";
 
-    // 1. Validation
     if (method === "Cash") {
         tendered = parseFloat(document.getElementById("folioCashTendered").value) || 0;
         if (tendered < currentCheckoutTotal) {
@@ -1059,15 +913,13 @@ async function confirmFolioCheckout() {
         if (!refNum) {
             return alert(`A Reference Number is required when paying via ${method}.`);
         }
-        tendered = currentCheckoutTotal; // Digital payments are exact amounts
+        tendered = currentCheckoutTotal; 
     }
 
     try {
         const batch = db.batch();
         const folioRef = db.collection("folios").doc(currentCheckoutFolioId);
         
-        // 2. Safely update or create the Folio using MERGE
-        // This prevents the "No document to update" error if the record is missing!
         batch.set(folioRef, {
             status: "CLOSED",
             paymentMethod: method,
@@ -1077,13 +929,11 @@ async function confirmFolioCheckout() {
             checkedOutAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        // 3. Find all rooms tied to this Folio ID directly and clear them
-        // This guarantees the rooms unlock even if the Folio data was corrupted
         const tiedRooms = await db.collection("rooms").where("currentFolioId", "==", currentCheckoutFolioId).get();
         
         tiedRooms.forEach(roomDoc => {
             batch.update(db.collection("rooms").doc(roomDoc.id), {
-                status: "MAINTENANCE", // Set to dirty/maintenance after checkout
+                status: "MAINTENANCE", 
                 currentGuestName: "",
                 currentFolioId: "",
                 guestAge: "",
@@ -1096,7 +946,6 @@ async function confirmFolioCheckout() {
 
         await batch.commit();
 
-        // 4. Update the Invoice UI before printing
         const invPaymentDetails = document.getElementById("invPaymentDetails");
         if (invPaymentDetails) invPaymentDetails.style.display = "block";
         
@@ -1119,14 +968,11 @@ async function confirmFolioCheckout() {
         alert(`Success! Folio settled via ${method}.\nRooms have been set to Maintenance for cleaning.`);
         
         closeFolioPaymentModal();
-        if (typeof closeFolioModal === "function") closeFolioModal(); // Closes main folio screen
-        if (typeof printFolioInvoice === "function") printFolioInvoice(); // Prints receipt
+        if (typeof closeFolioModal === "function") closeFolioModal(); 
+        if (typeof printFolioInvoice === "function") printFolioInvoice(); 
         
     } catch (error) {
         console.error("Error during checkout:", error);
         alert("Checkout failed. Check your connection.");
     }
 }
-
-
-
