@@ -695,89 +695,7 @@ function closePaymentModal() {
     document.getElementById("folioModal").classList.remove("hidden"); // Go back to folio details
 }
 
-// --- 5. CONFIRM PAYMENT & UPDATE DATABASE ---
-async function confirmFolioCheckout() {
-    const method = document.getElementById("paymentMethod").value;
-    const totalDue = activeFolioData.grandTotal;
-    let tendered = totalDue; 
-    let change = 0;
 
-    // Validation if they are paying in cash
-    if (method === "Cash") {
-        tendered = parseFloat(document.getElementById("cashTendered").value) || 0;
-        if (tendered < totalDue) {
-            return alert("Insufficient cash tendered. Please enter a valid amount.");
-        }
-        change = tendered - totalDue;
-    }
-
-    const batch = db.batch();
-    const checkoutTime = new Date().toISOString();
-
-    // Generate Invoice Number for Sales Report
-    const configRef = db.collection('config').doc('system');
-    const configDoc = await configRef.get();
-    let invNum = configDoc.exists ? (configDoc.data().invoiceCount || 1) : 1;
-    let currentGT = configDoc.exists ? (configDoc.data().grandTotal || 0) : 0;
-    let invString = "INV-" + String(invNum).padStart(6, '0');
-
-    // 1. Log payment into Sales Report (WITH FULL FOLIO DATA)
-    const saleRef = db.collection("sales").doc();
-    batch.set(saleRef, {
-        invoiceNo: invString,
-        tableNo: `Room ${activeFolioRoomId}`,
-        itemName: "Room Folio Checkout",
-        grossAmount: activeFolioData.grandTotal,
-        netAmount: activeFolioData.grandTotal,
-        totalCost: 0, 
-        paymentMethod: method,
-        cashTendered: tendered,
-        changeDue: change,
-        status: 'COMPLETED',
-        archived: false,
-        timestamp: new Date(),
-        folioSnapshot: activeFolioData // Saves guest info so it can be reprinted later!
-    });
-
-    // 2. Mark Folio as CLOSED and record payment details
-    batch.update(db.collection("folios").doc(activeFolioData.id), {
-        status: "CLOSED",
-        closedAt: checkoutTime,
-        paymentMethod: method,
-        amountTendered: tendered,
-        changeGiven: change,
-        invoiceNo: invString
-    });
-
-    // 3. Clear the Room in the Rack
-    batch.update(db.collection("rooms").doc(activeFolioRoomId), {
-        status: "AVAILABLE",
-        currentGuestName: null,
-        currentFolioId: null
-    });
-
-    // 4. Update Global Invoice Counter
-    batch.update(configRef, { invoiceCount: invNum + 1, grandTotal: currentGT + activeFolioData.grandTotal });
-
-    try {
-        await batch.commit();
-
-        // 🖨️ AUTO-PRINT THE GUEST INVOICE IMMEDIATELY!
-        printFolioInvoice();
-
-        // Hide modal and show success message
-        document.getElementById("folioPaymentModal").style.display = "none";
-        showToast(`Payment successful!\nMethod: ${method}\nChange: ₱${change.toFixed(2)}`);
-
-        // Clear memory
-        activeFolioData = null; 
-        activeFolioRoomId = null;
-
-    } catch (e) {
-        console.error(e);
-        alert("Error processing payment.");
-    }
-}
 
 function listenForWebReservations() {
     db.collection("web_reservations").onSnapshot((snapshot) => {
@@ -1148,41 +1066,42 @@ async function confirmFolioCheckout() {
         const batch = db.batch();
         const folioRef = db.collection("folios").doc(currentCheckoutFolioId);
         
-        // 2. Update Folio to CLOSED with payment details
-        batch.update(folioRef, {
+        // 2. Safely update or create the Folio using MERGE
+        // This prevents the "No document to update" error if the record is missing!
+        batch.set(folioRef, {
             status: "CLOSED",
             paymentMethod: method,
             referenceNumber: refNum,
             amountTendered: tendered,
             changeDue: change,
             checkedOutAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        }, { merge: true });
 
-        // 3. Free up the rooms (Fetch the folio to see which rooms were tied to it)
-        const folioDoc = await folioRef.get();
-        if (folioDoc.exists) {
-            const roomIdsString = folioDoc.data().roomId;
-            const roomIds = roomIdsString.split(",").map(id => id.trim());
-            
-            roomIds.forEach(id => {
-                batch.update(db.collection("rooms").doc(id), {
-                    status: "MAINTENANCE", // Set to dirty/maintenance after checkout
-                    currentGuestName: "",
-                    currentFolioId: "",
-                    guestAge: "",
-                    guestContact: "",
-                    guestEmail: "",
-                    guestAddress: "",
-                    checkInTime: null
-                });
+        // 3. Find all rooms tied to this Folio ID directly and clear them
+        // This guarantees the rooms unlock even if the Folio data was corrupted
+        const tiedRooms = await db.collection("rooms").where("currentFolioId", "==", currentCheckoutFolioId).get();
+        
+        tiedRooms.forEach(roomDoc => {
+            batch.update(db.collection("rooms").doc(roomDoc.id), {
+                status: "MAINTENANCE", // Set to dirty/maintenance after checkout
+                currentGuestName: "",
+                currentFolioId: "",
+                guestAge: "",
+                guestContact: "",
+                guestEmail: "",
+                guestAddress: "",
+                checkInTime: null
             });
-        }
+        });
 
         await batch.commit();
 
         // 4. Update the Invoice UI before printing
-        document.getElementById("invPaymentDetails").style.display = "block";
-        document.getElementById("invPayMethod").innerText = method;
+        const invPaymentDetails = document.getElementById("invPaymentDetails");
+        if (invPaymentDetails) invPaymentDetails.style.display = "block";
+        
+        const invPayMethod = document.getElementById("invPayMethod");
+        if (invPayMethod) invPayMethod.innerText = method;
 
         if (method === "Cash") {
             document.getElementById("invCashRow").style.display = "flex";
@@ -1200,8 +1119,8 @@ async function confirmFolioCheckout() {
         alert(`Success! Folio settled via ${method}.\nRooms have been set to Maintenance for cleaning.`);
         
         closeFolioPaymentModal();
-        closeFolioModal(); // Closes the main folio screen
-        printFolioInvoice(); // Automatically prints the receipt!
+        if (typeof closeFolioModal === "function") closeFolioModal(); // Closes main folio screen
+        if (typeof printFolioInvoice === "function") printFolioInvoice(); // Prints receipt
         
     } catch (error) {
         console.error("Error during checkout:", error);
