@@ -239,6 +239,106 @@ async function confirmWalkInCheckIn() {
 }
 
 
+// --- PRINT A PRICE ESTIMATE (NO DATABASE SAVE) ---
+function printWalkInQuote() {
+    // 1. Gather inputs
+    const guestName = document.getElementById("walkInName").value.trim() || "Valued Guest";
+    const nights = parseInt(document.getElementById("walkInNights").value) || 1;
+    const extraBeds = parseInt(document.getElementById("walkInExtraBeds").value) || 0;
+
+    const checkboxes = document.querySelectorAll(".walkin-room-checkbox:checked");
+    if (checkboxes.length === 0) {
+        return alert("Please select at least one room to generate a quote.");
+    }
+
+    // 2. Calculate Math
+    let roomDetailsHTML = "";
+    let totalRoomRate = 0;
+
+    checkboxes.forEach(cb => {
+        const rate = parseFloat(cb.getAttribute("data-rate"));
+        const type = cb.getAttribute("data-type");
+        const roomId = cb.value;
+        const roomSubtotal = rate * nights;
+        totalRoomRate += rate;
+
+        roomDetailsHTML += `
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #ccc;"><strong>Room ${roomId}</strong> (${type})</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ccc; text-align: center;">${nights}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ccc; text-align: right;">₱${roomSubtotal.toFixed(2)}</td>
+            </tr>
+        `;
+    });
+
+    const extraBedTotal = extraBeds * 800 * nights;
+    if (extraBeds > 0) {
+        roomDetailsHTML += `
+            <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #ccc;"><strong>Extra Beds</strong></td>
+                <td style="padding: 10px; border-bottom: 1px solid #ccc; text-align: center;">${extraBeds} x ${nights} night(s)</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ccc; text-align: right;">₱${extraBedTotal.toFixed(2)}</td>
+            </tr>
+        `;
+    }
+
+    const grandTotal = (totalRoomRate * nights) + extraBedTotal;
+
+    // 3. Generate the Printable Document
+    const printWin = window.open('', '_blank', 'width=800,height=600');
+    printWin.document.write(`
+        <html>
+        <head><title>Guest Quotation</title></head>
+        <body style="font-family: Arial, sans-serif; padding: 40px; color: #333;">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h2 style="color: #2b4227; margin: 0; font-size: 28px;">HILOM RESORT</h2>
+                <p style="margin: 5px 0; color: #666;">Brgy. Dumanhog, Siquijor Island<br>hilomresort@gmail.com | +63 928 402 7378</p>
+                <h3 style="margin-top: 20px; border-top: 2px solid #2b4227; padding-top: 15px; letter-spacing: 2px;">PRICE QUOTATION</h3>
+                <p style="font-size: 13px; color: #888; font-style: italic;">This is an estimate only. Rooms are subject to availability.</p>
+            </div>
+            
+            <div style="margin-bottom: 20px; font-size: 15px;">
+                <p><strong>Prepared For:</strong> ${guestName}</p>
+                <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 15px;">
+                <thead>
+                    <tr style="background-color: #f1f8e9;">
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #2b4227;">Description</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #2b4227;">Qty / Nights</th>
+                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #2b4227;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${roomDetailsHTML}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" style="padding: 20px 10px; text-align: right; font-size: 18px; font-weight: bold;">ESTIMATED TOTAL:</td>
+                        <td style="padding: 20px 10px; text-align: right; font-size: 18px; font-weight: bold; color: #2b4227;">₱${grandTotal.toFixed(2)}</td>
+                    </tr>
+                </tfoot>
+            </table>
+            
+            <div style="margin-top: 50px; text-align: center; font-size: 12px; color: #666; border-top: 1px dashed #ccc; padding-top: 20px;">
+                <p>Thank you for considering Hilom Resort. We hope to welcome you soon!</p>
+            </div>
+        </body>
+        </html>
+    `);
+    
+    printWin.document.close();
+    printWin.focus();
+    
+    // Automatically trigger the print dialog, then close the hidden window
+    setTimeout(() => { 
+        printWin.print(); 
+        printWin.close(); 
+    }, 350);
+}
+
+
 // --- ADVANCE BOOKING LOGIC (MULTI-ROOM) ---
 async function openAdvanceBookingModal(clickedRoomId, rate, type) {
     const checklistContainer = document.getElementById("advRoomChecklist");
