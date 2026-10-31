@@ -291,6 +291,7 @@ function printWalkInQuote() {
         <head><title>Guest Quotation</title></head>
         <body style="font-family: Arial, sans-serif; padding: 40px; color: #333;">
             <div style="text-align: center; margin-bottom: 30px;">
+                <img src="hilom.png" alt="Hilom Logo" style="height: 90px; object-fit: contain; margin-bottom: 10px;">
                 <h2 style="color: #2b4227; margin: 0; font-size: 28px;">HILOM RESORT</h2>
                 <p style="margin: 5px 0; color: #666;">Brgy. Dumanhog, Siquijor Island<br>hilomresort@gmail.com | +63 928 402 7378</p>
                 <h3 style="margin-top: 20px; border-top: 2px solid #2b4227; padding-top: 15px; letter-spacing: 2px;">PRICE QUOTATION</h3>
@@ -331,11 +332,11 @@ function printWalkInQuote() {
     printWin.document.close();
     printWin.focus();
     
-    // Automatically trigger the print dialog, then close the hidden window
+    // Increased delay to 500ms to ensure the logo image has time to load before the print dialog opens
     setTimeout(() => { 
         printWin.print(); 
         printWin.close(); 
-    }, 350);
+    }, 500);
 }
 
 
