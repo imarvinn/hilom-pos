@@ -693,9 +693,9 @@
 
     <!-- ================= MODALS & PRINT AREAS ================= -->
 
-    <!-- WALK-IN GUEST REGISTRATION MODAL -->
+   <!-- WALK-IN GUEST REGISTRATION MODAL -->
     <div id="walkInModal" class="modal-overlay hidden" style="z-index: 2600;">
-        <div class="modal-content" style="max-width: 400px; text-align: left;">
+        <div class="modal-content" style="max-width: 550px; text-align: left;">
             <h2 style="border-bottom: none; color: #2b4227; margin-top: 0; margin-bottom: 5px;">Guest Registration</h2>
             
             <p style="color: #666; font-size: 14px; margin-top: 0; margin-bottom: 10px;">Select Rooms for Check-In:</p>
@@ -719,11 +719,6 @@
                         <label style="font-size: 11px; color:#666; font-weight:bold;">Inclusions</label>
                         <input type="text" id="walkInInclusions" placeholder="e.g. Free Breakfast" style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
                     </div>
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button onclick="printWalkInQuote()" style="flex: 1; background: #4a6fa5; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px;">🖨️ Print Quote</button>
-                <button id="walkInSaveBtn" class="add-btn" style="flex: 2; padding: 12px; background: #557a46; font-size: 15px;" onclick="confirmWalkInCheckIn()">✔️ Confirm Check-In</button>
-                <button class="delete-btn" style="flex: 1; padding: 12px; font-size: 15px;" onclick="closeWalkInModal()">Cancel</button>
-            </div>
                 </div>
 
                 <div style="display: flex; gap: 10px; width: 100%;">
@@ -737,6 +732,7 @@
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="printWalkInQuote()" style="flex: 1; background: #4a6fa5; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px;">🖨️ Print Quote</button>
                 <button id="walkInSaveBtn" class="add-btn" style="flex: 2; padding: 12px; background: #557a46; font-size: 15px;" onclick="confirmWalkInCheckIn()">✔️ Confirm Check-In</button>
                 <button class="delete-btn" style="flex: 1; padding: 12px; font-size: 15px;" onclick="closeWalkInModal()">Cancel</button>
             </div>
