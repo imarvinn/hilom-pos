@@ -7,23 +7,181 @@
     <link rel="manifest" href="kitchen-manifest.json">
     <link rel="stylesheet" href="style.css">
     <style>
-        body { background-color: #1a1a1a; color: white; padding: 20px; overflow-y: auto; height: 100vh; }
-        .kitchen-title { font-size: 28px; color: #55efc4; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .live-indicator { font-size: 14px; background: #557a46; color: white; padding: 5px 12px; border-radius: 20px; }
+        body { 
+            background-color: #121212; 
+            color: white; 
+            padding: 0; 
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-y: auto; 
+            height: 100vh; 
+        }
+
+        #toast { visibility: hidden; min-width: 250px; background-color: #55efc4; color: #1e1e1e; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 1000; right: 30px; bottom: 30px; font-size: 15px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.3);}
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        /* =======================================================
+           --- ADVANCED KITCHEN KDS STYLES ---
+           ======================================================= */
+        .kds-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+            gap: 20px; 
+            align-items: flex-start;
+        }
+
+        .kds-card { 
+            background: #1e1e1e; 
+            border-radius: 12px; 
+            border-top: 6px solid #55efc4; /* Default: New Order (Teal) */
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease;
+        }
+
+        /* Urgency States based on time elapsed */
+        .kds-card.warning { border-top: 6px solid #fdcb6e; } /* Warning: Getting old (Yellow) */
+        .kds-card.urgent { border-top: 6px solid #ff7675; animation: pulse-border 2s infinite; } /* Urgent: Too old (Red Pulse) */
+
+        @keyframes pulse-border { 
+            0% { box-shadow: 0 0 0 0 rgba(255, 118, 117, 0.4); } 
+            70% { box-shadow: 0 0 0 10px rgba(255, 118, 117, 0); } 
+            100% { box-shadow: 0 0 0 0 rgba(255, 118, 117, 0); } 
+        }
+
+        .kds-card.served { 
+            border-top: 6px solid #2d3436; 
+            opacity: 0.4; 
+            filter: grayscale(100%); 
+        }
+
+        .kds-header { 
+            background: #2d3436; 
+            padding: 15px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid #444; 
+        }
+
+        .kds-header strong { 
+            font-size: 22px; 
+            font-weight: 800; 
+            color: #fff; 
+            letter-spacing: 1px; 
+        }
+
+        .kds-time { 
+            font-size: 14px; 
+            color: #b2bec3; 
+            font-weight: 600; 
+            background: rgba(0,0,0,0.3); 
+            padding: 5px 10px; 
+            border-radius: 6px; 
+        }
+
+        .kds-body { 
+            padding: 0; 
+            flex-grow: 1; 
+            color: #dfe6e9; 
+            max-height: 400px; 
+            overflow-y: auto; 
+        }
+
+        .kds-item { 
+            font-size: 18px; 
+            padding: 15px 20px; 
+            border-bottom: 1px solid #2a2a2a;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .kds-item:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+
+        .kds-item-main { 
+            display: flex; 
+            align-items: flex-start; 
+            gap: 12px;
+            font-weight: 600; 
+        }
+
+        .kds-qty { 
+            color: #1e1e1e; 
+            font-weight: 900; 
+            background: #55efc4; 
+            padding: 2px 10px; 
+            border-radius: 4px; 
+            font-size: 16px;
+        }
+
+        .kds-modifier { 
+            color: #fdcb6e; 
+            font-size: 14px; 
+            font-weight: 500;
+            display: inline-block;
+            background: rgba(253, 203, 110, 0.1);
+            padding: 5px 10px;
+            border-radius: 4px;
+            border-left: 3px solid #fdcb6e;
+            margin-left: 35px; 
+        }
+
+        .kds-footer { 
+            padding: 15px; 
+            background: #222; 
+            display: flex; 
+        }
+
+        .kds-footer button { 
+            flex: 1; 
+            background: #55efc4; 
+            color: #1e1e1e; 
+            border: none; 
+            padding: 15px; 
+            font-size: 16px; 
+            font-weight: 800; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .kds-footer button:hover { background: #00b894; }
+        .kds-footer button:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
     <div id="toast">Message goes here</div>
 
-    <div class="kitchen-title">
-        <span>🍳 HILOM Kitchen Queue (Live)</span>
-        <span class="live-indicator">● Connected to Live Orders</span>
+    <!-- KDS Top Navbar -->
+    <div style="background: #1e1e1e; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <span style="font-size: 28px;">🍳</span>
+            <h2 style="color: #55efc4; margin: 0; border: none; font-size: 24px; letter-spacing: 1px;">HILOM Kitchen Queue</h2>
+        </div>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <span style="background: rgba(85, 239, 196, 0.1); color: #55efc4; padding: 8px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; border: 1px solid rgba(85, 239, 196, 0.3);">🟢 Live Sync Active</span>
+        </div>
     </div>
 
-    <!-- Kitchen Grid Container -->
-    <div id="kitchenBoard" class="kds-grid">
-        <p style="color: #666; font-size: 18px;">Waiting for active orders...</p>
+    <!-- KDS Main Board -->
+    <div style="padding: 30px;">
+        <div id="kitchenBoard" class="kds-grid">
+            
+            <!-- Professional Empty State -->
+            <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 65vh; opacity: 0.5;">
+                <span style="font-size: 72px; margin-bottom: 20px; filter: grayscale(1);">🍽️</span>
+                <h3 style="color: #888; font-size: 28px; margin: 0; font-weight: normal;">No active orders</h3>
+                <p style="color: #555; font-size: 16px; margin-top: 10px;">Waiting for new tickets from the POS...</p>
+            </div>
+
+        </div>
     </div>
 
     <!-- Firebase SDKs -->
@@ -44,10 +202,10 @@
             }
         });
         if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('Kitchen Service Worker Registered'))
-      .catch((error) => console.log('Kitchen Service Worker Failed:', error));
-  }
+            navigator.serviceWorker.register('./sw.js')
+              .then(() => console.log('Kitchen Service Worker Registered'))
+              .catch((error) => console.log('Kitchen Service Worker Failed:', error));
+        }
     </script>
 </body>
 </html>
