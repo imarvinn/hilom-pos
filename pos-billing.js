@@ -911,43 +911,84 @@ function requestAdminPin() {
     });
 }
 
-async function submitClassicPin() {
+async function verifyPin() {
     const pinInput = document.getElementById("adminPin");
-    const enteredPin = pinInput ? pinInput.value : "";
+    const enteredPin = pinInput ? pinInput.value.trim() : "";
     
     if (!enteredPin) return showToast("Please enter a PIN.");
-    
-    try {
-        // Search the Firebase 'staff' collection for this exact PIN
-        const staffQuery = await db.collection("staff").where("pinCode", "==", enteredPin).get();
-        
-        if (!staffQuery.empty) {
-            // PIN found! Now check if they have Manager/Master permissions
-            const userData = staffQuery.docs[0].data();
-            
-            if (userData.role === "Manager" || userData.role === "Master" || userData.role === "IT") {
-                document.getElementById("pinModal").classList.add("hidden");
-                if (pinResolvePromise) {
-                    pinResolvePromise(true); 
-                    pinResolvePromise = null;
-                }
-                return; // Success!
-            } else {
-                showToast("Access Denied: Manager privileges required to void.");
+
+    let isAuthorized = false;
+
+    // 1. Check against the system's Master ADMIN_PIN (from auth-nav.js)
+    if (typeof ADMIN_PIN !== "undefined" && String(enteredPin) === String(ADMIN_PIN)) {
+        isAuthorized = true;
+    }
+
+    // 2. Also check Firebase 'staff' collection for Manager / Master / IT PINs
+    if (!isAuthorized) {
+        try {
+            const staffQuery = await db.collection("staff").where("pinCode", "==", enteredPin).get();
+            if (!staffQuery.empty) {
+                const hasManagerRole = staffQuery.docs.some(doc => {
+                    const role = doc.data().role;
+                    return role === "Manager" || role === "Master" || role === "IT";
+                });
+                if (hasManagerRole) isAuthorized = true;
             }
-        } else {
-            showToast("Incorrect PIN.");
+        } catch (err) {
+            console.error("Error checking staff PIN:", err);
         }
-        
-        // If it fails (wrong PIN or wrong role), clear the box for a retry
+    }
+
+    // 3. Fallback: Check 'settings/security' or 'config/system' if ADMIN_PIN wasn't loaded
+    if (!isAuthorized) {
+        try {
+            const secDoc = await db.collection("settings").doc("security").get();
+            if (secDoc.exists && String(secDoc.data().adminPin || secDoc.data().pin) === String(enteredPin)) {
+                isAuthorized = true;
+            }
+        } catch (e) {}
+    }
+
+    if (isAuthorized) {
+        document.getElementById("pinModal").classList.add("hidden");
+        if (pinInput) pinInput.value = "";
+
+        // CASE A: If waiting on a Void / Action authorization (pos-billing.js or reports.js)
+        if (typeof pinResolvePromise === "function" && pinResolvePromise !== null) {
+            const resolve = pinResolvePromise;
+            pinResolvePromise = null;
+            resolve(true);
+            return;
+        }
+
+        // CASE B: Unlocking Sidebar Tabs (Inventory, Menu Builder, Sales & Reports)
+        if (typeof isAdminUnlocked !== "undefined") isAdminUnlocked = true;
+        window.isAdminUnlocked = true;
+
+        const lockBtn = document.getElementById("lockBtn");
+        const changePinBtn = document.getElementById("changePinBtn");
+        if (lockBtn) lockBtn.classList.remove("hidden");
+        if (changePinBtn) changePinBtn.classList.remove("hidden");
+
+        // Switch to the tab the user originally clicked
+        if (typeof pendingView !== "undefined" && pendingView) {
+            const targetView = pendingView;
+            const targetBtn = typeof pendingBtn !== "undefined" ? pendingBtn : null;
+            pendingView = null;
+            if (typeof pendingBtn !== "undefined") pendingBtn = null;
+            switchView(targetView, targetBtn);
+        } else if (typeof executeSwitchView === "function" && typeof targetViewId !== "undefined") {
+            executeSwitchView(targetViewId, targetNavBtn);
+        }
+
+        showToast("Admin Unlocked");
+    } else {
+        showToast("Incorrect PIN.");
         if (pinInput) {
             pinInput.value = "";
             pinInput.focus();
         }
-        
-    } catch (error) {
-        console.error("Error verifying PIN:", error);
-        showToast("Database error verifying PIN.");
     }
 }
 
@@ -956,9 +997,13 @@ function closePinModal() {
     const pinInput = document.getElementById("adminPin");
     if (pinInput) pinInput.value = "";
     
+    if (typeof pendingView !== "undefined") pendingView = null;
+    if (typeof pendingBtn !== "undefined") pendingBtn = null;
+
     if (pinResolvePromise) {
-        pinResolvePromise(false);
+        const resolve = pinResolvePromise;
         pinResolvePromise = null;
+        resolve(false);
     }
 }
 
