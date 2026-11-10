@@ -900,15 +900,25 @@ let pinResolvePromise = null;
 function requestAdminPin() {
     return new Promise((resolve) => {
         const pinInput = document.getElementById("adminPin");
-        if (pinInput) pinInput.value = ""; // This fixes the auth-nav.js crash!
+        if (pinInput) pinInput.value = "";
         
         document.getElementById("pinModal").classList.remove("hidden");
-        
-        // Automatically focus the input box so you can start typing immediately
         if (pinInput) setTimeout(() => pinInput.focus(), 100);
         
         pinResolvePromise = resolve; 
     });
+}
+
+// --- SECURE THE TABLE VOID BUTTON ---
+async function secureVoidActiveTableModal() { 
+    if(activeBillingTableId) { 
+        const isAuthorized = await requestAdminPin();
+        if (!isAuthorized) return showToast("Void cancelled.");
+        
+        voidActiveTable(activeBillingTableId).then(() => { 
+            closeBillingModal(); 
+        }); 
+    } 
 }
 
 async function verifyPin() {
