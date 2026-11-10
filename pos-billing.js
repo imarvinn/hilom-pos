@@ -911,22 +911,43 @@ function requestAdminPin() {
     });
 }
 
-function submitClassicPin() {
+async function submitClassicPin() {
     const pinInput = document.getElementById("adminPin");
     const enteredPin = pinInput ? pinInput.value : "";
     
-    if (enteredPin === ADMIN_PIN) {
-        document.getElementById("pinModal").classList.add("hidden");
-        if (pinResolvePromise) {
-            pinResolvePromise(true); 
-            pinResolvePromise = null;
+    if (!enteredPin) return showToast("Please enter a PIN.");
+    
+    try {
+        // Search the Firebase 'staff' collection for this exact PIN
+        const staffQuery = await db.collection("staff").where("pinCode", "==", enteredPin).get();
+        
+        if (!staffQuery.empty) {
+            // PIN found! Now check if they have Manager/Master permissions
+            const userData = staffQuery.docs[0].data();
+            
+            if (userData.role === "Manager" || userData.role === "Master" || userData.role === "IT") {
+                document.getElementById("pinModal").classList.add("hidden");
+                if (pinResolvePromise) {
+                    pinResolvePromise(true); 
+                    pinResolvePromise = null;
+                }
+                return; // Success!
+            } else {
+                showToast("Access Denied: Manager privileges required to void.");
+            }
+        } else {
+            showToast("Incorrect PIN.");
         }
-    } else {
-        showToast("Incorrect Manager PIN");
+        
+        // If it fails (wrong PIN or wrong role), clear the box for a retry
         if (pinInput) {
             pinInput.value = "";
             pinInput.focus();
         }
+        
+    } catch (error) {
+        console.error("Error verifying PIN:", error);
+        showToast("Database error verifying PIN.");
     }
 }
 
