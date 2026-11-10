@@ -53,19 +53,27 @@ function renderInventoryPage(page) {
             else { expiryHTML = `<span class="status-ok" style="color:#2e7d32; font-weight:bold;">Good</span><br><small>${item.expiry}</small>`; }
         }
 
-        let statusBadge = (item.quantity || 0) <= 5 ? '<span class="status-low" style="background:#ffebee; color:#c62828; padding:3px 8px; border-radius:12px; font-size:12px;">Low Stock</span>' : '<span class="status-ok" style="background:#e8f5e9; color:#2e7d32; padding:3px 8px; border-radius:12px; font-size:12px;">In Stock</span>';
+        const unitLabel = item.unit || "";
+        // Set low-stock warning threshold higher for grams/mls (500g) than pieces (5pcs)
+        const lowThreshold = (unitLabel === "g" || unitLabel === "ml") ? 500 : 5;
+        let statusBadge = (item.quantity || 0) <= lowThreshold 
+            ? '<span class="status-low" style="background:#ffebee; color:#c62828; padding:3px 8px; border-radius:12px; font-size:12px;">Low Stock</span>' 
+            : '<span class="status-ok" style="background:#e8f5e9; color:#2e7d32; padding:3px 8px; border-radius:12px; font-size:12px;">In Stock</span>';
+
+        // Use larger step jumps (+100 / -100) for grams and mls for easier manual adjustments
+        const step = (unitLabel === "g" || unitLabel === "ml") ? 100 : 1;
 
         invList.innerHTML += `
             <tr>
                 <td><strong>${item.name || 'Unnamed'}</strong></td>
                 <td>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <button onclick="updateStockQty('${item.id}', -1, ${item.quantity || 0})" style="padding: 4px 10px; background: #e0e5e0; color: #333; font-size: 14px; border-radius: 4px; border:none; cursor:pointer;">-</button>
-                        <span style="font-size: 16px; font-weight: bold; min-width: 25px; text-align: center;">${item.quantity || 0}</span>
-                        <button onclick="updateStockQty('${item.id}', 1, ${item.quantity || 0})" style="padding: 4px 10px; background: #e0e5e0; color: #333; font-size: 14px; border-radius: 4px; border:none; cursor:pointer;">+</button>
+                        <button onclick="updateStockQty('${item.id}', -${step}, ${item.quantity || 0})" style="padding: 4px 10px; background: #e0e5e0; color: #333; font-size: 14px; border-radius: 4px; border:none; cursor:pointer;">-${step}</button>
+                        <span style="font-size: 16px; font-weight: bold; min-width: 55px; text-align: center;">${item.quantity || 0}${unitLabel}</span>
+                        <button onclick="updateStockQty('${item.id}', ${step}, ${item.quantity || 0})" style="padding: 4px 10px; background: #e0e5e0; color: #333; font-size: 14px; border-radius: 4px; border:none; cursor:pointer;">+${step}</button>
                     </div>
                 </td>
-                <td>₱${(item.cost||0).toFixed(2)}</td>
+                <td>₱${(item.cost||0).toFixed(4)}/${unitLabel || 'unit'}</td>
                 <td>${expiryHTML}</td>
                 <td>${statusBadge}</td>
                 <td class="no-print"><button class="delete-btn" style="background:transparent; color:#bd4b4b; border:1px solid #bd4b4b; border-radius:4px; cursor:pointer;" onclick="deleteItem('${item.id}')">✕</button></td>
@@ -141,13 +149,51 @@ function updateStockQty(id, change, currentQty) {
     db.collection("inventory").doc(id).update({ quantity: firebase.firestore.FieldValue.increment(change) }).catch(() => showToast("Error updating stock quantity."));
 }
 
+// --- AUTO-CONVERTING ADD ITEM FUNCTION ---
 function addItem() {
-    const name = document.getElementById("itemName").value, qty = document.getElementById("itemQty").value;
-    const cost = document.getElementById("itemCost").value, expiry = document.getElementById("itemExpiry").value;
-    if(name && qty && cost) { 
-        db.collection("inventory").add({ name: name.trim(), quantity: parseInt(qty), shiftStartQty: parseInt(qty), cost: parseFloat(cost), expiry: expiry || null })
-        .then(() => { document.getElementById("itemName").value = ""; document.getElementById("itemQty").value = ""; document.getElementById("itemCost").value = ""; document.getElementById("itemExpiry").value = ""; }); 
+    const name = document.getElementById("itemName").value.trim();
+    const rawQty = parseFloat(document.getElementById("itemQty").value);
+    const unitSelect = document.getElementById("itemUnit");
+    const selectedUnit = unitSelect ? unitSelect.value : "pcs";
+    const totalCostInput = parseFloat(document.getElementById("itemCost").value);
+    const expiry = document.getElementById("itemExpiry").value;
+
+    if (!name || isNaN(rawQty) || isNaN(totalCostInput)) {
+        return showToast("Please fill in a valid name, quantity, and total cost.");
     }
+
+    let finalQty = rawQty;
+    let baseUnit = selectedUnit;
+
+    // Auto-convert kg to grams, and Liters to milliliters
+    if (selectedUnit === "kg") {
+        finalQty = rawQty * 1000;
+        baseUnit = "g";
+    } else if (selectedUnit === "L") {
+        finalQty = rawQty * 1000;
+        baseUnit = "ml";
+    }
+
+    // Automatically calculate cost per single base unit (e.g. cost per 1 gram)
+    const costPerUnit = finalQty > 0 ? (totalCostInput / finalQty) : 0;
+
+    db.collection("inventory").add({
+        name: name,
+        quantity: finalQty,
+        shiftStartQty: finalQty,
+        unit: baseUnit,
+        cost: costPerUnit,
+        expiry: expiry || null
+    }).then(() => {
+        document.getElementById("itemName").value = "";
+        document.getElementById("itemQty").value = "";
+        document.getElementById("itemCost").value = "";
+        document.getElementById("itemExpiry").value = "";
+        showToast("Stock added successfully!");
+    }).catch(err => {
+        console.error("Error adding stock:", err);
+        showToast("Failed to add stock.");
+    });
 }
 
 function deleteItem(id) { 
