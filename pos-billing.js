@@ -895,48 +895,49 @@ function deleteCategory(catName) {
 // ==========================================
 // --- SECURITY & ROLE AUTHORIZATION ---
 // ==========================================
-let currentPinInput = "";
 let pinResolvePromise = null;
 
 function requestAdminPin() {
     return new Promise((resolve) => {
-        currentPinInput = "";
-        document.getElementById("pinDisplay").innerText = "";
+        const pinInput = document.getElementById("adminPin");
+        if (pinInput) pinInput.value = ""; // This fixes the auth-nav.js crash!
+        
         document.getElementById("pinModal").classList.remove("hidden");
-        pinResolvePromise = resolve; // Store the resolve function to call it later
+        
+        // Automatically focus the input box so you can start typing immediately
+        if (pinInput) setTimeout(() => pinInput.focus(), 100);
+        
+        pinResolvePromise = resolve; 
     });
 }
 
-function enterPin(num) {
-    if (currentPinInput.length < 4) {
-        currentPinInput += num;
-        document.getElementById("pinDisplay").innerText = "•".repeat(currentPinInput.length);
-    }
-}
-
-function clearPin() {
-    currentPinInput = "";
-    document.getElementById("pinDisplay").innerText = "";
-}
-
-function closePinModal() {
-    document.getElementById("pinModal").classList.add("hidden");
-    if (pinResolvePromise) {
-        pinResolvePromise(false); // Resolve as failed/cancelled
-        pinResolvePromise = null;
-    }
-}
-
-function submitPin() {
-    if (currentPinInput === ADMIN_PIN) {
+function submitClassicPin() {
+    const pinInput = document.getElementById("adminPin");
+    const enteredPin = pinInput ? pinInput.value : "";
+    
+    if (enteredPin === ADMIN_PIN) {
         document.getElementById("pinModal").classList.add("hidden");
         if (pinResolvePromise) {
-            pinResolvePromise(true); // Authorized!
+            pinResolvePromise(true); 
             pinResolvePromise = null;
         }
     } else {
         showToast("Incorrect Manager PIN");
-        clearPin();
+        if (pinInput) {
+            pinInput.value = "";
+            pinInput.focus();
+        }
+    }
+}
+
+function closePinModal() {
+    document.getElementById("pinModal").classList.add("hidden");
+    const pinInput = document.getElementById("adminPin");
+    if (pinInput) pinInput.value = "";
+    
+    if (pinResolvePromise) {
+        pinResolvePromise(false);
+        pinResolvePromise = null;
     }
 }
 

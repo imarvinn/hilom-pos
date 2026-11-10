@@ -978,30 +978,18 @@
         </div>
     </div>
 
-    <!-- ================= SECURITY PIN PAD MODAL ================= -->
+    <!-- ================= SECURITY PIN MODAL (Classic) ================= -->
     <div id="pinModal" class="modal-overlay hidden" style="z-index: 3000;">
-        <div class="modal-content" style="max-width: 320px; text-align: center; padding: 25px;">
-            <h2 style="color: #2b4227; margin-top: 0; border: none; font-size: 20px;">Manager Authorization</h2>
-            <p style="color: #666; font-size: 13px; margin-top: 0;">Enter Admin PIN to continue</p>
+        <div class="modal-content" style="text-align:center; max-width: 320px;">
+            <h2 style="border-bottom:none; color: #2b4227; font-size: 22px;">Manager Authorization</h2>
+            <p style="color:#666; margin-top:0; font-size: 14px;">Enter 4-digit PIN to continue.</p>
             
-            <div id="pinDisplay" style="font-size: 30px; letter-spacing: 15px; margin-bottom: 20px; height: 40px; border-bottom: 2px solid #e0e5e0; color: #2b4227;"></div>
+            <input type="password" id="adminPin" class="pin-input" maxlength="4" placeholder="••••" style="margin: 20px auto; display: block; text-align: center;">
             
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 15px;">
-                <button class="pin-btn" onclick="enterPin('1')">1</button>
-                <button class="pin-btn" onclick="enterPin('2')">2</button>
-                <button class="pin-btn" onclick="enterPin('3')">3</button>
-                <button class="pin-btn" onclick="enterPin('4')">4</button>
-                <button class="pin-btn" onclick="enterPin('5')">5</button>
-                <button class="pin-btn" onclick="enterPin('6')">6</button>
-                <button class="pin-btn" onclick="enterPin('7')">7</button>
-                <button class="pin-btn" onclick="enterPin('8')">8</button>
-                <button class="pin-btn" onclick="enterPin('9')">9</button>
-                <button class="pin-btn delete-btn" style="border: none;" onclick="clearPin()">C</button>
-                <button class="pin-btn" onclick="enterPin('0')">0</button>
-                <button class="pin-btn add-btn" style="border: none;" onclick="submitPin()">OK</button>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="add-btn" style="flex:1; padding: 12px; font-size: 16px;" onclick="submitClassicPin()">Unlock</button>
+                <button class="delete-btn" style="flex:1; padding: 12px; font-size: 16px;" onclick="closePinModal()">Cancel</button>
             </div>
-            
-            <button class="delete-btn" style="width: 100%; padding: 12px;" onclick="closePinModal()">Cancel Action</button>
         </div>
     </div>
 
