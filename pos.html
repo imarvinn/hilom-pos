@@ -834,19 +834,6 @@
         </div>
     </div>
 
-    <!-- ADMIN PIN MODAL -->
-    <div id="pinModal" class="modal-overlay hidden">
-        <div class="modal-content" style="text-align:center;">
-            <h2 style="border-bottom:none; color: #2b4227;">Admin Access</h2>
-            <p style="color:#666; margin-top:0;">Enter 4-digit PIN to access backend.</p>
-            <input type="password" id="adminPin" class="pin-input" maxlength="4" placeholder="••••">
-            <br>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="add-btn" style="flex:1;" onclick="verifyPin()">Unlock</button>
-                <button class="delete-btn" style="flex:1;" onclick="closePinModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
 
     <!-- CHANGE PIN MODAL -->
     <div id="changePinModal" class="modal-overlay hidden">
@@ -930,7 +917,7 @@
     <button class="delete-btn" style="flex:0.7; font-size:14px; padding:10px 2px;" onclick="closeBillingModal()">Cancel</button>
 </div>
         <div style="margin-top: 10px;">
-             <button class="delete-btn" style="width: 100%; padding: 8px; font-size: 13px;" onclick="voidActiveTableModal()">Void Complete Table</button>
+             <button class="delete-btn" style="width: 100%; padding: 8px; font-size: 13px;" onclick="secureVoidActiveTableModal()">Void Complete Table</button>
         </div>
         </div>
     </div>
