@@ -233,12 +233,19 @@
             <div class="card" id="liveInventoryCard">
                 <h2>Live Inventory Tracker</h2>
                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
-                    <input type="text" id="itemName" placeholder="Ingredient Name" required style="flex: 1; min-width: 150px;">
-                    <input type="number" id="itemQty" placeholder="Qty" required style="width: 80px;">
-                    <input type="number" id="itemCost" placeholder="Cost (₱)" required style="width: 90px;">
-                    <input type="date" id="itemExpiry" title="Expiration Date (Optional)" style="width: 130px;">
-                    <button class="add-btn no-print" onclick="addItem()">+ Add Stock</button>
-                </div>
+    <input type="text" id="itemName" placeholder="Ingredient Name (e.g., Rice)" required style="flex: 1; min-width: 150px;">
+    <input type="number" id="itemQty" placeholder="Qty" required style="width: 80px;">
+    <select id="itemUnit" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; width: 95px;">
+        <option value="g">g (Grams)</option>
+        <option value="kg">kg → g</option>
+        <option value="ml">ml</option>
+        <option value="L">L → ml</option>
+        <option value="pcs">pcs</option>
+    </select>
+    <input type="number" id="itemCost" placeholder="Total Cost (₱)" title="Total cost of the amount entered" required style="width: 120px;">
+    <input type="date" id="itemExpiry" title="Expiration Date (Optional)" style="width: 130px;">
+    <button class="add-btn no-print" onclick="addItem()">+ Add Stock</button>
+</div>
                 <table>
                     <thead><tr><th>Item Name</th><th>Qty</th><th>Cost/Unit</th><th>Expiry</th><th>Stock Status</th><th class="no-print">Actions</th></tr></thead>
                     <tbody id="inventoryList"></tbody>
