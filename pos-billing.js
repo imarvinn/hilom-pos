@@ -19,26 +19,68 @@ function showDigitalReceipt(sourceAreaId) {
     setTimeout(() => { actions.style.opacity = "1"; }, 1500);
 }
 
-function triggerPhysicalPrint() {
+// --- UNIVERSAL PRINT ENGINE (WINDOWS/MAC + IPAD/IOS) ---
+async function triggerPhysicalPrint() {
+    // 1. Identify which receipt area is currently active
     let areaId = "customerReceiptArea";
     if (currentPrintType === 'print-zread') areaId = "zReadingArea";
     else if (currentPrintType === 'print-xread') areaId = "xReadingArea";
     else if (currentPrintType === 'print-ticket') areaId = "kitchenTicketArea";
 
-    const receiptElement = document.getElementById(areaId);
-    if (!receiptElement) return showToast("Nothing to print!");
+    // Detect if the user is on an iPad or iPhone (including iPadOS 13+ desktop mode)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    const receiptText = receiptElement.innerText || receiptElement.textContent;
-    const encodedReceipt = encodeURIComponent(receiptText);
-    const bridgeUrl = `thermer://print?text=${encodedReceipt}&cut=true`;
+    // 2. DESKTOP (Windows / Mac): Use your native CSS @media print engine
+    if (!isIOS) {
+        document.body.classList.add(currentPrintType); 
+        window.print(); 
+        document.body.classList.remove(currentPrintType);
+        return;
+    }
+
+    // 3. IPAD / IPHONE: Render crisp receipt image & open iOS Share Sheet (or print bridge)
+    const paper = document.getElementById("animatedReceiptPaper");
+    const targetEl = (paper && paper.innerHTML.trim() !== "") ? paper : document.getElementById(areaId);
+    if (!targetEl) return showToast("Nothing to print!");
 
     try {
-        // Attempt to launch the iOS bridge app
-        window.location.href = bridgeUrl;
-    } catch (error) {
-        console.error("Print bridge error:", error);
-        alert("Printing failed: Ensure the 'Thermer' print-bridge app is installed on this iOS device.");
+        // If html2canvas is loaded (from pos.html), convert the receipt into a high-res image
+        // so logos, ₱ symbols, and columns print accurately in Thermer / iOS printer apps
+        if (typeof html2canvas === "function") {
+            showToast("Preparing receipt for iPad printer...");
+            const canvas = await html2canvas(targetEl, { scale: 2, backgroundColor: "#ffffff" });
+            
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], "hilom-receipt.png", { type: "image/png" });
+                
+                // Open the native iOS Share Drawer -> Tap "Thermer" (or your printer app) -> Prints!
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: "HILOM POS Receipt"
+                        });
+                    } catch (shareErr) {
+                        // User closed the share sheet
+                    }
+                } else {
+                    // Fallback to iOS AirPrint dialog
+                    document.body.classList.add(currentPrintType);
+                    window.print();
+                    document.body.classList.remove(currentPrintType);
+                }
+            }, "image/png");
+            return;
+        }
+    } catch (err) {
+        console.error("iOS receipt capture error:", err);
     }
+
+    // Final fallback if html2canvas isn't available
+    document.body.classList.add(currentPrintType); 
+    window.print(); 
+    document.body.classList.remove(currentPrintType);
 }
 
 function tearReceipt() {
