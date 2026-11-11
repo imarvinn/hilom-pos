@@ -63,22 +63,36 @@ function renderCart() {
     document.getElementById("cartTotal").innerText = `Total: ₱${cartTotalRaw.toFixed(2)}`;
 }
 
-// --- SEND TO KITCHEN ---
+// --- SEND TO KITCHEN (SUPPORTS ADDITIONAL ORDERS / MERGING) ---
 async function sendToKitchen() {
     if (Object.keys(cart).length === 0) return showToast("Cart is empty!");
     const tableNoRaw = document.getElementById("tableNoInput").value.trim();
     if (!tableNoRaw) return showToast("Please enter a Table Number.");
-    const tableNo = tableNoRaw.toUpperCase(); let checkoutTime = new Date(); 
+    const tableNo = tableNoRaw.toUpperCase(); 
+    let checkoutTime = new Date(); 
     
-    let totalNeeds = {}; let tableItemsPayload = {};
+    let totalNeeds = {}; 
+    let newItemsPayload = {};
+
     for (let [itemName, cartData] of Object.entries(cart)) {
-        const menuData = dynamicMenuRecipes[itemName]; if (!menuData) continue;
-        tableItemsPayload[itemName] = { qty: cartData.qty, basePrice: cartData.price, totalCost: 0, deductionsString: "", rawDeductions: [] };
+        const menuData = dynamicMenuRecipes[itemName]; 
+        if (!menuData) continue;
+        
+        newItemsPayload[itemName] = { 
+            qty: cartData.qty, 
+            basePrice: cartData.price, 
+            totalCost: 0, 
+            deductionsString: "", 
+            rawDeductions: [] 
+        };
+        
         for (const ingredient of menuData.recipe) {
             const qtyNeeded = ingredient.deduct * cartData.qty;
-            if (!totalNeeds[ingredient.name]) totalNeeds[ingredient.name] = { needed: 0, cost: 0, id: null, currentQty: 0 };
+            if (!totalNeeds[ingredient.name]) {
+                totalNeeds[ingredient.name] = { needed: 0, cost: 0, id: null, currentQty: 0 };
+            }
             totalNeeds[ingredient.name].needed += qtyNeeded;
-            tableItemsPayload[itemName].rawDeductions.push({ name: ingredient.name, qty: qtyNeeded });
+            newItemsPayload[itemName].rawDeductions.push({ name: ingredient.name, qty: qtyNeeded });
         }
     }
 
@@ -88,8 +102,11 @@ async function sendToKitchen() {
     let missingStockMessages = [];
     snapshots.forEach(snap => {
         if (!snap.empty) {
-            const doc = snap.docs[0]; const data = doc.data();
-            totalNeeds[data.name].id = doc.id; totalNeeds[data.name].currentQty = data.quantity; totalNeeds[data.name].cost = data.cost || 0;
+            const doc = snap.docs[0]; 
+            const data = doc.data();
+            totalNeeds[data.name].id = doc.id; 
+            totalNeeds[data.name].currentQty = data.quantity; 
+            totalNeeds[data.name].cost = data.cost || 0;
         }
     });
 
@@ -98,36 +115,115 @@ async function sendToKitchen() {
         else if (data.currentQty < data.needed) missingStockMessages.push(`${name} (Need ${data.needed})`);
     }
 
-    if (missingStockMessages.length > 0) return showToast(`Send paused! Missing stock: ${missingStockMessages.join(", ")}`);
+    if (missingStockMessages.length > 0) {
+        return showToast(`Send paused! Missing stock: ${missingStockMessages.join(", ")}`);
+    }
 
     const batch = db.batch();
-    const receiptItems = document.getElementById("ticketItems"); receiptItems.innerHTML = "";
+    const receiptItems = document.getElementById("ticketItems"); 
+    receiptItems.innerHTML = "";
 
-    for (let [itemName, payload] of Object.entries(tableItemsPayload)) {
-        let usedIngredients = []; let calculatedCost = 0;
+    // Build payload & Kitchen Ticket (ONLY prints the new additional items for the kitchen)
+    for (let [itemName, payload] of Object.entries(newItemsPayload)) {
+        let usedIngredients = []; 
+        let calculatedCost = 0;
         for (let ing of payload.rawDeductions) {
             const ingCost = totalNeeds[ing.name].cost * ing.qty;
-            calculatedCost += ingCost; usedIngredients.push(`${ing.name} (${ing.qty})`);
+            calculatedCost += ingCost; 
+            usedIngredients.push(`${ing.name} (${ing.qty})`);
         }
-        payload.totalCost = calculatedCost; payload.deductionsString = usedIngredients.join(", ");
+        payload.totalCost = calculatedCost; 
+        payload.deductionsString = usedIngredients.join(", ");
         receiptItems.innerHTML += `<div class="receipt-item"><span><b>${payload.qty}x</b> ${itemName.toUpperCase()}</span></div>`;
     }
 
+    // Deduct inventory for the new items
     for (let [name, data] of Object.entries(totalNeeds)) {
         const docRef = db.collection("inventory").doc(data.id);
         batch.update(docRef, { quantity: firebase.firestore.FieldValue.increment(-data.needed) });
     }
 
-    const newTableRef = db.collection("active_tables").doc();
-    batch.set(newTableRef, { tableNo: tableNo, subtotal: cartTotalRaw, items: tableItemsPayload, timestamp: checkoutTime });
+    // CHECK IF THIS TABLE ALREADY HAS AN ACTIVE OPEN BILL
+    let existingTableId = null;
+    let existingTableData = null;
+    for (let [id, data] of Object.entries(activeTablesData)) {
+        if (data.tableNo.toUpperCase() === tableNo) {
+            existingTableId = id;
+            existingTableData = data;
+            break;
+        }
+    }
 
-    try {
-        await batch.commit();
-        showToast(`${tableNo} Sent to Kitchen!`);
-        document.getElementById("ticketTableNo").innerText = `${tableNo}`; 
-        document.getElementById("ticketTime").innerText = checkoutTime.toLocaleTimeString();
-        showDigitalReceipt('kitchenTicketArea'); clearCart();
-    } catch(err) { showToast("Network error saving order."); console.error(err); }
+    if (existingTableId && existingTableData) {
+        // MERGE INTO EXISTING TABLE
+        let mergedItems = JSON.parse(JSON.stringify(existingTableData.items || {}));
+        
+        for (let [itemName, newPayload] of Object.entries(newItemsPayload)) {
+            if (mergedItems[itemName]) {
+                // Item already exists on bill -> add quantities, costs, and combine rawDeductions
+                mergedItems[itemName].qty += newPayload.qty;
+                mergedItems[itemName].totalCost += newPayload.totalCost;
+                
+                let combinedMap = {};
+                (mergedItems[itemName].rawDeductions || []).forEach(d => {
+                    combinedMap[d.name] = (combinedMap[d.name] || 0) + d.qty;
+                });
+                newPayload.rawDeductions.forEach(d => {
+                    combinedMap[d.name] = (combinedMap[d.name] || 0) + d.qty;
+                });
+                
+                mergedItems[itemName].rawDeductions = Object.entries(combinedMap).map(([n, q]) => ({ name: n, qty: q }));
+                mergedItems[itemName].deductionsString = mergedItems[itemName].rawDeductions.map(d => `${d.name} (${d.qty})`).join(", ");
+            } else {
+                // Brand new item on this table's bill
+                mergedItems[itemName] = newPayload;
+            }
+        }
+
+        const updatedSubtotal = (existingTableData.subtotal || 0) + cartTotalRaw;
+        const existingTableRef = db.collection("active_tables").doc(existingTableId);
+        
+        batch.update(existingTableRef, {
+            items: mergedItems,
+            subtotal: updatedSubtotal,
+            served: false, // Reset served status so Kitchen KDS highlights the table again!
+            lastUpdated: checkoutTime
+        });
+
+        try {
+            await batch.commit();
+            showToast(`Additional order added to ${tableNo}!`);
+            document.getElementById("ticketTableNo").innerText = `${tableNo} (ADD-ON)`; 
+            document.getElementById("ticketTime").innerText = checkoutTime.toLocaleTimeString();
+            showDigitalReceipt('kitchenTicketArea'); 
+            clearCart();
+        } catch(err) { 
+            showToast("Network error updating order."); 
+            console.error(err); 
+        }
+
+    } else {
+        // CREATE BRAND NEW ACTIVE TABLE
+        const newTableRef = db.collection("active_tables").doc();
+        batch.set(newTableRef, { 
+            tableNo: tableNo, 
+            subtotal: cartTotalRaw, 
+            items: newItemsPayload, 
+            timestamp: checkoutTime 
+        });
+
+        try {
+            await batch.commit();
+            showToast(`${tableNo} Sent to Kitchen!`);
+            document.getElementById("ticketTableNo").innerText = `${tableNo}`; 
+            document.getElementById("ticketTime").innerText = checkoutTime.toLocaleTimeString();
+            showDigitalReceipt('kitchenTicketArea'); 
+            clearCart();
+        } catch(err) { 
+            showToast("Network error saving order."); 
+            console.error(err); 
+        }
+    }
 }
 
 // --- DIRECT CHECKOUT (SKIP KITCHEN) ---
@@ -319,7 +415,18 @@ function openBillingModal(tableId) {
     updateBillingTotal(); document.getElementById("billingModal").classList.remove("hidden");
 }
 
-function closeBillingModal() { document.getElementById("billingModal").classList.add("hidden"); activeBillingTableId = null; }
+function closeBillingModal() { 
+    document.getElementById("billingModal").classList.add("hidden"); 
+    activeBillingTableId = null; 
+}
+
+function addMoreToActiveTable() {
+    if (!activeBillingTableId || !activeTablesData[activeBillingTableId]) return;
+    const tableName = activeTablesData[activeBillingTableId].tableNo;
+    closeBillingModal();
+    document.getElementById("tableNoInput").value = tableName;
+    showToast(`Adding items to ${tableName}. Select menu items and click Send to Kitchen.`);
+}
 
 function toggleDiscountInputs() {
     const isSenior = document.getElementById("discountCheck").checked;
