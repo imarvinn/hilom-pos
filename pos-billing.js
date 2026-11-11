@@ -19,9 +19,7 @@ function showDigitalReceipt(sourceAreaId) {
     setTimeout(() => { actions.style.opacity = "1"; }, 1500);
 }
 
-// --- IOS PRINT BRIDGE FOR LAN / BLUETOOTH PRINTERS ---
 function triggerPhysicalPrint() {
-    // 1. Identify which receipt area is currently active
     let areaId = "customerReceiptArea";
     if (currentPrintType === 'print-zread') areaId = "zReadingArea";
     else if (currentPrintType === 'print-xread') areaId = "xReadingArea";
@@ -30,24 +28,17 @@ function triggerPhysicalPrint() {
     const receiptElement = document.getElementById(areaId);
     if (!receiptElement) return showToast("Nothing to print!");
 
-    // 2. Extract plain text content from the HTML receipt area
-    // (iOS print-bridge apps process raw text or HTML lines)
     const receiptText = receiptElement.innerText || receiptElement.textContent;
-
-    // 3. Format for the iOS Print-Bridge App (e.g., Thermer or PrintDirect)
-    // Most iOS bridge apps accept a base64 encoded string or raw text via URL scheme
     const encodedReceipt = encodeURIComponent(receiptText);
-
-    // Example URL Scheme for Thermer / iOS Bridge Apps:
-    // Ensure you configure your printer's LAN IP address inside the iOS app settings first.
     const bridgeUrl = `thermer://print?text=${encodedReceipt}&cut=true`;
 
-    // 4. Trigger the URL scheme to hand off printing to iOS
-    // This safely calls the background app without leaving Safari permanently
-    window.location.href = bridgeUrl;
-
-    // Optional: Log action
-    console.log("Sent print job to iOS bridge app.");
+    try {
+        // Attempt to launch the iOS bridge app
+        window.location.href = bridgeUrl;
+    } catch (error) {
+        console.error("Print bridge error:", error);
+        alert("Printing failed: Ensure the 'Thermer' print-bridge app is installed on this iOS device.");
+    }
 }
 
 function tearReceipt() {
