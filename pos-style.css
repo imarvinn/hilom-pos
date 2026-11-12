@@ -28,23 +28,10 @@ body {
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-@media screen and (max-width: 1024px) {
-    .dashboard-layout {
-        flex-direction: column !important;
-        height: auto !important;
-        display: flex !important;
-    }
-
-    /* Show the hamburger button */
-    .mobile-menu-btn {
-        display: block;
-    }
-
-    /* Hide the sidebar off-screen to the left */
-    .sidebar {
+.sidebar {
         position: fixed !important;
-        top: 54px; /* Sits right below the hamburger button */
-        left: -260px; /* Hidden off-screen */
+        top: 54px;
+        left: -260px;
         width: 250px !important;
         height: calc(100vh - 54px) !important;
         background: #2b4227;
@@ -54,25 +41,24 @@ body {
         display: flex !important;
         flex-direction: column !important;
         padding-top: 10px !important;
+        /* ADD THESE TWO LINES: */
+        overflow-y: auto !important; 
+        padding-bottom: 40px !important; 
     }
 
-    /* Slide it in when active */
-    .sidebar.active {
-        left: 0;
+    /* Auto-adjusting Room Rack & KDS Cards */
+    .pms-grid, .grid-layout, .table-map-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+        gap: 15px !important;
     }
 
-    /* Stack POS Container (Menu on top, Cart on bottom) */
-    .pos-container {
-        flex-direction: column !important;
+    /* Auto-adjusting POS Menu Buttons (slightly smaller min-width) */
+    .menu-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+        gap: 10px !important;
     }
-    .menu-section, .sidebar-section {
-        width: 100% !important;
-        flex: auto !important;
-    }
-    .main-content {
-        padding: 15px !important;
-    }
-}
 
 .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; animation: fadeIn 0.3s ease-in-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
