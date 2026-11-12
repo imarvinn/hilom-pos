@@ -73,25 +73,27 @@ body {
 
 
 /* =========================================
-   2. IPAD & MOBILE OVERRIDES
+   2. IPAD & MOBILE OVERRIDES (Responsive Fluid Design)
    ========================================= */
 @media screen and (max-width: 1024px) {
+    /* Dashboard & Layout Constraints */
     .dashboard-layout {
         flex-direction: column !important;
-        height: 100vh !important; /* <--- CHANGED FROM auto TO 100vh */
+        height: 100vh !important;
         display: flex !important;
+        overflow: hidden; /* Lock main window, let inner content scroll */
     }
 
-    /* Show the hamburger button */
+    /* Hamburger Button */
     .mobile-menu-btn {
         display: block;
     }
 
-    /* Turn the sidebar into a sliding off-screen menu */
+    /* Sliding Hamburger Sidebar */
     .sidebar {
         position: fixed !important;
-        top: 54px; /* Matches the height of the hamburger button */
-        left: -260px; /* Hidden off-screen to the left */
+        top: 54px;
+        left: -260px;
         width: 250px !important;
         height: calc(100vh - 54px) !important;
         background: #2b4227;
@@ -104,13 +106,9 @@ body {
         overflow-y: auto !important; 
         padding-bottom: 40px !important; 
     }
+    .sidebar.active { left: 0; }
 
-    /* Slide it into view when the button is clicked */
-    .sidebar.active {
-        left: 0;
-    }
-
-    /* Stack POS Menu on top, Checkout Cart on bottom */
+    /* POS Split Layout (Stack Menu on Top, Cart on Bottom) */
     .pos-container {
         flex-direction: column !important;
     }
@@ -118,22 +116,48 @@ body {
         width: 100% !important;
         flex: auto !important;
     }
+    
+    /* Make the main content area scrollable */
     .main-content {
-        padding: 15px !important;
+        padding: 10px !important; /* Smaller padding for mobile screens */
+        height: calc(100vh - 54px) !important;
+        overflow-y: auto !important;
     }
 
-    /* Auto-adjusting Room Rack & KDS Cards */
+    /* Auto-Adjusting Grids (Shrink to fit device width) */
     .pms-grid, .grid-layout, .table-map-grid {
         display: grid !important;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
-        gap: 15px !important;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+        gap: 10px !important;
     }
-
-    /* Auto-adjusting POS Menu Food Buttons */
     .menu-grid {
         display: grid !important;
-        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
-        gap: 10px !important;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    /* Fluid Modals (Make Billing & PIN popups fit the screen safely) */
+    .modal-content {
+        width: 90% !important;
+        max-width: 95% !important;
+        margin: 5% auto !important;
+        padding: 15px !important;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+
+    /* Prevent large tables (Inventory/Reports) from breaking the screen width */
+    table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    /* Scale down fonts and buttons for touch targets */
+    button, input, select {
+        font-size: 14px !important;
+        padding: 8px !important;
     }
 }
 
