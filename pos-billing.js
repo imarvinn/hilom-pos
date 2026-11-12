@@ -26,19 +26,64 @@ function showDigitalReceipt(sourceAreaId) {
     }
 }
 
-// --- UNIVERSAL PRINT ENGINE (WINDOWS/MAC + IPAD/IOS) ---
-async function triggerPhysicalPrint() {
-    // 1. Identify which receipt area is currently active
-    let areaId = "customerReceiptArea";
-    if (currentPrintType === 'print-zread') areaId = "zReadingArea";
-    else if (currentPrintType === 'print-xread') areaId = "xReadingArea";
-    else if (currentPrintType === 'print-ticket') areaId = "kitchenTicketArea";
+// --- DUAL-PRINTER ROUTING ENGINE (FRONT DESK vs. KITCHEN) ---
+const FRONT_DESK_PRINTER_NAME = "FrontDesk_Printer";
+const KITCHEN_PRINTER_NAME    = "Kitchen_Printer";
 
-    // Detect if the user is on an iPad or iPhone (including iPadOS 13+ desktop mode)
+async function triggerPhysicalPrint() {
+    // 1. Identify which receipt area AND which physical printer to target
+    let areaId = "customerReceiptArea";
+    let targetPrinterName = FRONT_DESK_PRINTER_NAME; // Default to Front Desk
+
+    if (currentPrintType === 'print-zread') {
+        areaId = "zReadingArea";
+        targetPrinterName = FRONT_DESK_PRINTER_NAME;
+    } else if (currentPrintType === 'print-xread') {
+        areaId = "xReadingArea";
+        targetPrinterName = FRONT_DESK_PRINTER_NAME;
+    } else if (currentPrintType === 'print-ticket') {
+        areaId = "kitchenTicketArea";
+        targetPrinterName = KITCHEN_PRINTER_NAME; // <-- Routes Kitchen Orders to Kitchen!
+    }
+
+    const targetEl = document.getElementById(areaId);
+    if (!targetEl) return showToast("Nothing to print!");
+
+    // 2. WINDOWS PC WITH QZ TRAY: Automatic Silent Dual-Printer Routing
+    if (typeof qz !== "undefined") {
+        try {
+            if (!qz.websocket.isActive()) {
+                await qz.websocket.connect();
+            }
+            const printer = await qz.printers.find(targetPrinterName);
+            const config = qz.configs.create(printer, {
+                margins: { top: 0, right: 0, bottom: 0, left: 0 }
+            });
+
+            // Capture the exact receipt styling as a sharp image for 80mm thermal output
+            const paper = document.getElementById("animatedReceiptPaper");
+            const renderNode = (paper && paper.innerHTML.trim() !== "") ? paper : targetEl;
+            const canvas = await html2canvas(renderNode, { scale: 2, backgroundColor: "#ffffff" });
+            const base64Image = canvas.toDataURL("image/png").split(",")[1];
+
+            await qz.print(config, [{
+                type: 'pixel',
+                format: 'image',
+                flavor: 'base64',
+                data: base64Image
+            }]);
+
+            showToast(`Printed to ${targetPrinterName}!`);
+            return;
+        } catch (qzErr) {
+            console.warn("QZ Tray not connected or printer name not found, falling back:", qzErr);
+        }
+    }
+
+    // 3. FALLBACK FOR DESKTOP (Single Default Printer via window.print)
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    // 2. DESKTOP (Windows / Mac): Use your native CSS @media print engine
     if (!isIOS) {
         document.body.classList.add(currentPrintType); 
         window.print(); 
@@ -46,36 +91,18 @@ async function triggerPhysicalPrint() {
         return;
     }
 
-    // 3. IPAD / IPHONE: Render crisp receipt image & open iOS Share Sheet (or print bridge)
+    // 4. IPAD / IPHONE: Render crisp receipt image & open iOS Share Sheet
     const paper = document.getElementById("animatedReceiptPaper");
-    const targetEl = (paper && paper.innerHTML.trim() !== "") ? paper : document.getElementById(areaId);
-    if (!targetEl) return showToast("Nothing to print!");
+    const iosTarget = (paper && paper.innerHTML.trim() !== "") ? paper : targetEl;
 
     try {
-        // If html2canvas is loaded (from pos.html), convert the receipt into a high-res image
-        // so logos, ₱ symbols, and columns print accurately in Thermer / iOS printer apps
         if (typeof html2canvas === "function") {
-            showToast("Preparing receipt for iPad printer...");
-            const canvas = await html2canvas(targetEl, { scale: 2, backgroundColor: "#ffffff" });
-            
+            showToast(`Preparing ${currentPrintType === 'print-ticket' ? 'Kitchen Ticket' : 'Receipt'}...`);
+            const canvas = await html2canvas(iosTarget, { scale: 2, backgroundColor: "#ffffff" });
             canvas.toBlob(async (blob) => {
-                const file = new File([blob], "hilom-receipt.png", { type: "image/png" });
-                
-                // Open the native iOS Share Drawer -> Tap "Thermer" (or your printer app) -> Prints!
+                const file = new File([blob], "hilom-print.png", { type: "image/png" });
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            files: [file],
-                            title: "HILOM POS Receipt"
-                        });
-                    } catch (shareErr) {
-                        // User closed the share sheet
-                    }
-                } else {
-                    // Fallback to iOS AirPrint dialog
-                    document.body.classList.add(currentPrintType);
-                    window.print();
-                    document.body.classList.remove(currentPrintType);
+                    await navigator.share({ files: [file], title: targetPrinterName });
                 }
             }, "image/png");
             return;
@@ -83,11 +110,6 @@ async function triggerPhysicalPrint() {
     } catch (err) {
         console.error("iOS receipt capture error:", err);
     }
-
-    // Final fallback if html2canvas isn't available
-    document.body.classList.add(currentPrintType); 
-    window.print(); 
-    document.body.classList.remove(currentPrintType);
 }
 
 function tearReceipt() {
