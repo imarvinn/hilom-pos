@@ -1,4 +1,4 @@
-// --- DIGITAL RECEIPT ANIMATION ---
+// --- DIGITAL RECEIPT ANIMATION (WITH KITCHEN AUTO-PRINT) ---
 function showDigitalReceipt(sourceAreaId) {
     if(sourceAreaId === 'customerReceiptArea') currentPrintType = 'print-receipt';
     else if(sourceAreaId === 'zReadingArea') currentPrintType = 'print-zread';
@@ -17,6 +17,13 @@ function showDigitalReceipt(sourceAreaId) {
 
     setTimeout(() => { paper.classList.add("animate-slide-out"); }, 50);
     setTimeout(() => { actions.style.opacity = "1"; }, 1500);
+
+    // AUTO-PRINT KITCHEN TICKETS AND PAID SALES INVOICES
+    if (sourceAreaId === 'kitchenTicketArea' || sourceAreaId === 'customerReceiptArea') {
+        setTimeout(() => {
+            triggerPhysicalPrint();
+        }, 400);
+    }
 }
 
 // --- UNIVERSAL PRINT ENGINE (WINDOWS/MAC + IPAD/IOS) ---
