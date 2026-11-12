@@ -173,6 +173,30 @@ body {
     }
 }
 /* =========================================
+       MODAL BUTTON FIXES (Billing & Checkout)
+       ========================================= */
+    /* 1. Force any flex container holding buttons to wrap to the next line */
+    .modal-content div[style*="display: flex"] {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+
+    /* 2. Give all modal buttons room to breathe and wrap text if needed */
+    .modal-content button {
+        flex: 1 1 auto;
+        white-space: normal !important;
+        margin-bottom: 5px !important;
+    }
+
+    /* 3. Force long-text action buttons to take the full width */
+    .modal-content button[onclick*="addMoreToActiveTable"],
+    .modal-content button[onclick*="secureVoidActiveTableModal"],
+    .modal-content button[onclick*="voidActiveTableModal"],
+    .modal-content button[onclick*="processPayment"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+/* =========================================
        ICON & IMAGE TOUCH-SCALING
        ========================================= */
     /* 1. Shrink the main logo inside the sliding sidebar */
