@@ -185,23 +185,43 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
 .bill-total { font-size: 22px; font-weight: bold; border-top: 2px solid #e0e5e0; padding-top: 10px; margin-top: 10px; display: flex; justify-content: space-between;}
 .discount-row { display: flex; align-items: center; margin: 15px 0 5px 0; padding: 10px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffeeba; color: #856404; font-weight: bold; cursor: pointer; }
 
-/* Clean Modal Action Button Layout (Prevents vertical text crushing) */
+/* Clean Modal Action Button Layout */
 .modal-content div[style*="display: flex"] {
+    display: flex !important;
     flex-wrap: wrap !important;
     gap: 8px !important;
+    width: 100% !important;
 }
-.modal-content div[style*="display: flex"] button {
-    flex: 1 1 calc(25% - 8px);
-    min-width: 75px;
+
+/* Default: 4 equal buttons per row (Bill, Invoice, Pay, Cancel) */
+.modal-content div[style*="display: flex"] > button {
+    flex: 1 1 calc(25% - 8px) !important;
+    min-width: 70px !important;
+    max-width: none !important;
+    width: auto !important;
+    margin: 0 !important;
     padding: 10px 8px !important;
     font-size: 13px !important;
-    text-align: center;
+    text-align: center !important;
 }
-.modal-content button[onclick*="addMoreToActiveTable"],
+
+/* Row 1 Left: Split button takes 28% width */
+.modal-content div[style*="display: flex"] > button:first-child {
+    flex: 1 1 calc(28% - 8px) !important;
+}
+
+/* Row 1 Right: Add Additional Order button takes remaining 72% width */
+.modal-content button[onclick*="addMoreToActiveTable"] {
+    flex: 1 1 calc(72% - 8px) !important;
+}
+
+/* Row 3: Void Complete Table spans 100% full width */
 .modal-content button[onclick*="secureVoidActiveTableModal"],
 .modal-content button[onclick*="voidActiveTableModal"] {
     flex: 1 1 100% !important;
     width: 100% !important;
+    max-width: none !important;
+    margin-top: 8px !important;
 }
 
 .pin-input { font-size: 24px; text-align: center; letter-spacing: 15px; width: 120px; padding: 10px; border-radius: 8px; border: 2px solid #ccc; margin: 15px 0;}
