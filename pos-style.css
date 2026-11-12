@@ -78,7 +78,7 @@ body {
 @media screen and (max-width: 1024px) {
     .dashboard-layout {
         flex-direction: column !important;
-        height: auto !important;
+        height: 100vh !important; /* <--- CHANGED FROM auto TO 100vh */
         display: flex !important;
     }
 
