@@ -10,14 +10,14 @@ body {
 }
 .hidden { display: none !important; }
 
-/* --- MOBILE RESPONSIVE STYLES (Screens 768px and down) --- */
-@media screen and (max-width: 768px) {
+/* --- MOBILE & IPAD RESPONSIVE STYLES (Screens 1024px and down) --- */
+@media screen and (max-width: 1024px) {
     /* Stack the dashboard layout vertically */
     .dashboard-layout {
-        flex-direction: column !important;
-        display: block !important;
-        height: auto !important;
-    }
+    flex-direction: column !important;
+    height: auto !important;
+    display: flex !important;
+}
 
     /* Convert sidebar into a top bar or inline navigation */
     .sidebar {
@@ -78,6 +78,13 @@ body {
         font-size: 14px !important;
         padding: 10px !important;
     }
+    .pos-container {
+    flex-direction: column !important;
+}
+.menu-section, .sidebar-section {
+    width: 100% !important;
+    flex: auto !important;
+}
     
 }
 
