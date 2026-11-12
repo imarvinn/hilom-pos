@@ -1368,3 +1368,17 @@ async function chargeToRoomFolio() {
         showToast("Error routing charge to room."); 
     }
 }
+
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.classList.toggle('active');
+}
+
+// Auto-close the menu when a nav button is clicked on mobile
+document.querySelectorAll('.sidebar .nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (window.innerWidth <= 1024) {
+            document.querySelector('.sidebar').classList.remove('active');
+        }
+    });
+});

@@ -10,82 +10,68 @@ body {
 }
 .hidden { display: none !important; }
 
-/* --- MOBILE & IPAD RESPONSIVE STYLES (Screens 1024px and down) --- */
+/* =========================================
+   IPAD & MOBILE HAMBURGER MENU
+   ========================================= */
+.mobile-menu-btn {
+    display: none; /* Hidden on desktop */
+    background: #2b4227;
+    color: white;
+    border: none;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
 @media screen and (max-width: 1024px) {
-    /* Stack the dashboard layout vertically */
     .dashboard-layout {
-    flex-direction: column !important;
-    height: auto !important;
-    display: flex !important;
-}
-
-    /* Convert sidebar into a top bar or inline navigation */
-    .sidebar {
-        width: 100% !important;
+        flex-direction: column !important;
         height: auto !important;
-        position: relative !important;
-        padding: 10px !important;
         display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 5px;
-        box-sizing: border-box;
     }
 
-    .sidebar img {
-        max-width: 100px !important;
-        margin: 0 auto 5px auto !important;
-    }
-
-    .sidebar .nav-btn, .sidebar button {
-        flex: 1;
-        min-width: 120px;
-        padding: 8px !important;
-        font-size: 12px !important;
-    }
-
-    /* Adjust main content container padding */
-    .main-content {
-        padding: 10px !important;
-        width: 100% !important;
-        box-sizing: border-box;
-    }
-
-    /* Make grids (rooms and POS menus) single-column or fluid */
-    .pms-grid, .grid-layout {
-        grid-template-columns: 1fr !important;
-    }
-
-    /* Make inventory and report tables horizontally scrollable on mobile */
-    table {
+    /* Show the hamburger button */
+    .mobile-menu-btn {
         display: block;
-        width: 100%;
-        overflow-x: auto;
-        white-space: nowrap;
     }
 
-    /* Scale down modal popups to fit phone screens safely */
-    .modal-content {
-        width: 90% !important;
-        max-width: 95% !important;
-        margin: 10% auto !important;
-        padding: 15px !important;
-        max-height: 80vh;
-        overflow-y: auto;
+    /* Hide the sidebar off-screen to the left */
+    .sidebar {
+        position: fixed !important;
+        top: 54px; /* Sits right below the hamburger button */
+        left: -260px; /* Hidden off-screen */
+        width: 250px !important;
+        height: calc(100vh - 54px) !important;
+        background: #2b4227;
+        z-index: 999;
+        transition: left 0.3s ease-in-out;
+        box-shadow: 4px 0 10px rgba(0,0,0,0.3);
+        display: flex !important;
+        flex-direction: column !important;
+        padding-top: 10px !important;
     }
 
-    /* Adjust buttons inside forms for easy touch interaction */
-    button, input, select {
-        font-size: 14px !important;
-        padding: 10px !important;
+    /* Slide it in when active */
+    .sidebar.active {
+        left: 0;
     }
+
+    /* Stack POS Container (Menu on top, Cart on bottom) */
     .pos-container {
-    flex-direction: column !important;
-}
-.menu-section, .sidebar-section {
-    width: 100% !important;
-    flex: auto !important;
-}
-    
+        flex-direction: column !important;
+    }
+    .menu-section, .sidebar-section {
+        width: 100% !important;
+        flex: auto !important;
+    }
+    .main-content {
+        padding: 15px !important;
+    }
 }
 
 .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; animation: fadeIn 0.3s ease-in-out; }
