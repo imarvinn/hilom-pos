@@ -25,7 +25,7 @@ function showDigitalReceipt(sourceAreaId) {
         }, 400);
     }
 }
-
+processPayment
 // --- DUAL-PRINTER ROUTING ENGINE (FRONT DESK vs. KITCHEN) ---
 const FRONT_DESK_PRINTER_NAME = "FrontDesk_Printer";
 const KITCHEN_PRINTER_NAME    = "Kitchen_Printer";
@@ -761,8 +761,10 @@ async function processPayment() {
             });
 
             // 3. Update the master counter and grand total
-            transaction.update(configRef, { invoiceCount: invNum + 1, grandTotal: currentGT + finalTotal });
-            
+transaction.set(configRef, { 
+    invoiceCount: invNum + 1, 
+    grandTotal: currentGT + finalTotal 
+}, { merge: true });
             // 4. Delete the active table
             transaction.delete(tableRef);
 
