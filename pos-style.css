@@ -130,10 +130,22 @@ body {
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
         gap: 10px !important;
     }
+    /* 1. Stop buttons from stretching too wide (Use auto-fill instead of auto-fit) */
     .menu-grid {
         display: grid !important;
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
-        gap: 8px !important;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+        gap: 12px !important;
+    }
+
+    /* 2. Force buttons into a proportional tile shape for easier tapping */
+    .order-btn {
+        min-height: 100px !important;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        line-height: 1.5;
+        padding: 10px !important;
     }
 
     /* Fluid Modals (Make Billing & PIN popups fit the screen safely) */
@@ -160,6 +172,36 @@ body {
         padding: 8px !important;
     }
 }
+/* =========================================
+       ICON & IMAGE TOUCH-SCALING
+       ========================================= */
+    /* 1. Shrink the main logo inside the sliding sidebar */
+    .sidebar-header img {
+        max-width: 120px !important; 
+        margin-bottom: 5px !important;
+    }
+
+    /* 2. Make action circle icons (Edit/Delete) easier to tap on touchscreens */
+    .action-circle {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 14px !important;
+    }
+
+    /* 3. Ensure no stray images or SVG icons ever stretch past the screen */
+    img, svg {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    /* 4. Adjust the hamburger menu icon text spacing */
+    .mobile-menu-btn {
+        padding: 12px 15px !important;
+        font-size: 16px !important;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
 .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; animation: fadeIn 0.3s ease-in-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
