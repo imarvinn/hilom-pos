@@ -171,7 +171,7 @@ body {
         font-size: 14px !important;
         padding: 8px !important;
     }
-}
+
 /* =========================================
        MODAL BUTTON FIXES (Billing & Checkout)
        ========================================= */
@@ -196,6 +196,7 @@ body {
         width: 100% !important;
         flex: 1 1 100% !important;
     }
+}
 /* =========================================
        ICON & IMAGE TOUCH-SCALING
        ========================================= */
