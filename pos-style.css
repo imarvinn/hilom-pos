@@ -19,16 +19,18 @@ body {
     width: 100vw; 
 }
 
+/* Strictly hidden on desktop (>1024px) so it never takes up screen width */
 .mobile-menu-btn {
-    display: none; /* Hidden on large desktop screens */
+    display: none !important;
     background: #2b4227;
     color: white;
     border: none;
-    padding: 15px;
-    font-size: 18px;
+    padding: 12px 15px;
+    font-size: 16px;
     font-weight: bold;
     text-align: left;
     width: 100%;
+    box-sizing: border-box;
     cursor: pointer;
     z-index: 1000;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
@@ -36,6 +38,7 @@ body {
 
 .sidebar {
     width: 250px;
+    flex-shrink: 0;
     background: #2b4227; 
     color: white;
     display: flex;
@@ -43,7 +46,7 @@ body {
     padding: 20px 0;
     box-shadow: 2px 0 10px rgba(0,0,0,0.15);
     z-index: 10;
-    overflow-y: auto; /* Scrollable on desktop */
+    overflow-y: auto;
 }
 
 .sidebar-header { 
@@ -71,173 +74,34 @@ body {
 .logout-nav { margin-top: auto; color: #ff9f43; }
 .logout-nav:hover { background: #8c5d3a; color: white; }
 
-
-/* =========================================
-   2. IPAD & MOBILE OVERRIDES (Responsive Fluid Design)
-   ========================================= */
-@media screen and (max-width: 1024px) {
-    /* Dashboard & Layout Constraints */
-    .dashboard-layout {
-        flex-direction: column !important;
-        height: 100vh !important;
-        display: flex !important;
-        overflow: hidden; /* Lock main window, let inner content scroll */
-    }
-
-    /* Hamburger Button */
-    .mobile-menu-btn {
-        display: block;
-    }
-
-    /* Sliding Hamburger Sidebar */
-    .sidebar {
-        position: fixed !important;
-        top: 54px;
-        left: -260px;
-        width: 250px !important;
-        height: calc(100vh - 54px) !important;
-        background: #2b4227;
-        z-index: 999;
-        transition: left 0.3s ease-in-out;
-        box-shadow: 4px 0 10px rgba(0,0,0,0.3);
-        display: flex !important;
-        flex-direction: column !important;
-        padding-top: 10px !important;
-        overflow-y: auto !important; 
-        padding-bottom: 40px !important; 
-    }
-    .sidebar.active { left: 0; }
-
-    /* POS Split Layout (Stack Menu on Top, Cart on Bottom) */
-    .pos-container {
-        flex-direction: column !important;
-    }
-    .menu-section, .sidebar-section {
-        width: 100% !important;
-        flex: auto !important;
-    }
-    
-    /* Make the main content area scrollable */
-    .main-content {
-        padding: 10px !important; /* Smaller padding for mobile screens */
-        height: calc(100vh - 54px) !important;
-        overflow-y: auto !important;
-    }
-
-    /* Auto-Adjusting Grids (Shrink to fit device width) */
-    .pms-grid, .grid-layout, .table-map-grid {
-        display: grid !important;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
-        gap: 10px !important;
-    }
-    /* 1. Stop buttons from stretching too wide (Use auto-fill instead of auto-fit) */
-    .menu-grid {
-        display: grid !important;
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
-        gap: 12px !important;
-    }
-
-    /* 2. Force buttons into a proportional tile shape for easier tapping */
-    .order-btn {
-        min-height: 100px !important;
-        display: flex !important;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        line-height: 1.5;
-        padding: 10px !important;
-    }
-
-    /* Fluid Modals (Make Billing & PIN popups fit the screen safely) */
-    .modal-content {
-        width: 90% !important;
-        max-width: 95% !important;
-        margin: 5% auto !important;
-        padding: 15px !important;
-        max-height: 85vh;
-        overflow-y: auto;
-    }
-
-    /* Prevent large tables (Inventory/Reports) from breaking the screen width */
-    table {
-        display: block;
-        width: 100%;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-
-    /* Scale down fonts and buttons for touch targets */
-    button, input, select {
-        font-size: 14px !important;
-        padding: 8px !important;
-    }
-
-/* =========================================
-       MODAL BUTTON FIXES (Billing & Checkout)
-       ========================================= */
-    /* 1. Force any flex container holding buttons to wrap to the next line */
-    .modal-content div[style*="display: flex"] {
-        flex-wrap: wrap !important;
-        gap: 8px !important;
-    }
-
-    /* 2. Give all modal buttons room to breathe and wrap text if needed */
-    .modal-content button {
-        flex: 1 1 auto;
-        white-space: normal !important;
-        margin-bottom: 5px !important;
-    }
-
-    /* 3. Force long-text action buttons to take the full width */
-    .modal-content button[onclick*="addMoreToActiveTable"],
-    .modal-content button[onclick*="secureVoidActiveTableModal"],
-    .modal-content button[onclick*="voidActiveTableModal"],
-    .modal-content button[onclick*="processPayment"] {
-        width: 100% !important;
-        flex: 1 1 100% !important;
-    }
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
+    background: #f4f6f4;
+    box-sizing: border-box;
 }
-/* =========================================
-       ICON & IMAGE TOUCH-SCALING
-       ========================================= */
-    /* 1. Shrink the main logo inside the sliding sidebar */
-    .sidebar-header img {
-        max-width: 120px !important; 
-        margin-bottom: 5px !important;
-    }
 
-    /* 2. Make action circle icons (Edit/Delete) easier to tap on touchscreens */
-    .action-circle {
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 14px !important;
-    }
+.view-section { display: none; }
+.view-section.active { display: block; animation: fadeIn 0.4s ease; }
 
-    /* 3. Ensure no stray images or SVG icons ever stretch past the screen */
-    img, svg {
-        max-width: 100%;
-        height: auto;
-    }
-    
-    /* 4. Adjust the hamburger menu icon text spacing */
-    .mobile-menu-btn {
-        padding: 12px 15px !important;
-        font-size: 16px !important;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-.card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; animation: fadeIn 0.3s ease-in-out; }
+.card { 
+    background: white; 
+    border-radius: 12px; 
+    padding: 25px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+    margin-bottom: 25px; 
+    animation: fadeIn 0.3s ease-in-out; 
+}
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 h2 { margin-top: 0; color: #2b4227; border-bottom: 2px solid #e0e5e0; padding-bottom: 10px; }
 h3 { color: #555; border-bottom: 1px dashed #ccc; padding-bottom: 5px; margin-top: 20px;}
 
-input, select { padding: 10px; margin-right: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 6px; outline: none; }
+input, select { padding: 10px; margin-right: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 6px; outline: none; box-sizing: border-box; }
 input:focus, select:focus { border-color: #557a46; }
 
-button { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s ease; }
+button { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s ease; }
 button:active { transform: scale(0.95); }
 
 /* Themed Action Buttons */
@@ -245,45 +109,6 @@ button:active { transform: scale(0.95); }
 .save-btn { background-color: #8c5d3a; color: white; } 
 .warn-btn { background-color: #d4a373; color: #333; } 
 .delete-btn { background-color: #bd4b4b; color: white; padding: 6px 12px; font-size: 12px;} 
-
-/* --- DASHBOARD LAYOUT --- */
-.dashboard-layout { display: flex; height: 100vh; width: 100vw; }
-
-.sidebar {
-    width: 250px;
-    background: #2b4227; 
-    color: white;
-    display: flex;
-    flex-direction: column;
-    padding: 20px 0;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.15);
-    z-index: 10;
-}
-.sidebar-header { text-align: center; font-size: 24px; font-weight: bold; padding: 0 20px 20px 20px; border-bottom: 1px solid #3c5e38; margin-bottom: 20px; letter-spacing: 1px;}
-.nav-btn {
-    background: transparent;
-    color: #ecf0f1;
-    text-align: left;
-    padding: 15px 25px;
-    border-radius: 0;
-    font-size: 16px;
-    font-weight: 500;
-    border-left: 5px solid transparent;
-}
-.nav-btn:hover { background: #3c5e38; color: white; } 
-.nav-btn.active { background: #3c5e38; border-left: 5px solid #d4a373; font-weight: bold; } 
-.logout-nav { margin-top: auto; color: #ff9f43; }
-.logout-nav:hover { background: #8c5d3a; color: white; }
-
-.main-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 30px;
-    background: #f4f6f4;
-}
-
-.view-section { display: none; }
-.view-section.active { display: block; animation: fadeIn 0.4s ease; }
 
 /* POS Layout */
 .pos-container { display: flex; gap: 20px; align-items: flex-start; }
@@ -293,11 +118,19 @@ button:active { transform: scale(0.95); }
 .cart-card { background: #fcfbf8; border: 2px solid #8c5d3a; } 
 .active-tables-card { background: #f0f4f0; border: 2px solid #557a46; } 
 
-.menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
+.menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
 .menu-item-container { position: relative; display: flex; flex-direction: column; }
 
 /* Themed Menu Buttons */
-.order-btn { background: linear-gradient(135deg, #6c8a58, #4a6839); color: white; font-size: 14px; padding: 15px 10px; border-radius: 8px; flex-grow: 1; box-shadow: 0 4px 10px rgba(74, 104, 57, 0.2);}
+.order-btn { 
+    background: linear-gradient(135deg, #6c8a58, #4a6839); 
+    color: white; 
+    font-size: 14px; 
+    padding: 15px 10px; 
+    border-radius: 8px; 
+    flex-grow: 1; 
+    box-shadow: 0 4px 10px rgba(74, 104, 57, 0.2);
+}
 .order-btn:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(74, 104, 57, 0.4); }
 
 .menu-actions { position: absolute; top: -10px; right: -10px; display: flex; gap: 5px; }
@@ -335,12 +168,41 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
 
 .table-item { background: white; border-radius: 8px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e0e5e0;}
 
-/* Modals (Billing & PIN) */
+/* Modals (Billing & PIN) - Widened & Clean Button Grid on Desktop & Mobile */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-.modal-content { background: white; padding: 25px; border-radius: 12px; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+.modal-content { 
+    background: white; 
+    padding: 25px; 
+    border-radius: 12px; 
+    width: 440px; 
+    max-width: 92vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+}
 .bill-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 15px;}
 .bill-total { font-size: 22px; font-weight: bold; border-top: 2px solid #e0e5e0; padding-top: 10px; margin-top: 10px; display: flex; justify-content: space-between;}
 .discount-row { display: flex; align-items: center; margin: 15px 0 5px 0; padding: 10px; background: #fff3cd; border-radius: 6px; border: 1px solid #ffeeba; color: #856404; font-weight: bold; cursor: pointer; }
+
+/* Clean Modal Action Button Layout (Prevents vertical text crushing) */
+.modal-content div[style*="display: flex"] {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+.modal-content div[style*="display: flex"] button {
+    flex: 1 1 calc(25% - 8px);
+    min-width: 75px;
+    padding: 10px 8px !important;
+    font-size: 13px !important;
+    text-align: center;
+}
+.modal-content button[onclick*="addMoreToActiveTable"],
+.modal-content button[onclick*="secureVoidActiveTableModal"],
+.modal-content button[onclick*="voidActiveTableModal"] {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+}
 
 .pin-input { font-size: 24px; text-align: center; letter-spacing: 15px; width: 120px; padding: 10px; border-radius: 8px; border: 2px solid #ccc; margin: 15px 0;}
 .pin-input:focus { border-color: #557a46; outline: none; }
@@ -380,114 +242,109 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
 .receipt-item { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;}
 .receipt-footer { border-top: 1px dashed black; padding-top: 10px; margin-top: 10px; text-align: center; }
 
-/* --- PRINT ONLY STYLES (Hardware Printer) --- */
-.print-only { display: none; }
 
-@media print {
-    /* 1. Global Reset & Overrides */
-    body { 
-        background-color: white !important; 
-        padding: 0 !important; 
-        margin: 0 !important; 
-        height: auto !important; 
-        overflow: visible !important; 
-        display: block !important;
-    }
-    .dashboard-layout { display: block !important; height: auto !important; }
-
-    /* Hide general UI elements */
-    .no-print, .sidebar, button, input, select, .menu-actions, #toast { 
-        display: none !important; 
+/* =========================================
+   2. IPAD & MOBILE OVERRIDES (<= 1024px)
+   ========================================= */
+@media screen and (max-width: 1024px) {
+    .dashboard-layout {
+        flex-direction: column !important;
+        height: 100vh !important;
+        display: flex !important;
+        overflow: hidden;
     }
 
-    /* Hide modals by default UNLESS printing Z-Read or X-Read */
-    .modal-overlay { display: none !important; }
-    body.print-zread .modal-overlay,
-    body.print-xread .modal-overlay { 
-        display: block !important; 
-        background: transparent !important; 
-        position: static !important; 
+    /* Show top hamburger bar only on tablet/mobile */
+    .mobile-menu-btn {
+        display: flex !important;
+        align-items: center;
+        gap: 10px;
+        height: 50px;
+        flex-shrink: 0;
     }
 
-    /* Hide main content components by default */
-    .main-content > * { display: none !important; }
-    .thermal-print-area { display: none !important; }
-
-    /* 2. Thermal Receipts & Tickets */
-    body.print-zread #animatedReceiptPaper,
-    body.print-xread #animatedReceiptPaper,
-    body.print-ticket #kitchenTicketArea,
-    body.print-receipt #customerReceiptArea { 
-        display: block !important; 
-        position: absolute; 
-        top: 0; 
-        left: 0; 
-        width: 100%; 
-        max-width: 300px; 
-        font-family: monospace; 
-        color: black; 
-        font-size: 14px; 
+    /* Sliding off-canvas sidebar */
+    .sidebar {
+        position: fixed !important;
+        top: 50px;
+        left: -260px;
+        width: 250px !important;
+        height: calc(100vh - 50px) !important;
+        background: #2b4227;
+        z-index: 999;
+        transition: left 0.3s ease-in-out;
+        box-shadow: 4px 0 10px rgba(0,0,0,0.3);
+        display: flex !important;
+        flex-direction: column !important;
+        padding: 10px 0 40px 0 !important;
+        overflow-y: auto !important;
     }
+    .sidebar.active { left: 0; }
 
-    body.print-zread #zReadingArea,
-    body.print-xread #xReadingArea { 
-        display: none !important; 
+    .sidebar-header img {
+        max-width: 120px !important;
+        margin-bottom: 5px !important;
     }
 
-    /* 3. Reports & Views */
-    body.print-sales #salesView { display: block !important; }
-    body.print-sales #salesCard, 
-    body.print-sales #expensesCard { 
-        display: block !important; 
-        position: relative; 
-        box-shadow: none; 
-        margin-bottom: 40px;
+    /* Main content fills remaining screen height and scrolls */
+    .main-content {
+        padding: 15px !important;
+        height: calc(100vh - 50px) !important;
+        overflow-y: auto !important;
     }
 
-    /* FIX FOR STOCK REPORT PRINTING */
-    body.print-inv-report #inventoryView { 
-        display: block !important; 
+    /* Stack POS Menu and Cart */
+    .pos-container {
+        flex-direction: column !important;
     }
-    body.print-inv-report #inventoryView > .card:not(#inventoryReportCard) { 
-        display: none !important; 
-    }
-    body.print-inv-report #inventoryReportCard { 
-        display: block !important; 
-        position: absolute; 
-        top: 0; 
-        left: 0; 
-        width: 100%; 
-        box-shadow: none;
+    .menu-section, .sidebar-section {
+        width: 100% !important;
+        flex: auto !important;
     }
 
-    /* Headers / Watermarks */
-    .print-only { 
-        display: block; 
-        text-align: center; 
-        font-size: 20px; 
-        font-weight: bold; 
-        margin-bottom: 20px; 
-        border-bottom: 2px solid #333; 
-        padding-bottom: 10px; 
+    /* Auto-Adjusting Grids */
+    .pms-grid, .grid-layout {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+        gap: 12px !important;
+    }
+    .table-map-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 10px !important;
+    }
+    .menu-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+        gap: 10px !important;
     }
 
-    body.print-folio #folioInvoiceArea {
-        display: block !important;
-        position: absolute;
-        top: 0;
-        left: 0;
+    .order-btn {
+        min-height: 85px !important;
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 10px !important;
+    }
+
+    .action-circle {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 13px !important;
+    }
+
+    table {
+        display: block;
         width: 100%;
-        background: white;
-    }
-    
-    body.print-folio .modal-overlay,
-    body.print-folio .main-content {
-        display: none !important; 
+        overflow-x: auto;
+        white-space: nowrap;
     }
 }
 
+
 /* =======================================================
-   --- ADVANCED KITCHEN KDS STYLES ---
+   3. ADVANCED KITCHEN KDS STYLES
    ======================================================= */
 .kds-grid { 
     display: grid; 
@@ -499,7 +356,7 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
 .kds-card { 
     background: #1e1e1e; 
     border-radius: 12px; 
-    border-top: 6px solid #55efc4; /* Default: New Order (Teal) */
+    border-top: 6px solid #55efc4;
     display: flex; 
     flex-direction: column; 
     overflow: hidden; 
@@ -507,9 +364,8 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
     transition: transform 0.2s ease;
 }
 
-/* Urgency States based on time elapsed */
-.kds-card.warning { border-top: 6px solid #fdcb6e; } /* Warning: Getting old (Yellow) */
-.kds-card.urgent { border-top: 6px solid #ff7675; animation: pulse-border 2s infinite; } /* Urgent: Too old (Red Pulse) */
+.kds-card.warning { border-top: 6px solid #fdcb6e; }
+.kds-card.urgent { border-top: 6px solid #ff7675; animation: pulse-border 2s infinite; }
 
 @keyframes pulse-border { 
     0% { box-shadow: 0 0 0 0 rgba(255, 118, 117, 0.4); } 
@@ -556,7 +412,6 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
     overflow-y: auto; 
 }
 
-/* Modern Order Items List */
 .kds-item { 
     font-size: 18px; 
     padding: 15px 20px; 
@@ -574,7 +429,6 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
     font-weight: 600; 
 }
 
-/* Emphasized Quantity Pill */
 .kds-qty { 
     color: #1e1e1e; 
     font-weight: 900; 
@@ -584,7 +438,6 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
     font-size: 16px;
 }
 
-/* Clearer Kitchen Notes/Modifiers */
 .kds-modifier { 
     color: #fdcb6e; 
     font-size: 14px; 
@@ -594,7 +447,7 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
     padding: 5px 10px;
     border-radius: 4px;
     border-left: 3px solid #fdcb6e;
-    margin-left: 35px; /* Aligns with text, pushing past the QTY block */
+    margin-left: 35px;
 }
 
 .kds-footer { 
@@ -621,10 +474,8 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
 .kds-footer button:hover { background: #00b894; }
 .kds-footer button:active { transform: scale(0.98); }
 
-/* Modifier Badge for POS Cart */
 .mod-badge { background: #ffeaa7; color: #d63031; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 3px; }
 
-/* --- PRINT INVOICE BUTTON & BEHAVIOR --- */
 .print-btn {
     background-color: #4a6fa5;
     color: white;
@@ -634,14 +485,105 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
     font-weight: bold;
     transition: all 0.2s ease;
 }
+.print-btn:hover { background-color: #3b5985; }
 
-.print-btn:hover {
-    background-color: #3b5985;
-}
 
-/* --- PRINT BOOKING DETAILS INVOICE --- */
-    body.print-booking .modal-overlay { display: none !important; }
+/* =======================================================
+   4. PRINT ONLY STYLES (Hardware Printer)
+   ======================================================= */
+.print-only { display: none; }
+
+@media print {
+    body { 
+        background-color: white !important; 
+        padding: 0 !important; 
+        margin: 0 !important; 
+        height: auto !important; 
+        overflow: visible !important; 
+        display: block !important;
+    }
+    .dashboard-layout { display: block !important; height: auto !important; }
+
+    .no-print, .sidebar, .mobile-menu-btn, button, input, select, .menu-actions, #toast { 
+        display: none !important; 
+    }
+
+    .modal-overlay { display: none !important; }
+    body.print-zread .modal-overlay,
+    body.print-xread .modal-overlay { 
+        display: block !important; 
+        background: transparent !important; 
+        position: static !important; 
+    }
+
+    .main-content > * { display: none !important; }
+    .thermal-print-area { display: none !important; }
+
+    body.print-zread #animatedReceiptPaper,
+    body.print-xread #animatedReceiptPaper,
+    body.print-ticket #kitchenTicketArea,
+    body.print-receipt #customerReceiptArea { 
+        display: block !important; 
+        position: absolute; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        max-width: 300px; 
+        font-family: monospace; 
+        color: black; 
+        font-size: 14px; 
+    }
+
+    body.print-zread #zReadingArea,
+    body.print-xread #xReadingArea { 
+        display: none !important; 
+    }
+
+    body.print-sales #salesView { display: block !important; }
+    body.print-sales #salesCard, 
+    body.print-sales #expensesCard { 
+        display: block !important; 
+        position: relative; 
+        box-shadow: none; 
+        margin-bottom: 40px;
+    }
+
+    body.print-inv-report #inventoryView { display: block !important; }
+    body.print-inv-report #inventoryView > .card:not(#inventoryReportCard) { display: none !important; }
+    body.print-inv-report #inventoryReportCard { 
+        display: block !important; 
+        position: absolute; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        box-shadow: none;
+    }
+
+    .print-only { 
+        display: block; 
+        text-align: center; 
+        font-size: 20px; 
+        font-weight: bold; 
+        margin-bottom: 20px; 
+        border-bottom: 2px solid #333; 
+        padding-bottom: 10px; 
+    }
+
+    body.print-folio #folioInvoiceArea {
+        display: block !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: white;
+    }
     
+    body.print-folio .modal-overlay,
+    body.print-folio .main-content {
+        display: none !important; 
+    }
+
+    body.print-booking .modal-overlay { display: none !important; }
     body.print-booking #bookingDetailsModal {
         display: block !important;
         position: absolute !important;
@@ -649,8 +591,6 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
         width: 100% !important; height: auto !important;
         background: white !important;
     }
-    
-    /* Expands the modal to look like an official A4 document */
     body.print-booking #bookingDetailsModal .modal-content {
         box-shadow: none !important;
         border: none !important;
@@ -659,24 +599,16 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
         width: 100% !important;
         max-width: 700px !important; 
     }
-
-    /* Shows the logo header, hides the standard screen title */
     body.print-booking .print-booking-header { display: block !important; }
     body.print-booking .screen-booking-title { display: none !important; }
-    
-    /* Removes the gray box styling for a clean paper look */
     body.print-booking #bookingDetailsContent {
         background: transparent !important;
         border: none !important;
         padding: 0 !important;
     }
-
     body.print-booking .main-content, 
     body.print-booking .sidebar { display: none !important; }
-    
     body.print-booking #bookingDetailsModal button { display: none !important; }
-    
-    /* Auto-inject a professional footer message on the printout */
     body.print-booking #bookingDetailsModal .modal-content::after {
         content: "Thank you for choosing Hilom Resort. Please present this confirmation document to the Front Desk upon arrival.";
         display: block;
@@ -687,3 +619,4 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
         font-size: 13px;
         color: #555;
     }
+}
