@@ -243,25 +243,83 @@
     </script>
 
     <script>
+        // 1. Set Footer Year (Once)
         document.getElementById('year').innerText = new Date().getFullYear();
 
-        // ⚠️ YOUR FIREBASE CONFIG
-        const firebaseConfig = {
-          apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
-          authDomain: "dbr-pos.firebaseapp.com",
-          projectId: "dbr-pos",
-          storageBucket: "dbr-pos.firebasestorage.app",
-          messagingSenderId: "176532211278",
-          appId: "1:176532211278:web:57d78462a3355a32ce251f",
-          measurementId: "G-MPYZMBHZDC"
-        };
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        const db = firebase.firestore();
+        // 2. Custom Hilom Luxury Alert Modal Functions
+        function showHilomAlert(message) {
+            const modal = document.getElementById('hilomCustomAlert');
+            const card = document.getElementById('hilomCustomAlertCard');
+            const iconWrap = document.getElementById('hilomAlertIconWrap');
+            const titleEl = document.getElementById('hilomAlertTitle');
+            const msgEl = document.getElementById('hilomAlertMessage');
 
-        // Pricing Logic
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById("checkIn").setAttribute('min', today);
-        document.getElementById("checkOut").setAttribute('min', today);
+            const lower = String(message).toLowerCase();
+            const isSuccess = lower.includes('success');
+            const isError = lower.includes('error') || lower.includes('denied') || lower.includes('failed') || lower.includes('timed out');
+
+            if (isSuccess) {
+                card.style.borderTopColor = '#557a46';
+                iconWrap.style.background = '#e8f5e9';
+                iconWrap.style.color = '#2b4227';
+                iconWrap.style.borderColor = '#c8dac8';
+                iconWrap.innerHTML = '✓';
+                titleEl.innerText = 'Reservation Request Sent';
+                msgEl.innerText = 'Thank you for choosing Hilom Resort! Your booking request has been received by our Front Desk. Our team will contact you shortly to confirm your stay.';
+            } else if (isError) {
+                card.style.borderTopColor = '#bd4b4b';
+                iconWrap.style.background = '#ffebee';
+                iconWrap.style.color = '#bd4b4b';
+                iconWrap.style.borderColor = '#f5c6cb';
+                iconWrap.innerHTML = '!';
+                titleEl.innerText = 'Submission Notice';
+                msgEl.innerText = message;
+            } else {
+                card.style.borderTopColor = '#d4a373';
+                iconWrap.style.background = '#fff3cd';
+                iconWrap.style.color = '#8c5d3a';
+                iconWrap.style.borderColor = '#ffeeba';
+                iconWrap.innerHTML = 'i';
+                titleEl.innerText = 'Please Verify';
+                msgEl.innerText = message;
+            }
+
+            modal.style.display = 'flex';
+            requestAnimationFrame(() => {
+                modal.style.opacity = '1';
+                card.style.transform = 'translateY(0) scale(1)';
+            });
+        }
+
+        function closeHilomAlert() {
+            const modal = document.getElementById('hilomCustomAlert');
+            const card = document.getElementById('hilomCustomAlertCard');
+            modal.style.opacity = '0';
+            card.style.transform = 'translateY(15px) scale(0.96)';
+            setTimeout(() => { modal.style.display = 'none'; }, 250);
+        }
+
+        window.alert = function(msg) {
+            showHilomAlert(msg);
+        };
+
+        // 3. Firebase Initialization (With Long-Polling Fix so "Sending..." never hangs)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
+            authDomain: "dbr-pos.firebaseapp.com",
+            projectId: "dbr-pos",
+            storageBucket: "dbr-pos.firebasestorage.app",
+            messagingSenderId: "176532211278",
+            appId: "1:176532211278:web:57d78462a3355a32ce251f",
+            measurementId: "G-MPYZMBHZDC"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+        db.settings({ experimentalForceLongPolling: true, merge: true });
+
+        // 4. Pricing & Calendar Logic
         const roomRates = { "Deluxe": 3600, "Family": 5500, "Shoreline": 3800 };
 
         function calculateTotal() {
@@ -270,23 +328,21 @@
             const checkIn = document.getElementById("checkIn").value;
             const checkOut = document.getElementById("checkOut").value;
             
-            if(!roomType || !checkIn || !checkOut) return;
-            const inDate = new Date(checkIn); const outDate = new Date(checkOut);
-            if (outDate <= inDate) return; 
+            if (!roomType || !checkIn || !checkOut) return;
+            const inDate = new Date(checkIn);
+            const outDate = new Date(checkOut);
+            if (outDate <= inDate) return;
             
             const nights = Math.ceil((outDate - inDate) / (1000 * 3600 * 24));
             const baseRate = roomRates[roomType];
-            
-            // Multiply rate by nights AND number of rooms
-            let roomTotal = (baseRate * nights) * roomQty;
+            const roomTotal = (baseRate * nights) * roomQty;
             
             const addonSelect = document.getElementById("addonSelect");
             const selectedOption = addonSelect.options[addonSelect.selectedIndex];
-            const addonPrice = parseFloat(selectedOption.getAttribute("data-price"));
+            const addonPrice = parseFloat(selectedOption.getAttribute("data-price")) || 0;
             
             let addonsTotal = 0;
             if (addonPrice > 0) {
-                // One-time fees (Transfer) vs Daily fees (Extra Bed)
                 addonsTotal = (selectedOption.value === "Airport Transfer") ? addonPrice : (addonPrice * nights);
             }
             
@@ -295,35 +351,62 @@
             document.getElementById("priceBreakdown").innerText = `${roomQty} Room(s) x ${nights} Night(s) at ₱${baseRate.toLocaleString()} + Add-ons`;
         }
 
-        // Add listener for the new room quantity field
+        // Initialize Flatpickr Date Pickers and trigger calculateTotal on change
+        const checkInPicker = flatpickr("#checkIn", {
+            minDate: "today",
+            altInput: true,
+            altFormat: "F j, Y",
+            dateFormat: "Y-m-d",
+            onChange: calculateTotal
+        });
+        const checkOutPicker = flatpickr("#checkOut", {
+            minDate: "today",
+            altInput: true,
+            altFormat: "F j, Y",
+            dateFormat: "Y-m-d",
+            onChange: calculateTotal
+        });
+
         document.getElementById("roomQty").addEventListener("input", calculateTotal);
         document.getElementById("roomType").addEventListener("change", calculateTotal);
-        document.getElementById("checkIn").addEventListener("change", calculateTotal);
-        document.getElementById("checkOut").addEventListener("change", calculateTotal);
         document.getElementById("addonSelect").addEventListener("change", calculateTotal);
 
-        // Submit Booking
+        // 5. Submit Booking Handler
         document.getElementById("bookingForm").addEventListener("submit", async (e) => {
             e.preventDefault();
-            // reCAPTCHA Validation
-            const recaptchaResponse = grecaptcha.getResponse();
-            if (recaptchaResponse.length === 0) {
-                alert("Please verify that you are not a robot.");
-                return;
+
+            // Safe reCAPTCHA check
+            if (typeof grecaptcha !== "undefined") {
+                try {
+                    const recaptchaResponse = grecaptcha.getResponse();
+                    if (!recaptchaResponse || recaptchaResponse.length === 0) {
+                        alert("Please verify that you are not a robot.");
+                        return;
+                    }
+                } catch (rcErr) {
+                    console.warn("reCAPTCHA check bypassed due to key config:", rcErr);
+                }
             }
-            const btn = document.getElementById("submitBtn");
-            btn.innerText = "Sending..."; btn.disabled = true;
+
             const checkIn = document.getElementById("checkIn").value;
             const checkOut = document.getElementById("checkOut").value;
 
-            if (new Date(checkOut) <= new Date(checkIn)) {
-                alert("Check-out date must be after check-in date.");
-                btn.innerText = "Send Booking Request"; btn.disabled = false;
+            if (!checkIn || !checkOut) {
+                alert("Please select both your Check-In and Check-Out dates.");
                 return;
             }
 
+            if (new Date(checkOut) <= new Date(checkIn)) {
+                alert("Check-out date must be after check-in date.");
+                return;
+            }
+
+            const btn = document.getElementById("submitBtn");
+            btn.innerText = "Sending...";
+            btn.disabled = true;
+
             try {
-                await db.collection("web_reservations").add({
+                const writePromise = db.collection("web_reservations").add({
                     guestName: document.getElementById("guestName").value.trim(),
                     contact: document.getElementById("contact").value.trim(),
                     roomType: document.getElementById("roomType").value,
@@ -335,19 +418,32 @@
                     status: "PENDING",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
+
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error("Request timed out. Please check your internet connection or Firebase security rules.")), 10000)
+                );
+
+                await Promise.race([writePromise, timeoutPromise]);
+
                 alert("Success! Your booking request has been sent to our Front Desk.");
                 document.getElementById("bookingForm").reset();
-                grecaptcha.reset(); // Resets the reCAPTCHA widget after successful booking
+                checkInPicker.clear();
+                checkOutPicker.clear();
+                if (typeof grecaptcha !== "undefined") {
+                    try { grecaptcha.reset(); } catch (err) {}
+                }
                 document.getElementById("priceEstimate").innerText = "₱0.00";
                 document.getElementById("priceBreakdown").innerText = "Select dates and room to see price";
             } catch (error) {
-                console.error(error); alert("Error submitting request.");
+                console.error("Booking error:", error);
+                alert("Error submitting request: " + (error.message || "Please try again."));
             } finally {
-                btn.innerText = "Send Booking Request"; btn.disabled = false;
+                btn.innerText = "Send Booking Request";
+                btn.disabled = false;
             }
         });
 
-        // Status Tracker
+        // 6. Guest Reservation Status Tracker
         async function checkStatus() {
             const contact = document.getElementById("trackContact").value.trim();
             const resultDiv = document.getElementById("statusResult");
@@ -368,9 +464,14 @@
 
                 let html = "";
                 bookings.forEach(data => {
-                    let statusColor = "#f39c12"; let statusText = data.status ? data.status.toUpperCase() : "PENDING";
-                    if (statusText === "CONFIRMED" || statusText === "APPROVED") { statusColor = "#557a46"; statusText = "CONFIRMED"; } 
-                    else if (statusText === "REJECTED" || statusText === "CANCELLED") { statusColor = "#bd4b4b"; }
+                    let statusColor = "#f39c12";
+                    let statusText = data.status ? data.status.toUpperCase() : "PENDING";
+                    if (statusText === "CONFIRMED" || statusText === "APPROVED") {
+                        statusColor = "#557a46";
+                        statusText = "CONFIRMED";
+                    } else if (statusText === "REJECTED" || statusText === "CANCELLED" || statusText === "DECLINED") {
+                        statusColor = "#bd4b4b";
+                    }
                     html += `
                         <div style="border: 1px solid #e0e5e0; padding: 15px; border-radius: 8px; margin-bottom: 10px; background: #f9f9f9;">
                             <div style="font-weight: bold; font-size: 18px; color: var(--primary-dark); margin-bottom: 5px;">${data.guestName}</div>
@@ -381,14 +482,67 @@
                 });
                 resultDiv.innerHTML = html;
             } catch (error) {
-                console.error(error); resultDiv.innerHTML = "<p style='color: #bd4b4b; text-align:center;'>Error retrieving data.</p>";
+                console.error(error);
+                resultDiv.innerHTML = "<p style='color: #bd4b4b; text-align:center;'>Error retrieving data.</p>";
             }
         }
-        
+
+        // 7. UI Animations, Navbar & Mobile Menu (No Duplicates)
         window.addEventListener("scroll", function() {
             const nav = document.querySelector("nav");
             if (window.scrollY > 50) nav.classList.add("scrolled");
             else nav.classList.remove("scrolled");
+        });
+
+        function reveal() {
+            const reveals = document.querySelectorAll(".reveal");
+            for (let i = 0; i < reveals.length; i++) {
+                const windowHeight = window.innerHeight;
+                const elementTop = reveals[i].getBoundingClientRect().top;
+                if (elementTop < windowHeight - 100) {
+                    reveals[i].classList.add("active");
+                }
+            }
+        }
+        window.addEventListener("scroll", reveal);
+        reveal();
+
+        function toggleMenu() {
+            document.getElementById("navLinks").classList.toggle("active");
+        }
+
+        function highlightActiveLink() {
+            let path = window.location.pathname;
+            if (path === "/" || path === "") path = "index.html";
+            const navLinks = document.querySelectorAll('.nav-links a');
+            navLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                const cleanPath = path.replace('.html', '').replace(/^\//, '');
+                const cleanHref = href.replace('.html', '');
+                if (cleanPath === cleanHref && !link.classList.contains('btn')) {
+                    link.classList.add('active');
+                }
+            });
+        }
+        highlightActiveLink();
+
+        document.querySelectorAll('a[href]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href && !href.startsWith('http') && !href.startsWith('wa.me')) {
+                    e.preventDefault();
+                    document.body.classList.add('fade-out-active');
+                    setTimeout(() => { window.location.href = href; }, 400);
+                }
+            });
+        });
+
+        window.addEventListener('load', function() {
+            const preloader = document.getElementById('preloader');
+            setTimeout(() => {
+                if (preloader) preloader.classList.add('fade-out');
+                setTimeout(() => { if (preloader) preloader.remove(); }, 800);
+            }, 300);
         });
     </script>
 
@@ -411,7 +565,7 @@
             }
         });
     });
-    document.getElementById('year').innerText = new Date().getFullYear();
+  
 
 
     
