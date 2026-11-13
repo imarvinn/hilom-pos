@@ -111,6 +111,61 @@
         </div>
     </footer>
 
+    <!-- HILOM POS SYSTEM NOTIFICATION MODAL (GLOBAL ALERT OVERRIDE) -->
+    <div id="posCustomAlertModal" class="no-print" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(3px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
+        <div id="posCustomAlertCard" style="background: #ffffff; width: 100%; max-width: 400px; border-radius: 12px; border-top: 6px solid #557a46; box-shadow: 0 15px 35px rgba(0,0,0,0.3); padding: 26px 24px 22px; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+            <div id="posAlertIcon" style="width: 54px; height: 54px; border-radius: 50%; background: #e8f5e9; color: #2b4227; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 26px; font-weight: bold;">
+                ✓
+            </div>
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #8c5d3a; margin-bottom: 4px;">
+                HILOM POS & PMS
+            </div>
+            <h3 id="posAlertTitle" style="margin: 0 0 10px; font-size: 20px; color: #2b4227; border: none; padding: 0;">
+                System Notification
+            </h3>
+            <p id="posAlertMessage" style="margin: 0 0 20px; font-size: 14px; color: #444; line-height: 1.55; white-space: pre-line;"></p>
+            <button onclick="document.getElementById('posCustomAlertModal').style.display='none'" style="width: 100%; background: #2b4227; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer;">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <script>
+        window.alert = function(message) {
+            const modal = document.getElementById('posCustomAlertModal');
+            const card = document.getElementById('posCustomAlertCard');
+            const icon = document.getElementById('posAlertIcon');
+            const title = document.getElementById('posAlertTitle');
+            const msg = document.getElementById('posAlertMessage');
+
+            const cleanMsg = String(message).replace(/^[✅❌🔒]\s*/, '');
+            const lower = cleanMsg.toLowerCase();
+
+            if (lower.includes('success') || lower.includes('approved') || lower.includes('cancelled successfully')) {
+                card.style.borderTopColor = '#557a46';
+                icon.style.background = '#e8f5e9';
+                icon.style.color = '#2b4227';
+                icon.innerText = '✓';
+                title.innerText = 'Action Confirmed';
+            } else if (lower.includes('error') || lower.includes('denied') || lower.includes('failed') || lower.includes('insufficient')) {
+                card.style.borderTopColor = '#bd4b4b';
+                icon.style.background = '#ffebee';
+                icon.style.color = '#bd4b4b';
+                icon.innerText = '✕';
+                title.innerText = 'Action Required';
+            } else {
+                card.style.borderTopColor = '#d4a373';
+                icon.style.background = '#fff3cd';
+                icon.style.color = '#8c5d3a';
+                icon.innerText = '!';
+                title.innerText = 'System Notice';
+            }
+
+            msg.innerText = cleanMsg;
+            modal.style.display = 'flex';
+        };
+    </script>
+
     <script>
 
         // Initialize Lightbox on Images

@@ -103,9 +103,11 @@
                 </div>
 
                <!-- Google reCAPTCHA Widget -->
-<div class="g-recaptcha" data-sitekey="6LcPfPktAAAAALtZuLt0M5H1hg2uj8TAwuVQI0Bd"></div>
-                <div style="background: #eef2eb; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--primary); text-align: right;">
+                <div style="display: flex; justify-content: center; margin: 15px 0;">
+                    <div class="g-recaptcha" data-sitekey="6LcPfPktAAAAALtZuLt0M5H1hg2uj8TAwuVQI0Bd"></div>
+                </div>
 
+                <!-- Estimated Total Box (Fixed duplicate unclosed div) -->
                 <div style="background: #eef2eb; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--primary); text-align: right;">
                     <span style="font-size: 14px; color: #555;">Estimated Total:</span>
                     <div id="priceEstimate" style="font-size: 28px; font-weight: bold; color: var(--primary-dark);">₱0.00</div>
@@ -161,6 +163,84 @@
             <p>&copy; <span id="year"></span> Hilom by Dondeezco. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- HILOM LUXURY NOTIFICATION MODAL -->
+    <div id="hilomCustomAlert" style="display: none; position: fixed; inset: 0; background: rgba(20, 32, 18, 0.72); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity 0.25s ease;">
+        <div id="hilomCustomAlertCard" style="background: #ffffff; width: 100%; max-width: 420px; border-radius: 14px; border-top: 6px solid #557a46; box-shadow: 0 20px 50px rgba(0,0,0,0.35); padding: 32px 28px 26px; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; transform: translateY(15px) scale(0.96); transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div id="hilomAlertIconWrap" style="width: 64px; height: 64px; border-radius: 50%; background: #e8f5e9; color: #2b4227; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 30px; font-weight: bold; border: 2px solid #c8dac8;">
+                ✓
+            </div>
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #8c5d3a; margin-bottom: 4px;">
+                Hilom Resort by Dondeezco
+            </div>
+            <h3 id="hilomAlertTitle" style="margin: 0 0 10px; font-size: 22px; color: #2b4227; font-weight: 700;">
+                Reservation Sent
+            </h3>
+            <p id="hilomAlertMessage" style="margin: 0 0 22px; font-size: 14.5px; color: #555; line-height: 1.6; white-space: pre-line;"></p>
+            <button onclick="closeHilomAlert()" style="width: 100%; background: #2b4227; color: #ffffff; border: none; padding: 13px 20px; border-radius: 8px; font-size: 15px; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#557a46'" onmouseout="this.style.background='#2b4227'">
+                Continue
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function showHilomAlert(message) {
+            const modal = document.getElementById('hilomCustomAlert');
+            const card = document.getElementById('hilomCustomAlertCard');
+            const iconWrap = document.getElementById('hilomAlertIconWrap');
+            const titleEl = document.getElementById('hilomAlertTitle');
+            const msgEl = document.getElementById('hilomAlertMessage');
+
+            const lower = String(message).toLowerCase();
+            const isSuccess = lower.includes('success');
+            const isError = lower.includes('error') || lower.includes('denied') || lower.includes('failed');
+
+            if (isSuccess) {
+                card.style.borderTopColor = '#557a46';
+                iconWrap.style.background = '#e8f5e9';
+                iconWrap.style.color = '#2b4227';
+                iconWrap.style.borderColor = '#c8dac8';
+                iconWrap.innerHTML = '✓';
+                titleEl.innerText = 'Reservation Request Sent';
+                msgEl.innerText = 'Thank you for choosing Hilom Resort! Your booking request has been received by our Front Desk. Our team will contact you shortly to confirm your stay.';
+            } else if (isError) {
+                card.style.borderTopColor = '#bd4b4b';
+                iconWrap.style.background = '#ffebee';
+                iconWrap.style.color = '#bd4b4b';
+                iconWrap.style.borderColor = '#f5c6cb';
+                iconWrap.innerHTML = '!';
+                titleEl.innerText = 'Submission Notice';
+                msgEl.innerText = message;
+            } else {
+                card.style.borderTopColor = '#d4a373';
+                iconWrap.style.background = '#fff3cd';
+                iconWrap.style.color = '#8c5d3a';
+                iconWrap.style.borderColor = '#ffeeba';
+                iconWrap.innerHTML = 'i';
+                titleEl.innerText = 'Please Verify';
+                msgEl.innerText = message;
+            }
+
+            modal.style.display = 'flex';
+            requestAnimationFrame(() => {
+                modal.style.opacity = '1';
+                card.style.transform = 'translateY(0) scale(1)';
+            });
+        }
+
+        function closeHilomAlert() {
+            const modal = document.getElementById('hilomCustomAlert');
+            const card = document.getElementById('hilomCustomAlertCard');
+            modal.style.opacity = '0';
+            card.style.transform = 'translateY(15px) scale(0.96)';
+            setTimeout(() => { modal.style.display = 'none'; }, 250);
+        }
+
+        // Automatically replace all native browser alert() popups on this page
+        window.alert = function(msg) {
+            showHilomAlert(msg);
+        };
+    </script>
 
     <script>
         document.getElementById('year').innerText = new Date().getFullYear();
