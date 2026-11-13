@@ -425,6 +425,18 @@
 
                 await Promise.race([writePromise, timeoutPromise]);
 
+                // 1. Reset form & date pickers safely without conflicting with Flatpickr
+                document.getElementById("bookingForm").reset();
+                if (checkInPicker && checkInPicker.altInput) checkInPicker.altInput.value = "";
+                if (checkOutPicker && checkOutPicker.altInput) checkOutPicker.altInput.value = "";
+
+                if (typeof grecaptcha !== "undefined") {
+                    try { grecaptcha.reset(); } catch (err) {}
+                }
+                document.getElementById("priceEstimate").innerText = "₱0.00";
+                document.getElementById("priceBreakdown").innerText = "Select dates and room to see price";
+
+                // 2. Show the luxury success modal last so nothing interrupts it
                 alert("Success! Your booking request has been sent to our Front Desk.");
                 document.getElementById("bookingForm").reset();
                 checkInPicker.clear();
@@ -545,9 +557,6 @@
             }, 300);
         });
     </script>
-
-
-
 
     <script>
 
