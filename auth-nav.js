@@ -132,7 +132,6 @@ function closePinModal() {
 // Keep a backup alias just in case any cached HTML still calls submitClassicPin()
 window.submitClassicPin = verifyPin;
 
-function closePinModal() { document.getElementById('pinModal').classList.add('hidden'); }
 
 function lockAdmin() {
     isAdminUnlocked = false;

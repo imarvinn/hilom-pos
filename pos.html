@@ -2222,9 +2222,9 @@ function loadAuditLogs() {
     </div>
 </div>
 
-<!-- HILOM POS SYSTEM NOTIFICATION MODAL (GLOBAL ALERT OVERRIDE) -->
+<!-- HILOM POS SYSTEM MODAL SUITE (ALERT, CONFIRM & PROMPT) -->
     <div id="posCustomAlertModal" class="no-print" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(3px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
-        <div id="posCustomAlertCard" style="background: #ffffff; width: 100%; max-width: 400px; border-radius: 12px; border-top: 6px solid #557a46; box-shadow: 0 15px 35px rgba(0,0,0,0.3); padding: 26px 24px 22px; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+        <div id="posCustomAlertCard" style="background: #ffffff; width: 100%; max-width: 410px; border-radius: 12px; border-top: 6px solid #557a46; box-shadow: 0 15px 35px rgba(0,0,0,0.3); padding: 26px 24px 22px; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
             <div id="posAlertIcon" style="width: 54px; height: 54px; border-radius: 50%; background: #e8f5e9; color: #2b4227; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 26px; font-weight: bold;">
                 ✓
             </div>
@@ -2234,20 +2234,41 @@ function loadAuditLogs() {
             <h3 id="posAlertTitle" style="margin: 0 0 10px; font-size: 20px; color: #2b4227; border: none; padding: 0;">
                 System Notification
             </h3>
-            <p id="posAlertMessage" style="margin: 0 0 20px; font-size: 14px; color: #444; line-height: 1.55; white-space: pre-line;"></p>
-            <button onclick="document.getElementById('posCustomAlertModal').style.display='none'" style="width: 100%; background: #2b4227; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer;">
-                OK
-            </button>
+            <p id="posAlertMessage" style="margin: 0 0 18px; font-size: 14px; color: #444; line-height: 1.55; white-space: pre-line;"></p>
+
+            <!-- Optional Input Box for hilomPrompt() -->
+            <div id="posPromptInputWrap" style="display: none; margin-bottom: 18px;">
+                <input type="text" id="posPromptInput" style="width: 100%; padding: 11px 12px; border: 1.5px solid #c8dac8; border-radius: 6px; font-size: 15px; box-sizing: border-box; text-align: center; margin: 0;">
+            </div>
+
+            <!-- Action Buttons -->
+            <div id="posAlertBtnRow" style="display: flex; gap: 10px; width: 100%;">
+                <button id="posAlertCancelBtn" style="display: none; flex: 1; background: #e0e5e0; color: #333; border: none; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer;">
+                    Cancel
+                </button>
+                <button id="posAlertOkBtn" style="flex: 1; background: #2b4227; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer;">
+                    OK
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
+        // 1. Global Alert Override (Synchronous display)
         window.alert = function(message) {
             const modal = document.getElementById('posCustomAlertModal');
             const card = document.getElementById('posCustomAlertCard');
             const icon = document.getElementById('posAlertIcon');
             const title = document.getElementById('posAlertTitle');
             const msg = document.getElementById('posAlertMessage');
+            const inputWrap = document.getElementById('posPromptInputWrap');
+            const cancelBtn = document.getElementById('posAlertCancelBtn');
+            const okBtn = document.getElementById('posAlertOkBtn');
+
+            inputWrap.style.display = 'none';
+            cancelBtn.style.display = 'none';
+            okBtn.innerText = 'OK';
+            okBtn.style.background = '#2b4227';
 
             const cleanMsg = String(message).replace(/^[✅❌🔒]\s*/, '');
             const lower = cleanMsg.toLowerCase();
@@ -2273,10 +2294,113 @@ function loadAuditLogs() {
             }
 
             msg.innerText = cleanMsg;
+            okBtn.onclick = () => { modal.style.display = 'none'; };
             modal.style.display = 'flex';
         };
-    </script>
 
+        // 2. Async Confirm Modal (Replaces confirm(...))
+        window.hilomConfirm = function(message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('posCustomAlertModal');
+                const card = document.getElementById('posCustomAlertCard');
+                const icon = document.getElementById('posAlertIcon');
+                const title = document.getElementById('posAlertTitle');
+                const msg = document.getElementById('posAlertMessage');
+                const inputWrap = document.getElementById('posPromptInputWrap');
+                const cancelBtn = document.getElementById('posAlertCancelBtn');
+                const okBtn = document.getElementById('posAlertOkBtn');
+
+                inputWrap.style.display = 'none';
+                cancelBtn.style.display = 'block';
+
+                const cleanMsg = String(message).replace(/^[✅❌🔒]\s*/, '');
+                const lower = cleanMsg.toLowerCase();
+                const isDestructive = lower.includes('delete') || lower.includes('decline') || lower.includes('remove') || lower.includes('cancel');
+
+                if (isDestructive) {
+                    card.style.borderTopColor = '#bd4b4b';
+                    icon.style.background = '#ffebee';
+                    icon.style.color = '#bd4b4b';
+                    icon.innerText = '!';
+                    title.innerText = 'Confirm Action';
+                    okBtn.style.background = '#bd4b4b';
+                    okBtn.innerText = 'Yes, Proceed';
+                } else {
+                    card.style.borderTopColor = '#557a46';
+                    icon.style.background = '#e8f5e9';
+                    icon.style.color = '#2b4227';
+                    icon.innerText = '?';
+                    title.innerText = 'Please Confirm';
+                    okBtn.style.background = '#557a46';
+                    okBtn.innerText = 'Confirm';
+                }
+
+                msg.innerText = cleanMsg;
+
+                okBtn.onclick = () => {
+                    modal.style.display = 'none';
+                    resolve(true);
+                };
+                cancelBtn.onclick = () => {
+                    modal.style.display = 'none';
+                    resolve(false);
+                };
+
+                modal.style.display = 'flex';
+            });
+        };
+
+        // 3. Async Prompt Modal (Replaces prompt(...))
+        window.hilomPrompt = function(message, defaultValue = "") {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('posCustomAlertModal');
+                const card = document.getElementById('posCustomAlertCard');
+                const icon = document.getElementById('posAlertIcon');
+                const title = document.getElementById('posAlertTitle');
+                const msg = document.getElementById('posAlertMessage');
+                const inputWrap = document.getElementById('posPromptInputWrap');
+                const inputEl = document.getElementById('posPromptInput');
+                const cancelBtn = document.getElementById('posAlertCancelBtn');
+                const okBtn = document.getElementById('posAlertOkBtn');
+
+                const cleanMsg = String(message).replace(/^[✅❌🔒]\s*/, '');
+                const isPin = cleanMsg.toLowerCase().includes('pin');
+
+                card.style.borderTopColor = isPin ? '#8c5d3a' : '#4a6fa5';
+                icon.style.background = isPin ? '#fff3cd' : '#e8f5e9';
+                icon.style.color = isPin ? '#8c5d3a' : '#2b4227';
+                icon.innerText = isPin ? '🔒' : '✎';
+                title.innerText = isPin ? 'Security Authorization' : 'Input Required';
+                msg.innerText = cleanMsg;
+
+                inputWrap.style.display = 'block';
+                inputEl.type = isPin ? 'password' : 'text';
+                inputEl.value = defaultValue || '';
+                inputEl.placeholder = isPin ? 'Enter 4-digit PIN' : '';
+
+                cancelBtn.style.display = 'block';
+                okBtn.style.background = '#557a46';
+                okBtn.innerText = 'Submit';
+
+                const submitVal = () => {
+                    modal.style.display = 'none';
+                    resolve(inputEl.value);
+                };
+
+                okBtn.onclick = submitVal;
+                cancelBtn.onclick = () => {
+                    modal.style.display = 'none';
+                    resolve(null);
+                };
+                inputEl.onkeydown = (e) => {
+                    if (e.key === 'Enter') submitVal();
+                };
+
+                modal.style.display = 'flex';
+                setTimeout(() => inputEl.focus(), 50);
+            });
+        };
+    </script>
 
 </body>
 </html>

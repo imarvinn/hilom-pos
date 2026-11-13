@@ -594,12 +594,14 @@ function addNewRoom() {
     });
 }
 
-function deleteRoom(roomId) {
-    if (confirm(`Are you sure you want to delete Room ${roomId}?`)) db.collection("rooms").doc(roomId).delete();
+async function deleteRoom(roomId) {
+    if (await hilomConfirm(`Are you sure you want to delete Room ${roomId}?`)) {
+        db.collection("rooms").doc(roomId).delete();
+    }
 }
 
-function editRoomRate(roomId, currentRate) {
-    const newRateStr = prompt(`Enter new daily rate for Room ${roomId}:`, currentRate);
+async function editRoomRate(roomId, currentRate) {
+    const newRateStr = await hilomPrompt(`Enter new daily rate for Room ${roomId}:`, currentRate);
     if (!newRateStr) return; 
     
     const newRate = parseFloat(newRateStr);
@@ -736,7 +738,7 @@ function listenForWebReservations() {
 }
 
 async function approveWebReservation(resId, guestName, roomType, nights, checkInStr, checkOutStr) {
-    const roomId = prompt(`Assign ${guestName} (requested ${roomType}) to which Room ID? (e.g., Room 1)`);
+    const roomId = await hilomPrompt(`Assign ${guestName} (requested ${roomType}) to which Room ID? (e.g., 101)`);
     if (!roomId) return;
     
     const roomCheck = await db.collection("rooms").doc(roomId).get();
@@ -744,11 +746,12 @@ async function approveWebReservation(resId, guestName, roomType, nights, checkIn
         return alert(`Error: "${roomId}" does not exist in your database. Please check your spelling and try again.`);
     }
     
-    const rateStr = prompt(`Enter daily rate for ${roomId}:`, "1500");
+    const defaultRate = roomCheck.data().dailyRate || "3600";
+    const rateStr = await hilomPrompt(`Enter daily rate for Room ${roomId}:`, defaultRate);
     if (!rateStr) return;
     const rate = parseFloat(rateStr);
 
-    const inclusions = prompt(`Enter inclusions (e.g., Free Breakfast) or leave blank:`, "None");
+    const inclusions = await hilomPrompt(`Enter inclusions (e.g., Free Breakfast) or leave blank:`, "None");
 
     let checkInDate = new Date(checkInStr);
     checkInDate.setHours(14, 0, 0, 0); 
@@ -787,13 +790,13 @@ async function approveWebReservation(resId, guestName, roomType, nights, checkIn
 
     try { 
         await batch.commit(); 
-        showToast(`Online booking for ${guestName} confirmed in ${roomId}!`); 
+        showToast(`Online booking for ${guestName} confirmed in Room ${roomId}!`); 
     } 
     catch(e) { console.error(e); showToast("Error approving reservation."); }
 }
 
 async function rejectWebReservation(resId) {
-    if(!confirm("Are you sure you want to decline and delete this online reservation request?")) return;
+    if (!(await hilomConfirm("Are you sure you want to decline and delete this online reservation request?"))) return;
     try {
         await db.collection("web_reservations").doc(resId).update({ status: "DECLINED" });
         showToast("Reservation declined.");
@@ -825,16 +828,16 @@ function switchSalesTab(tabName) {
     }
 }
 
-function setRoomMaintenance(roomId) {
-    if(confirm(`Mark Room ${roomId} as under maintenance? It will not be available for check-in.`)) {
+async function setRoomMaintenance(roomId) {
+    if (await hilomConfirm(`Mark Room ${roomId} as under maintenance? It will not be available for check-in.`)) {
         db.collection("rooms").doc(roomId).update({ status: "MAINTENANCE" })
           .then(() => showToast(`Room ${roomId} is now under maintenance.`))
           .catch((e) => console.error(e));
     }
 }
 
-function finishRoomMaintenance(roomId) {
-    if(confirm(`Is Room ${roomId} ready for guests?`)) {
+async function finishRoomMaintenance(roomId) {
+    if (await hilomConfirm(`Is Room ${roomId} ready for guests?`)) {
         db.collection("rooms").doc(roomId).update({ status: "AVAILABLE" })
           .then(() => showToast(`Room ${roomId} is now Available.`))
           .catch((e) => console.error(e));
@@ -908,7 +911,7 @@ function closeBookingDetailsModal() {
 }
 
 async function confirmCancelBooking(resId) {
-    const pin = prompt("🔒 SECURITY CHECK: Enter a Manager or Master PIN to cancel this reservation:");
+    const pin = await hilomPrompt("Enter a Manager or Master PIN to cancel this reservation:");
     if (!pin) return;
 
     try {
@@ -918,12 +921,12 @@ async function confirmCancelBooking(resId) {
             .get();
         
         if (staffQuery.empty) {
-            return alert("❌ ACCESS DENIED: Invalid PIN or you do not have Manager/Master privileges. (Check your PIN in the Time Clock > Staff Information Sheet)");
+            return alert("ACCESS DENIED: Invalid PIN or you do not have Manager/Master privileges.");
         }
         
         const managerName = staffQuery.docs[0].data().name;
 
-        if (!confirm(`Authorized as ${managerName}.\n\nAre you absolutely sure you want to cancel this booking? The room will immediately become available for these dates.`)) {
+        if (!(await hilomConfirm(`Authorized as ${managerName}.\n\nAre you sure you want to cancel this booking? The room will immediately become available for these dates.`))) {
             return;
         }
 
@@ -933,7 +936,7 @@ async function confirmCancelBooking(resId) {
             cancelledBy: managerName
         });
 
-        alert("✅ Booking cancelled successfully.");
+        alert("Booking cancelled successfully.");
         closeBookingDetailsModal();
         
         if (typeof loadBookingCalendar === "function") {

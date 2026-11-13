@@ -25,7 +25,7 @@ function showDigitalReceipt(sourceAreaId) {
         }, 400);
     }
 }
-processPayment
+
 // --- DUAL-PRINTER ROUTING ENGINE (FRONT DESK vs. KITCHEN) ---
 const FRONT_DESK_PRINTER_NAME = "FrontDesk_Printer";
 const KITCHEN_PRINTER_NAME    = "Kitchen_Printer";
@@ -428,8 +428,12 @@ function selectTableForOrder(tableName) { document.getElementById("tableNoInput"
 
 // --- VOID TABLES ---
 async function voidActiveTable(tableId) {
-    if (!confirm("Void this entire table? Ingredients will be restored to inventory.")) return;
+    const confirmed = window.hilomConfirm
+        ? await hilomConfirm("Void this entire table? Ingredients will be restored to inventory.")
+        : confirm("Void this entire table? Ingredients will be restored to inventory.");
+    if (!confirmed) return;
     const tableData = activeTablesData[tableId];
+    if (!tableData) return;
     
     let restoreTotals = {};
     for (let [itemName, itemData] of Object.entries(tableData.items)) {
@@ -449,20 +453,19 @@ async function voidActiveTable(tableId) {
             batch.update(doc.ref, { quantity: firebase.firestore.FieldValue.increment(restoreTotals[name]) });
         }
     });
-    // --- NEW: WRITE TO IMMUTABLE AUDIT LOG ---
+
     const auditRef = db.collection("audit_logs").doc();
     batch.set(auditRef, {
         action: "VOID_ORDER",
         tableNo: tableData.tableNo,
         amount: tableData.subtotal,
-        authorizedBy: "Manager PIN", // Or pass the specific manager's name if available
+        authorizedBy: "Manager PIN",
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         details: `Voided ${Object.keys(tableData.items).length} items. Inventory restored.`
     });
 
     batch.delete(db.collection("active_tables").doc(tableId));
 
-    // NEW: Release the Room if voiding a Room Folio
     if (tableData.isRoomFolio && tableData.roomId) {
         batch.update(db.collection("rooms").doc(tableData.roomId), {
             status: "AVAILABLE", activeTableId: null, currentGuestName: null
@@ -894,8 +897,12 @@ const name = sanitizeHTML(document.getElementById("newMenuName").value.trim()), 
     if(editingMenuId) db.collection("menu").doc(editingMenuId).update(payload).then(resetMenuForm); else { payload.timestamp = firebase.firestore.FieldValue.serverTimestamp(); db.collection("menu").add(payload).then(resetMenuForm); }
     showToast("Menu Item Saved");
 }
-function deleteMenu(id) { if(confirm("Delete menu item?")) db.collection("menu").doc(id).delete(); }
-
+async function deleteMenu(id) {
+    const confirmed = window.hilomConfirm
+        ? await hilomConfirm("Are you sure you want to delete this menu item?")
+        : confirm("Delete menu item?");
+    if (confirmed) db.collection("menu").doc(id).delete();
+}
 // ==========================================
 // --- SPLIT BILL LOGIC (SENIOR/PWD SAFE) ---
 // ==========================================
@@ -1078,9 +1085,12 @@ function addCategory() {
     });
 }
 
-function deleteCategory(catName) {
-    if(menuCategories.length <= 1) return showToast("You must have at least one category.");
-    if(!confirm(`Are you sure you want to delete the '${catName}' category?`)) return;
+async function deleteCategory(catName) {
+    if (menuCategories.length <= 1) return showToast("You must have at least one category.");
+    const confirmed = window.hilomConfirm
+        ? await hilomConfirm(`Are you sure you want to delete the '${catName}' category?`)
+        : confirm(`Are you sure you want to delete the '${catName}' category?`);
+    if (!confirmed) return;
     
     let updatedList = menuCategories.filter(c => c !== catName);
     db.collection("settings").doc("categories").update({ list: updatedList }).then(() => {
@@ -1282,7 +1292,10 @@ function toggleServeStatus(tableId, currentStatus) {
 
 // Function to completely remove/clear a finished order from the database queue
 async function clearKitchenOrder(tableId) {
-    if (!confirm("Clear this order from the kitchen queue?")) return;
+    const confirmed = window.hilomConfirm
+        ? await hilomConfirm("Clear this order from the kitchen queue?")
+        : confirm("Clear this order from the kitchen queue?");
+    if (!confirmed) return;
     try {
         await db.collection("active_tables").doc(tableId).delete();
         showToast("Order cleared from queue.");
@@ -1296,14 +1309,16 @@ async function clearKitchenOrder(tableId) {
 async function chargeToRoomFolio() {
     if (Object.keys(cart).length === 0) return showToast("Cart is empty!");
     
-    const roomId = prompt("Enter the Room Number to charge this order to (e.g., 101):");
+    const roomId = window.hilomPrompt
+        ? await hilomPrompt("Enter the Room Number to charge this order to (e.g., 101):")
+        : prompt("Enter the Room Number to charge this order to (e.g., 101):");
     if (!roomId) return;
 
     try {
         // 1. Verify Room exists and is occupied
-        const roomDoc = await db.collection("rooms").doc(roomId).get();
+        const roomDoc = await db.collection("rooms").doc(roomId.trim()).get();
         if (!roomDoc.exists || roomDoc.data().status !== "OCCUPIED" || !roomDoc.data().currentFolioId) {
-            return showToast(`Room ${roomId} is not currently occupied.`);
+            return alert(`Room ${roomId} is not currently occupied.`);
         }
 
         // 2. Validate and deduct inventory for the food ordered

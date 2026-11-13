@@ -471,3 +471,4 @@ function printAssetReport() {
     printWin.focus();
     setTimeout(() => { printWin.print(); printWin.close(); }, 350);
 }
+
