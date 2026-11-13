@@ -12,7 +12,6 @@
     <!-- Open Graph / Social Media Preview Tags -->
     <meta property="og:title" content="Hilom Resort by Dondeezco">
     <meta property="og:description" content="Experience relaxation, comfort, and exceptional coastal views in Siquijor. Book your luxury getaway today.">
-    <!-- Using your Shoreline room image as the preview thumbnail -->
     <meta property="og:image" content="https://hilomresort.vercel.app/757863595_122180789318854145_5234982306311465279_n.jpg">
     <meta property="og:url" content="https://hilomresort.vercel.app/">
     <meta name="twitter:card" content="summary_large_image">
@@ -25,29 +24,29 @@
 <body>
 
     <!-- CINEMATIC PRELOADER -->
-<div id="preloader" class="preloader">
-    <img src="text-1790998905612.png" alt="Hilom" class="preloader-logo">
-</div>
+    <div id="preloader" class="preloader">
+        <img src="text-1790998905612.png" alt="Hilom" class="preloader-logo">
+    </div>
 
     <nav>
-    <div class="brand-container">
-        <img src="text-1790998905612.png" alt="Hilom" class="new-text-logo">
-        <span class="sub-text">by Dondeezco</span>
-    </div>
-    
-    <!-- New Hamburger Button for Mobile -->
-    <button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
+        <div class="brand-container">
+            <img src="text-1790998905612.png" alt="Hilom" class="new-text-logo">
+            <span class="sub-text">by Dondeezco</span>
+        </div>
+        
+        <!-- Hamburger Button for Mobile -->
+        <button class="mobile-menu-btn" onclick="toggleMenu()">☰</button>
 
-    <!-- Wrapped Links -->
-    <div class="nav-links" id="navLinks">
-        <a href="index.html">Home</a>
-        <a href="experience.html">Experience</a>
-        <a href="rooms.html">Our Rooms</a>
-        <a href="booking.html">Book & Status</a>
-        <a href="contact.html">Contact</a>
-        <a href="booking.html" class="btn">Book Now</a>
-    </div>
-</nav>
+        <!-- Wrapped Links -->
+        <div class="nav-links" id="navLinks">
+            <a href="index.html">Home</a>
+            <a href="experience.html">Experience</a>
+            <a href="rooms.html">Our Rooms</a>
+            <a href="booking.html">Book & Status</a>
+            <a href="contact.html">Contact</a>
+            <a href="booking.html" class="btn">Book Now</a>
+        </div>
+    </nav>
 
     <section class="booking-section">
         <div class="booking-container reveal">
@@ -102,12 +101,12 @@
                     </select>
                 </div>
 
-               <!-- Google reCAPTCHA Widget -->
+                <!-- Google reCAPTCHA Widget -->
                 <div style="display: flex; justify-content: center; margin: 15px 0;">
                     <div class="g-recaptcha" data-sitekey="6LcPfPktAAAAALtZuLt0M5H1hg2uj8TAwuVQI0Bd"></div>
                 </div>
 
-                <!-- Estimated Total Box (Fixed duplicate unclosed div) -->
+                <!-- Estimated Total Box -->
                 <div style="background: #eef2eb; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--primary); text-align: right;">
                     <span style="font-size: 14px; color: #555;">Estimated Total:</span>
                     <div id="priceEstimate" style="font-size: 28px; font-weight: bold; color: var(--primary-dark);">₱0.00</div>
@@ -133,13 +132,11 @@
 
     <footer class="executive-footer">
         <div class="footer-container">
-            <!-- Column 1: Brand & Tagline -->
             <div class="footer-brand">
                 <img src="hilom.png" alt="Hilom Logo" class="footer-logo">
                 <p>Experience relaxation, comfort, and exceptional coastal views in Siquijor.</p>
             </div>
             
-            <!-- Column 2: Quick Links -->
             <div class="footer-links">
                 <h4>Explore</h4>
                 <a href="index.html">Home</a>
@@ -148,7 +145,6 @@
                 <a href="booking.html">Book & Status</a>
             </div>
 
-            <!-- Column 3: Contact Info -->
             <div class="footer-contact">
                 <h4>Connect</h4>
                 <p>hilomresort@gmail.com</p>
@@ -183,67 +179,9 @@
         </div>
     </div>
 
+    <!-- SINGLE UNIFIED SCRIPT BLOCK (NO DUPLICATES) -->
     <script>
-        function showHilomAlert(message) {
-            const modal = document.getElementById('hilomCustomAlert');
-            const card = document.getElementById('hilomCustomAlertCard');
-            const iconWrap = document.getElementById('hilomAlertIconWrap');
-            const titleEl = document.getElementById('hilomAlertTitle');
-            const msgEl = document.getElementById('hilomAlertMessage');
-
-            const lower = String(message).toLowerCase();
-            const isSuccess = lower.includes('success');
-            const isError = lower.includes('error') || lower.includes('denied') || lower.includes('failed');
-
-            if (isSuccess) {
-                card.style.borderTopColor = '#557a46';
-                iconWrap.style.background = '#e8f5e9';
-                iconWrap.style.color = '#2b4227';
-                iconWrap.style.borderColor = '#c8dac8';
-                iconWrap.innerHTML = '✓';
-                titleEl.innerText = 'Reservation Request Sent';
-                msgEl.innerText = 'Thank you for choosing Hilom Resort! Your booking request has been received by our Front Desk. Our team will contact you shortly to confirm your stay.';
-            } else if (isError) {
-                card.style.borderTopColor = '#bd4b4b';
-                iconWrap.style.background = '#ffebee';
-                iconWrap.style.color = '#bd4b4b';
-                iconWrap.style.borderColor = '#f5c6cb';
-                iconWrap.innerHTML = '!';
-                titleEl.innerText = 'Submission Notice';
-                msgEl.innerText = message;
-            } else {
-                card.style.borderTopColor = '#d4a373';
-                iconWrap.style.background = '#fff3cd';
-                iconWrap.style.color = '#8c5d3a';
-                iconWrap.style.borderColor = '#ffeeba';
-                iconWrap.innerHTML = 'i';
-                titleEl.innerText = 'Please Verify';
-                msgEl.innerText = message;
-            }
-
-            modal.style.display = 'flex';
-            requestAnimationFrame(() => {
-                modal.style.opacity = '1';
-                card.style.transform = 'translateY(0) scale(1)';
-            });
-        }
-
-        function closeHilomAlert() {
-            const modal = document.getElementById('hilomCustomAlert');
-            const card = document.getElementById('hilomCustomAlertCard');
-            modal.style.opacity = '0';
-            card.style.transform = 'translateY(15px) scale(0.96)';
-            setTimeout(() => { modal.style.display = 'none'; }, 250);
-        }
-
-        // Automatically replace all native browser alert() popups on this page
-        window.alert = function(msg) {
-            showHilomAlert(msg);
-        };
-    </script>
-
-    <script>
-        // 1. Set Footer Year (Once)
+        // 1. Set Footer Year
         document.getElementById('year').innerText = new Date().getFullYear();
 
         // 2. Custom Hilom Luxury Alert Modal Functions
@@ -303,7 +241,7 @@
             showHilomAlert(msg);
         };
 
-        // 3. Firebase Initialization (With Long-Polling Fix so "Sending..." never hangs)
+        // 3. Firebase Initialization (With Long-Polling Fix)
         const firebaseConfig = {
             apiKey: "AIzaSyAfu260e9bNPHMBPcEtVzEJ2G2hcScNl5A",
             authDomain: "dbr-pos.firebaseapp.com",
@@ -319,7 +257,7 @@
         const db = firebase.firestore();
         db.settings({ experimentalForceLongPolling: true, merge: true });
 
-        // 4. Pricing & Calendar Logic
+        // 4. Pricing & Calendar Logic (Initialized ONCE)
         const roomRates = { "Deluxe": 3600, "Family": 5500, "Shoreline": 3800 };
 
         function calculateTotal() {
@@ -351,7 +289,6 @@
             document.getElementById("priceBreakdown").innerText = `${roomQty} Room(s) x ${nights} Night(s) at ₱${baseRate.toLocaleString()} + Add-ons`;
         }
 
-        // Initialize Flatpickr Date Pickers and trigger calculateTotal on change
         const checkInPicker = flatpickr("#checkIn", {
             minDate: "today",
             altInput: true,
@@ -375,7 +312,6 @@
         document.getElementById("bookingForm").addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            // Safe reCAPTCHA check
             if (typeof grecaptcha !== "undefined") {
                 try {
                     const recaptchaResponse = grecaptcha.getResponse();
@@ -425,8 +361,14 @@
 
                 await Promise.race([writePromise, timeoutPromise]);
 
-                // 1. Reset form & date pickers safely without conflicting with Flatpickr
-                document.getElementById("bookingForm").reset();
+                // Reset form inputs safely without triggering Flatpickr's internal reset bug
+                document.getElementById("guestName").value = "";
+                document.getElementById("contact").value = "";
+                document.getElementById("roomType").selectedIndex = 0;
+                document.getElementById("roomQty").value = "1";
+                document.getElementById("addonSelect").selectedIndex = 0;
+                document.getElementById("checkIn").value = "";
+                document.getElementById("checkOut").value = "";
                 if (checkInPicker && checkInPicker.altInput) checkInPicker.altInput.value = "";
                 if (checkOutPicker && checkOutPicker.altInput) checkOutPicker.altInput.value = "";
 
@@ -436,16 +378,7 @@
                 document.getElementById("priceEstimate").innerText = "₱0.00";
                 document.getElementById("priceBreakdown").innerText = "Select dates and room to see price";
 
-                // 2. Show the luxury success modal last so nothing interrupts it
                 alert("Success! Your booking request has been sent to our Front Desk.");
-                document.getElementById("bookingForm").reset();
-                checkInPicker.clear();
-                checkOutPicker.clear();
-                if (typeof grecaptcha !== "undefined") {
-                    try { grecaptcha.reset(); } catch (err) {}
-                }
-                document.getElementById("priceEstimate").innerText = "₱0.00";
-                document.getElementById("priceBreakdown").innerText = "Select dates and room to see price";
             } catch (error) {
                 console.error("Booking error:", error);
                 alert("Error submitting request: " + (error.message || "Please try again."));
@@ -499,7 +432,7 @@
             }
         }
 
-        // 7. UI Animations, Navbar & Mobile Menu (No Duplicates)
+        // 7. UI Animations, Navbar & Mobile Menu
         window.addEventListener("scroll", function() {
             const nav = document.querySelector("nav");
             if (window.scrollY > 50) nav.classList.add("scrolled");
@@ -558,115 +491,9 @@
         });
     </script>
 
-    <script>
-
-        // Smooth Page Transitions
-    document.querySelectorAll('a[href]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            let href = this.getAttribute('href');
-            // Only apply to internal pages, skip external links or the WhatsApp widget
-            if(href && !href.startsWith('http') && !href.startsWith('wa.me')) {
-                e.preventDefault();
-                document.body.classList.add('fade-out-active');
-                setTimeout(() => {
-                    window.location.href = href;
-                }, 400); // Waits for the fade animation to finish
-            }
-        });
-    });
-  
-
-
-    
-    // Initialize Luxury Calendar Picker
-        flatpickr("#checkIn", {
-            minDate: "today",
-            altInput: true,
-            altFormat: "F j, Y",
-            dateFormat: "Y-m-d",
-        });
-        flatpickr("#checkOut", {
-            minDate: "today",
-            altInput: true,
-            altFormat: "F j, Y",
-            dateFormat: "Y-m-d",
-        });
-    
-    // Transparent to Glass Navbar
-    window.addEventListener("scroll", function() {
-        const nav = document.querySelector("nav");
-        if (window.scrollY > 50) nav.classList.add("scrolled");
-        else nav.classList.remove("scrolled");
-    });
-
-    
-
-    // Cinematic Scroll Reveal Animation
-    function reveal() {
-        var reveals = document.querySelectorAll(".reveal");
-        for (var i = 0; i < reveals.length; i++) {
-            var windowHeight = window.innerHeight;
-            var elementTop = reveals[i].getBoundingClientRect().top;
-            var elementVisible = 100; // Trigger point
-            if (elementTop < windowHeight - elementVisible) {
-                reveals[i].classList.add("active");
-            }
-        }
-    }
-    window.addEventListener("scroll", reveal);
-    reveal(); // Trigger once on load
-
-    // Toggle Mobile Hamburger Menu
-    function toggleMenu() {
-        document.getElementById("navLinks").classList.toggle("active");
-    }
-
-    // Highlight Active Menu Item Automatically (Vercel Clean URL Fix)
-    function highlightActiveLink() {
-        let path = window.location.pathname;
-        
-        // If it's the root domain, default to index
-        if (path === "/" || path === "") {
-            path = "index.html";
-        }
-        
-        const navLinks = document.querySelectorAll('.nav-links a');
-        navLinks.forEach(link => {
-            let href = link.getAttribute('href');
-            
-            // Strip .html and leading slashes from both to compare them reliably
-            let cleanPath = path.replace('.html', '').replace(/^\//, ''); 
-            let cleanHref = href.replace('.html', '');
-            
-            // Add the active class, but ignore the "Book Now" button
-            if (cleanPath === cleanHref && !link.classList.contains('btn')) {
-                link.classList.add('active');
-            }
-        });
-    }
-    highlightActiveLink();
-    
-
-    // Cinematic Preloader (Wait for page load)
-    window.addEventListener('load', function() {
-        const preloader = document.getElementById('preloader');
-        
-        // A tiny 300ms theatrical delay to ensure the video has started playing
-        setTimeout(() => {
-            preloader.classList.add('fade-out');
-            
-            // Remove the preloader from the code entirely after the fade finishes
-            setTimeout(() => {
-                if(preloader) preloader.remove();
-            }, 800);
-        }, 300);
-    });
-</script>
-
-<!-- FLOATING CONCIERGE WIDGET -->
+    <!-- FLOATING CONCIERGE WIDGET -->
     <a href="https://wa.me/639284027378" class="floating-concierge" target="_blank" rel="noopener noreferrer">
         <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
-            <!-- WhatsApp SVG Icon -->
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.487-1.761-1.663-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
         </svg>
     </a>
