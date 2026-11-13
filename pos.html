@@ -2237,8 +2237,10 @@ function loadAuditLogs() {
             <p id="posAlertMessage" style="margin: 0 0 18px; font-size: 14px; color: #444; line-height: 1.55; white-space: pre-line;"></p>
 
             <!-- Optional Input Box for hilomPrompt() -->
+            <!-- Optional Input or Select Dropdown for hilomPrompt() -->
             <div id="posPromptInputWrap" style="display: none; margin-bottom: 18px;">
                 <input type="text" id="posPromptInput" style="width: 100%; padding: 11px 12px; border: 1.5px solid #c8dac8; border-radius: 6px; font-size: 15px; box-sizing: border-box; text-align: center; margin: 0;">
+                <select id="posPromptSelect" style="display: none; width: 100%; padding: 11px 12px; border: 1.5px solid #557a46; border-radius: 6px; font-size: 15px; font-weight: 600; color: #2b4227; background: #f4f6f4; box-sizing: border-box; margin: 0; cursor: pointer;"></select>
             </div>
 
             <!-- Action Buttons -->
@@ -2351,7 +2353,8 @@ function loadAuditLogs() {
         };
 
         // 3. Async Prompt Modal (Replaces prompt(...))
-        window.hilomPrompt = function(message, defaultValue = "") {
+        // 3. Async Prompt Modal (Supports Text Input OR Dropdown Options Array)
+        window.hilomPrompt = function(message, defaultValue = "", options = null) {
             return new Promise((resolve) => {
                 const modal = document.getElementById('posCustomAlertModal');
                 const card = document.getElementById('posCustomAlertCard');
@@ -2360,23 +2363,39 @@ function loadAuditLogs() {
                 const msg = document.getElementById('posAlertMessage');
                 const inputWrap = document.getElementById('posPromptInputWrap');
                 const inputEl = document.getElementById('posPromptInput');
+                const selectEl = document.getElementById('posPromptSelect');
                 const cancelBtn = document.getElementById('posAlertCancelBtn');
                 const okBtn = document.getElementById('posAlertOkBtn');
 
                 const cleanMsg = String(message).replace(/^[✅❌🔒]\s*/, '');
                 const isPin = cleanMsg.toLowerCase().includes('pin');
+                const isDropdown = Array.isArray(options) && options.length > 0;
 
-                card.style.borderTopColor = isPin ? '#8c5d3a' : '#4a6fa5';
+                card.style.borderTopColor = isPin ? '#8c5d3a' : (isDropdown ? '#557a46' : '#4a6fa5');
                 icon.style.background = isPin ? '#fff3cd' : '#e8f5e9';
                 icon.style.color = isPin ? '#8c5d3a' : '#2b4227';
-                icon.innerText = isPin ? '🔒' : '✎';
-                title.innerText = isPin ? 'Security Authorization' : 'Input Required';
+                icon.innerText = isPin ? '🔒' : (isDropdown ? '🛏️' : '✎');
+                title.innerText = isPin ? 'Security Authorization' : (isDropdown ? 'Select Room' : 'Input Required');
                 msg.innerText = cleanMsg;
 
                 inputWrap.style.display = 'block';
-                inputEl.type = isPin ? 'password' : 'text';
-                inputEl.value = defaultValue || '';
-                inputEl.placeholder = isPin ? 'Enter 4-digit PIN' : '';
+
+                if (isDropdown && selectEl) {
+                    inputEl.style.display = 'none';
+                    selectEl.style.display = 'block';
+                    selectEl.innerHTML = options.map(opt => {
+                        const val = typeof opt === 'object' ? opt.value : opt;
+                        const label = typeof opt === 'object' ? opt.label : opt;
+                        const selected = String(val) === String(defaultValue) ? 'selected' : '';
+                        return `<option value="${val}" ${selected}>${label}</option>`;
+                    }).join('');
+                } else {
+                    if (selectEl) selectEl.style.display = 'none';
+                    inputEl.style.display = 'block';
+                    inputEl.type = isPin ? 'password' : 'text';
+                    inputEl.value = defaultValue || '';
+                    inputEl.placeholder = isPin ? 'Enter 4-digit PIN' : '';
+                }
 
                 cancelBtn.style.display = 'block';
                 okBtn.style.background = '#557a46';
@@ -2384,7 +2403,7 @@ function loadAuditLogs() {
 
                 const submitVal = () => {
                     modal.style.display = 'none';
-                    resolve(inputEl.value);
+                    resolve(isDropdown && selectEl ? selectEl.value : inputEl.value);
                 };
 
                 okBtn.onclick = submitVal;
@@ -2397,7 +2416,10 @@ function loadAuditLogs() {
                 };
 
                 modal.style.display = 'flex';
-                setTimeout(() => inputEl.focus(), 50);
+                setTimeout(() => {
+                    if (isDropdown && selectEl) selectEl.focus();
+                    else inputEl.focus();
+                }, 50);
             });
         };
     </script>

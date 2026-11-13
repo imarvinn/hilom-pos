@@ -738,61 +738,98 @@ function listenForWebReservations() {
 }
 
 async function approveWebReservation(resId, guestName, roomType, nights, checkInStr, checkOutStr) {
-    const roomId = await hilomPrompt(`Assign ${guestName} (requested ${roomType}) to which Room ID? (e.g., 101)`);
-    if (!roomId) return;
-    
-    const roomCheck = await db.collection("rooms").doc(roomId).get();
-    if (!roomCheck.exists) {
-        return alert(`Error: "${roomId}" does not exist in your database. Please check your spelling and try again.`);
-    }
-    
-    const defaultRate = roomCheck.data().dailyRate || "3600";
-    const rateStr = await hilomPrompt(`Enter daily rate for Room ${roomId}:`, defaultRate);
-    if (!rateStr) return;
-    const rate = parseFloat(rateStr);
+    try {
+        // 1. Fetch all currently AVAILABLE (vacant) rooms
+        const availSnap = await db.collection("rooms").where("status", "==", "AVAILABLE").get();
+        if (availSnap.empty) {
+            return alert(`No vacant (AVAILABLE) rooms right now. Please check out or finish maintenance on a room first.`);
+        }
 
-    const inclusions = await hilomPrompt(`Enter inclusions (e.g., Free Breakfast) or leave blank:`, "None");
+        const vacantRooms = [];
+        availSnap.forEach(doc => {
+            vacantRooms.push({ id: doc.id, ...doc.data() });
+        });
 
-    let checkInDate = new Date(checkInStr);
-    checkInDate.setHours(14, 0, 0, 0); 
-    let expectedCheckOut = new Date(checkOutStr);
-    expectedCheckOut.setHours(12, 0, 0, 0); 
+        // Sort so rooms matching the guest's requested roomType appear first, then by room number
+        const reqLower = String(roomType || "").toLowerCase();
+        vacantRooms.sort((a, b) => {
+            const aMatch = String(a.roomType || "").toLowerCase().includes(reqLower) ? 0 : 1;
+            const bMatch = String(b.roomType || "").toLowerCase().includes(reqLower) ? 0 : 1;
+            if (aMatch !== bMatch) return aMatch - bMatch;
+            return String(a.roomNumber || a.id).localeCompare(String(b.roomNumber || b.id), undefined, { numeric: true });
+        });
 
-    const batch = db.batch();
-    const folioRef = db.collection("folios").doc();
+        // Build dropdown options
+        const roomOptions = vacantRooms.map(r => {
+            const isMatch = String(r.roomType || "").toLowerCase().includes(reqLower);
+            const matchTag = isMatch ? "★ Match" : "";
+            return {
+                value: r.id,
+                label: `Room ${r.roomNumber || r.id} — ${r.roomType} (₱${(r.dailyRate || 0).toFixed(2)}/night) ${matchTag}`.trim()
+            };
+        });
 
-    batch.set(folioRef, {
-        roomId: roomId,
-        roomType: roomType, 
-        guestName: guestName,
-        checkInTime: checkInDate.toISOString(),
-        expectedCheckOut: expectedCheckOut.toISOString(), 
-        dailyRate: rate,
-        nights: nights,
-        inclusions: inclusions || "None", 
-        roomChargesTotal: rate * nights,
-        posChargesTotal: 0,
-        posOrders: [],
-        grandTotal: rate * nights,
-        status: "OPEN" 
-    });
+        // 2. Show Dropdown Modal of Vacant Rooms
+        const roomId = await hilomPrompt(
+            `Select a vacant room for ${guestName} (Requested: ${roomType}):`,
+            roomOptions[0].value,
+            roomOptions
+        );
+        if (!roomId) return;
 
-    batch.update(db.collection("rooms").doc(roomId), {
-        status: "OCCUPIED",
-        currentGuestName: guestName,
-        currentFolioId: folioRef.id
-    });
+        const selectedRoom = vacantRooms.find(r => r.id === roomId);
+        const defaultRate = selectedRoom && selectedRoom.dailyRate ? selectedRoom.dailyRate : "3600";
 
-    batch.update(db.collection("web_reservations").doc(resId), {
-        status: "CONFIRMED",
-        assignedRoom: roomId
-    });
+        // 3. Confirm or adjust daily rate
+        const rateStr = await hilomPrompt(`Confirm daily rate (₱) for Room ${roomId}:`, defaultRate);
+        if (!rateStr) return;
+        const rate = parseFloat(rateStr) || 0;
 
-    try { 
+        // 4. Confirm inclusions (pre-filled with whatever add-ons the guest selected online, if any)
+        const inclusions = await hilomPrompt(`Enter inclusions (e.g., Free Breakfast) or leave as None:`, "None");
+        if (inclusions === null) return;
+
+        let checkInDate = new Date(checkInStr);
+        checkInDate.setHours(14, 0, 0, 0); 
+        let expectedCheckOut = new Date(checkOutStr);
+        expectedCheckOut.setHours(12, 0, 0, 0); 
+
+        const batch = db.batch();
+        const folioRef = db.collection("folios").doc();
+
+        batch.set(folioRef, {
+            roomId: roomId,
+            roomType: selectedRoom ? selectedRoom.roomType : roomType, 
+            guestName: guestName,
+            checkInTime: checkInDate.toISOString(),
+            expectedCheckOut: expectedCheckOut.toISOString(), 
+            dailyRate: rate,
+            nights: nights,
+            inclusions: inclusions || "None", 
+            roomChargesTotal: rate * nights,
+            posChargesTotal: 0,
+            posOrders: [],
+            grandTotal: rate * nights,
+            status: "OPEN" 
+        });
+
+        batch.update(db.collection("rooms").doc(roomId), {
+            status: "OCCUPIED",
+            currentGuestName: guestName,
+            currentFolioId: folioRef.id
+        });
+
+        batch.update(db.collection("web_reservations").doc(resId), {
+            status: "CONFIRMED",
+            assignedRoom: roomId
+        });
+
         await batch.commit(); 
         showToast(`Online booking for ${guestName} confirmed in Room ${roomId}!`); 
-    } 
-    catch(e) { console.error(e); showToast("Error approving reservation."); }
+    } catch (e) {
+        console.error(e);
+        showToast("Error approving reservation.");
+    }
 }
 
 async function rejectWebReservation(resId) {

@@ -1308,10 +1308,25 @@ async function clearKitchenOrder(tableId) {
 // --- CHARGE POS CART DIRECTLY TO A GUEST'S ROOM FOLIO ---
 async function chargeToRoomFolio() {
     if (Object.keys(cart).length === 0) return showToast("Cart is empty!");
-    
+
+    // Fetch all OCCUPIED rooms so the waiter/cashier can pick from a dropdown
+    const occSnap = await db.collection("rooms").where("status", "==", "OCCUPIED").get();
+    if (occSnap.empty) {
+        return alert("There are currently no occupied rooms checked in.");
+    }
+
+    const occupiedRooms = [];
+    occSnap.forEach(doc => occupiedRooms.push({ id: doc.id, ...doc.data() }));
+    occupiedRooms.sort((a, b) => String(a.roomNumber || a.id).localeCompare(String(b.roomNumber || b.id), undefined, { numeric: true }));
+
+    const roomOptions = occupiedRooms.map(r => ({
+        value: r.id,
+        label: `Room ${r.roomNumber || r.id} — ${r.currentGuestName || "Guest"} (${r.roomType || ""})`
+    }));
+
     const roomId = window.hilomPrompt
-        ? await hilomPrompt("Enter the Room Number to charge this order to (e.g., 101):")
-        : prompt("Enter the Room Number to charge this order to (e.g., 101):");
+        ? await hilomPrompt("Select Occupied Room to charge this order to:", roomOptions[0].value, roomOptions)
+        : prompt("Enter the Room Number to charge this order to:");
     if (!roomId) return;
 
     try {
