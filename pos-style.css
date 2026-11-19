@@ -640,3 +640,26 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
         color: #555;
     }
 }
+
+/* 1. Force .hidden to ALWAYS override mobile @media display rules */
+.hidden {
+    display: none !important;
+}
+
+/* 2. Lock the Login Screen to full viewport so nothing peeks underneath on mobile */
+#loginScreen,
+#loginContainer,
+.login-container {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    min-height: 100dvh;
+    width: 100%;
+    background: #f4f6f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
