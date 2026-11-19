@@ -1,3 +1,13 @@
+// Safe HTML escaper for public booking & guest fields
+function escapeRoomHTML(val) {
+    return String(val ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 // ==========================================
 // --- FRONT DESK ROOM RACK & FOLIO LOGIC ---
 // ==========================================
@@ -242,7 +252,7 @@ async function confirmWalkInCheckIn() {
 // --- PRINT A PRICE ESTIMATE (NO DATABASE SAVE) ---
 function printWalkInQuote() {
     // 1. Gather inputs
-    const guestName = document.getElementById("walkInName").value.trim() || "Valued Guest";
+    const guestName = escapeRoomHTML(document.getElementById("walkInName").value.trim() || "Valued Guest");
     const nights = parseInt(document.getElementById("walkInNights").value) || 1;
     const extraBeds = parseInt(document.getElementById("walkInExtraBeds").value) || 0;
 
@@ -257,8 +267,8 @@ function printWalkInQuote() {
 
     checkboxes.forEach(cb => {
         const rate = parseFloat(cb.getAttribute("data-rate"));
-        const type = cb.getAttribute("data-type");
-        const roomId = cb.value;
+        const type = escapeRoomHTML(cb.getAttribute("data-type"));
+        const roomId = escapeRoomHTML(cb.value);
         const roomSubtotal = rate * nights;
         totalRoomRate += rate;
 
@@ -707,31 +717,47 @@ function listenForWebReservations() {
             const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
             const nights = Math.ceil(timeDiff / (1000 * 3600 * 24)) || 1;
 
+            const safeGuest = escapeRoomHTML(data.guestName || "Guest");
+            const safeContact = escapeRoomHTML(data.contact || "N/A");
+            const safeRoomType = escapeRoomHTML(data.roomType || "Standard");
+            const safeIn = escapeRoomHTML(data.checkInDate || "");
+            const safeOut = escapeRoomHTML(data.checkOutDate || "");
+            const safeAddons = escapeRoomHTML(data.addons || "None");
+            const safeTotal = escapeRoomHTML(data.estimatedTotal || "N/A");
+
             const card = document.createElement("div");
             card.style.cssText = "background: white; padding: 12px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 250px;";
             card.innerHTML = `
-                <div style="font-weight: bold; font-size: 15px;">${data.guestName || "Guest"}</div>
-                <div style="font-size: 12px; color: #555; margin-bottom: 5px;">📞 ${data.contact || "N/A"}</div>
-                <div style="color: #557a46; font-weight: bold; font-size: 13px;">${data.roomType || "Standard"} Room</div>
+                <div style="font-weight: bold; font-size: 15px;">${safeGuest}</div>
+                <div style="font-size: 12px; color: #555; margin-bottom: 5px;">📞 ${safeContact}</div>
+                <div style="color: #557a46; font-weight: bold; font-size: 13px;">${safeRoomType} Room</div>
                 
                 <div style="font-size: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc;">
-                    <strong>In:</strong> ${data.checkInDate} <br>
-                    <strong>Out:</strong> ${data.checkOutDate} (${nights} nights)
+                    <strong>In:</strong> ${safeIn} <br>
+                    <strong>Out:</strong> ${safeOut} (${nights} nights)
                 </div>
                 
                 <div style="font-size: 12px; margin-top: 8px; background: #fff3cd; padding: 5px; border-radius: 4px;">
-                    <strong>Extras:</strong> ${data.addons || 'None'}<br>
-                    <strong>Est. Total:</strong> <span style="color: #bd4b4b; font-weight: bold;">${data.estimatedTotal || 'N/A'}</span>
+                    <strong>Extras:</strong> ${safeAddons}<br>
+                    <strong>Est. Total:</strong> <span style="color: #bd4b4b; font-weight: bold;">${safeTotal}</span>
                 </div>
 
                 <div style="display: flex; gap: 5px; margin-top: 10px;">
-                    <button onclick="approveWebReservation('${data.id}', '${data.guestName}', '${data.roomType}', ${nights}, '${data.checkInDate}', '${data.checkOutDate}')" style="background: #557a46; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Assign Room</button>
-                    <button onclick="rejectWebReservation('${data.id}')" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">X</button>
+                    <button class="btn-assign-web" style="background: #557a46; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Assign Room</button>
+                    <button class="btn-reject-web" style="background: #bd4b4b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">X</button>
                 </div>
             `;
+
+            card.querySelector(".btn-assign-web").addEventListener("click", () => {
+                approveWebReservation(data.id, data.guestName || "Guest", data.roomType || "Standard", nights, data.checkInDate, data.checkOutDate);
+            });
+            card.querySelector(".btn-reject-web").addEventListener("click", () => {
+                rejectWebReservation(data.id);
+            });
+
             list.appendChild(card);
         });
-   }, (error) => {
+    }, (error) => {
         if (error.code === "permission-denied") return;
         console.error("Listener error:", error);
     });
@@ -742,7 +768,7 @@ async function approveWebReservation(resId, guestName, roomType, nights, checkIn
         // 1. Fetch all currently AVAILABLE (vacant) rooms
         const availSnap = await db.collection("rooms").where("status", "==", "AVAILABLE").get();
         if (availSnap.empty) {
-            return alert(`No vacant (AVAILABLE) rooms right now. Please check out or finish maintenance on a room first.`);
+            return alert("No vacant (AVAILABLE) rooms right now. Please check out or finish maintenance on a room first.");
         }
 
         const vacantRooms = [];
@@ -759,7 +785,6 @@ async function approveWebReservation(resId, guestName, roomType, nights, checkIn
             return String(a.roomNumber || a.id).localeCompare(String(b.roomNumber || b.id), undefined, { numeric: true });
         });
 
-        // Build dropdown options
         const roomOptions = vacantRooms.map(r => {
             const isMatch = String(r.roomType || "").toLowerCase().includes(reqLower);
             const matchTag = isMatch ? "★ Match" : "";
@@ -785,8 +810,8 @@ async function approveWebReservation(resId, guestName, roomType, nights, checkIn
         if (!rateStr) return;
         const rate = parseFloat(rateStr) || 0;
 
-        // 4. Confirm inclusions (pre-filled with whatever add-ons the guest selected online, if any)
-        const inclusions = await hilomPrompt(`Enter inclusions (e.g., Free Breakfast) or leave as None:`, "None");
+        // 4. Confirm inclusions
+        const inclusions = await hilomPrompt("Enter inclusions (e.g., Free Breakfast) or leave as None:", "None");
         if (inclusions === null) return;
 
         let checkInDate = new Date(checkInStr);
@@ -887,7 +912,16 @@ function openBookingDetails(resId) {
     const res = window.currentCalendarReservations.find(r => r.id === resId);
     if (!res) return;
 
-    const refDisplay = res.bookingRef ? res.bookingRef : res.reference ? res.reference : "N/A";
+    const refDisplay = escapeRoomHTML(res.bookingRef ? res.bookingRef : res.reference ? res.reference : "N/A");
+    const safeGuest = escapeRoomHTML(res.guestName || "Guest");
+    const safeContact = escapeRoomHTML(res.contact || "N/A");
+    const safeIn = escapeRoomHTML(res.checkIn || "");
+    const safeOut = escapeRoomHTML(res.checkOut || "");
+    const safeRoomType = escapeRoomHTML(res.roomType || "Standard Room");
+    const safeRoomQty = escapeRoomHTML(res.roomQty || "1");
+    const safeAddons = escapeRoomHTML(res.addons || "No Extras");
+    const safeTotal = escapeRoomHTML(res.estimatedTotal || "TBD");
+    const safeStatus = escapeRoomHTML(res.status || "");
 
     const content = `
         <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; border: 1px dashed #557a46; margin-bottom: 15px; text-align: center;">
@@ -896,9 +930,9 @@ function openBookingDetails(resId) {
         </div>
         
         <div style="margin-bottom: 20px;">
-            <strong>Guest Name:</strong> ${res.guestName}<br>
-            <strong>Contact No:</strong> ${res.contact || 'N/A'}<br>
-            <strong>Dates:</strong> ${res.checkIn} to ${res.checkOut}
+            <strong>Guest Name:</strong> ${safeGuest}<br>
+            <strong>Contact No:</strong> ${safeContact}<br>
+            <strong>Dates:</strong> ${safeIn} to ${safeOut}
         </div>
 
         <table style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px;">
@@ -913,15 +947,15 @@ function openBookingDetails(resId) {
             <tbody>
                 <tr style="border-bottom: 1px dashed #ccc;">
                     <td style="padding: 10px 0;">
-                        <strong>${res.roomType || 'Standard Room'}</strong><br>
+                        <strong>${safeRoomType}</strong><br>
                         <span style="font-size: 12px; color: #666;">Night(s) Stay</span>
                     </td>
-                    <td style="padding: 10px 0; text-align: center;">${res.roomQty || '1'} Room(s)</td>
+                    <td style="padding: 10px 0; text-align: center;">${safeRoomQty} Room(s)</td>
                     <td style="padding: 10px 0; text-align: right;">--</td>
                     <td style="padding: 10px 0; text-align: right;">--</td>
                 </tr>
                 <tr style="border-bottom: 1px dashed #ccc;">
-                    <td style="padding: 10px 0;"><strong>${res.addons || 'No Extras'}</strong></td>
+                    <td style="padding: 10px 0;"><strong>${safeAddons}</strong></td>
                     <td style="padding: 10px 0; text-align: center;">--</td>
                     <td style="padding: 10px 0; text-align: right;">--</td>
                     <td style="padding: 10px 0; text-align: right;">--</td>
@@ -930,12 +964,12 @@ function openBookingDetails(resId) {
             <tfoot>
                 <tr style="font-size: 18px; font-weight: bold;">
                     <td colspan="3" style="padding: 15px 0; text-align: right; color: #2b4227;">GRAND TOTAL:</td>
-                    <td style="padding: 15px 0; text-align: right; color: #bd4b4b;">${res.estimatedTotal || 'TBD'}</td>
+                    <td style="padding: 15px 0; text-align: right; color: #bd4b4b;">${safeTotal}</td>
                 </tr>
             </tfoot>
         </table>
         
-        <p style="margin: 15px 0 5px 0; text-align: center;"><strong>Status:</strong> <span style="background: #e8f5e9; color: #557a46; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${res.status}</span></p>
+        <p style="margin: 15px 0 5px 0; text-align: center;"><strong>Status:</strong> <span style="background: #e8f5e9; color: #557a46; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">${safeStatus}</span></p>
     `;
     
     document.getElementById("bookingDetailsContent").innerHTML = content;
@@ -1117,4 +1151,3 @@ async function confirmFolioCheckout() {
         alert("Checkout failed. Check your connection.");
     }
 }
-

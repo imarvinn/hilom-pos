@@ -891,10 +891,23 @@ function resetMenuForm() {
     document.getElementById("ingredientInputs").innerHTML = `<div class="ingredient-row"><input type="text" class="ing-name" placeholder="Ingredient Needed" style="flex: 1;"><input type="number" class="ing-qty" placeholder="Qty" style="width: 80px;"></div>`;
 }
 function saveMenuItem() {
-const name = sanitizeHTML(document.getElementById("newMenuName").value.trim()), price = parseFloat(document.getElementById("menuPrice").value) || 0, category = document.getElementById("menuCategory").value;    let recipe = []; document.querySelectorAll(".ingredient-row").forEach(row => { const n = row.querySelector(".ing-name").value.trim(), q = row.querySelector(".ing-qty").value; if(n && q) recipe.push({name: n, deduct: parseInt(q)}); });
-    if(!name) return showToast("Menu Name is required.");
-    const payload = {name, price, category, recipe};
-    if(editingMenuId) db.collection("menu").doc(editingMenuId).update(payload).then(resetMenuForm); else { payload.timestamp = firebase.firestore.FieldValue.serverTimestamp(); db.collection("menu").add(payload).then(resetMenuForm); }
+    const name = sanitizeHTML(document.getElementById("newMenuName").value.trim());
+    const price = parseFloat(document.getElementById("menuPrice").value) || 0;
+    const category = document.getElementById("menuCategory").value;
+    let recipe = [];
+    document.querySelectorAll(".ingredient-row").forEach(row => {
+        const n = sanitizeHTML(row.querySelector(".ing-name").value.trim());
+        const q = row.querySelector(".ing-qty").value;
+        if (n && q) recipe.push({ name: n, deduct: parseInt(q) });
+    });
+    if (!name) return showToast("Menu Name is required.");
+    const payload = { name, price, category, recipe };
+    if (editingMenuId) {
+        db.collection("menu").doc(editingMenuId).update(payload).then(resetMenuForm);
+    } else {
+        payload.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+        db.collection("menu").add(payload).then(resetMenuForm);
+    }
     showToast("Menu Item Saved");
 }
 async function deleteMenu(id) {
@@ -1117,115 +1130,7 @@ function requestAdminPin() {
 
 // --- SECURE THE TABLE VOID BUTTON ---
 async function secureVoidActiveTableModal() { 
-    if(activeBillingTableId) { 
-        const isAuthorized = await requestAdminPin();
-        if (!isAuthorized) return showToast("Void cancelled.");
-        
-        voidActiveTable(activeBillingTableId).then(() => { 
-            closeBillingModal(); 
-        }); 
-    } 
-}
-
-async function verifyPin() {
-    const pinInput = document.getElementById("adminPin");
-    const enteredPin = pinInput ? pinInput.value.trim() : "";
-    
-    if (!enteredPin) return showToast("Please enter a PIN.");
-
-    let isAuthorized = false;
-
-    // 1. Check against the system's Master ADMIN_PIN (from auth-nav.js)
-    if (typeof ADMIN_PIN !== "undefined" && String(enteredPin) === String(ADMIN_PIN)) {
-        isAuthorized = true;
-    }
-
-    // 2. Also check Firebase 'staff' collection for Manager / Master / IT PINs
-    if (!isAuthorized) {
-        try {
-            const staffQuery = await db.collection("staff").where("pinCode", "==", enteredPin).get();
-            if (!staffQuery.empty) {
-                const hasManagerRole = staffQuery.docs.some(doc => {
-                    const role = doc.data().role;
-                    return role === "Manager" || role === "Master" || role === "IT";
-                });
-                if (hasManagerRole) isAuthorized = true;
-            }
-        } catch (err) {
-            console.error("Error checking staff PIN:", err);
-        }
-    }
-
-    // 3. Fallback: Check 'settings/security' or 'config/system' if ADMIN_PIN wasn't loaded
-    if (!isAuthorized) {
-        try {
-            const secDoc = await db.collection("settings").doc("security").get();
-            if (secDoc.exists && String(secDoc.data().adminPin || secDoc.data().pin) === String(enteredPin)) {
-                isAuthorized = true;
-            }
-        } catch (e) {}
-    }
-
-    if (isAuthorized) {
-        document.getElementById("pinModal").classList.add("hidden");
-        if (pinInput) pinInput.value = "";
-
-        // CASE A: If waiting on a Void / Action authorization (pos-billing.js or reports.js)
-        if (typeof pinResolvePromise === "function" && pinResolvePromise !== null) {
-            const resolve = pinResolvePromise;
-            pinResolvePromise = null;
-            resolve(true);
-            return;
-        }
-
-        // CASE B: Unlocking Sidebar Tabs (Inventory, Menu Builder, Sales & Reports)
-        if (typeof isAdminUnlocked !== "undefined") isAdminUnlocked = true;
-        window.isAdminUnlocked = true;
-
-        const lockBtn = document.getElementById("lockBtn");
-        const changePinBtn = document.getElementById("changePinBtn");
-        if (lockBtn) lockBtn.classList.remove("hidden");
-        if (changePinBtn) changePinBtn.classList.remove("hidden");
-
-        // Switch to the tab the user originally clicked
-        if (typeof pendingView !== "undefined" && pendingView) {
-            const targetView = pendingView;
-            const targetBtn = typeof pendingBtn !== "undefined" ? pendingBtn : null;
-            pendingView = null;
-            if (typeof pendingBtn !== "undefined") pendingBtn = null;
-            switchView(targetView, targetBtn);
-        } else if (typeof executeSwitchView === "function" && typeof targetViewId !== "undefined") {
-            executeSwitchView(targetViewId, targetNavBtn);
-        }
-
-        showToast("Admin Unlocked");
-    } else {
-        showToast("Incorrect PIN.");
-        if (pinInput) {
-            pinInput.value = "";
-            pinInput.focus();
-        }
-    }
-}
-
-function closePinModal() {
-    document.getElementById("pinModal").classList.add("hidden");
-    const pinInput = document.getElementById("adminPin");
-    if (pinInput) pinInput.value = "";
-    
-    if (typeof pendingView !== "undefined") pendingView = null;
-    if (typeof pendingBtn !== "undefined") pendingBtn = null;
-
-    if (pinResolvePromise) {
-        const resolve = pinResolvePromise;
-        pinResolvePromise = null;
-        resolve(false);
-    }
-}
-
-// --- SECURE THE TABLE VOID BUTTON ---
-async function secureVoidActiveTableModal() { 
-    if(activeBillingTableId) { 
+    if (activeBillingTableId) { 
         const isAuthorized = await requestAdminPin();
         if (!isAuthorized) return showToast("Void cancelled.");
         

@@ -172,7 +172,8 @@ function renderExpensePage(page) {
     list.innerHTML = ""; 
     pageItems.forEach((exp) => {
         let time = "Just now"; if (exp.timestamp) time = exp.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        list.innerHTML += `<tr><td>${time}</td><td>${exp.name}</td><td>₱${exp.amount.toFixed(2)}</td><td class="no-print"><button class="delete-btn" onclick="deleteExpense('${exp.id}')">✕</button></td></tr>`;
+        const safeExpName = String(exp.name || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        list.innerHTML += `<tr><td>${time}</td><td>${safeExpName}</td><td>₱${exp.amount.toFixed(2)}</td><td class="no-print"><button class="delete-btn" onclick="deleteExpense('${exp.id}')">✕</button></td></tr>`;
     });
 }
 
@@ -264,10 +265,19 @@ function calculateNetProfit() {
 }
 
 function addExpense() {
-    const name = document.getElementById("expName").value.trim(); const amt = parseFloat(document.getElementById("expAmount").value);
-    if(name && amt) {
-        db.collection("expenses").add({ name: name, amount: amt, archived: false, timestamp: new Date() }).then(() => {
-            document.getElementById("expName").value = ""; document.getElementById("expAmount").value = ""; showToast("Expense logged.");
+    const rawName = document.getElementById("expName").value.trim();
+    const name = typeof sanitizeHTML === "function" ? sanitizeHTML(rawName) : rawName.replace(/[<>]/g, "");
+    const amt = parseFloat(document.getElementById("expAmount").value);
+    if (name && !isNaN(amt) && amt > 0) {
+        db.collection("expenses").add({
+            name: name,
+            amount: amt,
+            archived: false,
+            timestamp: new Date()
+        }).then(() => {
+            document.getElementById("expName").value = "";
+            document.getElementById("expAmount").value = "";
+            showToast("Expense logged.");
         });
     }
 }
@@ -277,6 +287,7 @@ async function deleteExpense(id) {
         db.collection("expenses").doc(id).delete();
     }
 }
+
 // BIR AUDIT-SAFE VOID LOGIC (NOW PIN PROTECTED)
 async function voidSale(saleId) {
     // 1. Trigger the visual PIN pad and wait for authorization
@@ -410,7 +421,7 @@ async function reprintReceipt(saleId) {
     } catch(e) { console.error(e); showToast("Error reprinting receipt."); }
 }
 
-// MID-SHIFT X-READING (WITH CUSTOM HILOM FLOAT PROMPT)
+// NEW: MID-SHIFT X-READING (WITH DRAWER FLOAT)
 async function generateXReading() {
     let floatInput = await hilomPrompt("Enter starting cash float (₱) for this shift:", "1000");
     if (floatInput === null) return; // User cancelled
@@ -470,98 +481,13 @@ async function generateXReading() {
     } catch(e) { showToast("Error generating X-Read."); console.error(e); }
 }
 
-// FORMAL Z-READING SHIFT CLOSE (WITH CUSTOM HILOM FLOAT PROMPT & CONFIRM)
+// FORMAL Z-READING SHIFT CLOSE (WITH DRAWER FLOAT)
 async function closeShift() {
     let floatInput = await hilomPrompt("Enter starting cash float (₱) for this shift:", "1000");
     if (floatInput === null) return; 
     let startingFloat = parseFloat(floatInput) || 0;
 
     if (!(await hilomConfirm("Generate Z-Reading and close shift? All active shift sales and expenses will be archived."))) return;
-    try {
-        const configRef = db.collection('config').doc('system');
-        const configDoc = await configRef.get();
-        let zCount = configDoc.exists ? (configDoc.data().zCount || 1) : 1;
-        let currentGT = configDoc.exists ? (configDoc.data().grandTotal || 0) : 0;
-
-        const salesSnap = await db.collection("sales").where("archived", "==", false).get();
-        let gross = 0, voids = 0, discounts = 0, net = 0, cashSales = 0;
-        let begInv = null, endInv = null;
-        
-        const batch = db.batch();
-        salesSnap.forEach(doc => { 
-            let s = doc.data();
-            let safeInvoice = s.invoiceNo || "INV-000000";
-            let invNumStr = safeInvoice.replace("INV-", "");
-            
-            if (safeInvoice !== "INV-000000") {
-                if(!begInv || invNumStr < begInv) begInv = invNumStr;
-                if(!endInv || invNumStr > endInv) endInv = invNumStr;
-            }
-            
-            if (s.status === 'VOID') {
-                voids += s.grossAmount || s.price || 0;
-            } else {
-                let sGross = s.grossAmount !== undefined ? s.grossAmount : (s.price || 0);
-                let sNet = s.netAmount !== undefined ? s.netAmount : (s.price || 0);
-                gross += sGross;
-                discounts += s.discountAmount || 0;
-                net += sNet;
-                
-                if (s.paymentMethod === 'Cash') {
-                    cashSales += sNet;
-                }
-            }
-            batch.update(doc.ref, { archived: true }); 
-        });
-        
-        let totalExp = 0;
-        const expSnap = await db.collection("expenses").where("archived", "==", false).get();
-        expSnap.forEach(doc => { 
-            totalExp += doc.data().amount || 0; 
-            batch.update(doc.ref, { archived: true }); 
-        });
-
-        const invSnap = await db.collection("inventory").get();
-        invSnap.forEach(doc => batch.update(doc.ref, { shiftStartQty: doc.data().quantity || 0 }));
-        
-        let expectedCash = startingFloat + cashSales - totalExp;
-
-        const zReadRef = db.collection("z_readings").doc();
-        batch.set(zReadRef, {
-            zCount: zCount, begInvoice: begInv ? `INV-${begInv}` : "-", endInvoice: endInv ? `INV-${endInv}` : "-",
-            grossSales: gross, voids: voids, discounts: discounts, netSales: net, nrcst: currentGT, timestamp: new Date()
-        });
-
-        batch.update(configRef, { zCount: zCount + 1 });
-        await batch.commit();
-
-        document.getElementById("zReadTime").innerText = new Date().toLocaleString();
-        document.getElementById("zCounterDisplay").innerText = String(zCount).padStart(4, '0');
-        document.getElementById("zBegInv").innerText = begInv ? `INV-${begInv}` : "-";
-        document.getElementById("zEndInv").innerText = endInv ? `INV-${endInv}` : "-";
-        document.getElementById("zGross").innerText = `₱${gross.toFixed(2)}`;
-        document.getElementById("zVoids").innerText = `₱${voids.toFixed(2)}`;
-        document.getElementById("zDiscounts").innerText = `₱${discounts.toFixed(2)}`;
-        document.getElementById("zNet").innerText = `₱${net.toFixed(2)}`;
-        document.getElementById("zNewTotal").innerText = `₱${currentGT.toFixed(2)}`;
-        
-        document.getElementById("zFloat").innerText = `₱${startingFloat.toFixed(2)}`;
-        document.getElementById("zCashSales").innerText = `₱${cashSales.toFixed(2)}`;
-        document.getElementById("zExpenses").innerText = `₱${totalExp.toFixed(2)}`;
-        document.getElementById("zExpectedCash").innerText = `₱${expectedCash.toFixed(2)}`;
-        
-        if(typeof showDigitalReceipt === "function") showDigitalReceipt('zReadingArea'); 
-        showToast("Shift Closed and Z-Read Saved successfully.");
-    } catch(e) { showToast("Error closing shift."); console.error(e); }
-}
-
-// FORMAL Z-READING SHIFT CLOSE (WITH DRAWER FLOAT)
-async function closeShift() {
-    let floatInput = prompt("Enter starting cash float (₱) for this shift:", "1000");
-    if (floatInput === null) return; 
-    let startingFloat = parseFloat(floatInput) || 0;
-
-    if(!confirm("Generate Z-Reading and close shift?")) return;
     try {
         const configRef = db.collection('config').doc('system');
         const configDoc = await configRef.get();

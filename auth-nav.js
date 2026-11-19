@@ -3,30 +3,38 @@ function switchView(viewId, navElement) {
     const protectedViews = ['inventoryView', 'menuManageView', 'salesView'];
     
     if (protectedViews.includes(viewId) && !isAdminUnlocked) {
-        pendingViewId = viewId; pendingNavElement = navElement;
+        pendingViewId = viewId;
+        pendingNavElement = navElement;
         document.getElementById('pinModal').classList.remove('hidden');
         document.getElementById('adminPin').value = '';
         document.getElementById('adminPin').focus();
         return;
     }
 
-document.querySelectorAll('.view-section').forEach(el => {
+    document.querySelectorAll('.view-section').forEach(el => {
         el.classList.add('hidden');
         el.classList.remove('active');
     });
-        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+
     const targetView = document.getElementById(viewId);
-    if (targetView) { targetView.classList.remove('hidden'); targetView.classList.add('active'); }
+    if (targetView) {
+        targetView.classList.remove('hidden');
+        targetView.classList.add('active');
+    }
     if (navElement) navElement.classList.add('active');
     
     if (isAdminUnlocked) {
-        document.getElementById("lockBtn").classList.remove("hidden");
-        document.getElementById("changePinBtn").classList.remove("hidden");
+        const lockBtn = document.getElementById("lockBtn");
+        const changePinBtn = document.getElementById("changePinBtn");
+        if (lockBtn) lockBtn.classList.remove("hidden");
+        if (changePinBtn) changePinBtn.classList.remove("hidden");
     }
 }
 
 async function verifyPin() {
-    const pinInput = document.getElementById("adminPin").value.trim();
+    const pinElement = document.getElementById("adminPin");
+    const pinInput = pinElement ? pinElement.value.trim() : "";
     
     if (!pinInput) {
         return alert("Please enter a PIN.");
@@ -46,26 +54,37 @@ async function verifyPin() {
             }
         });
 
-        // Fallback: Also allow the system ADMIN_PIN if set
+        // Fallback 1: Check loaded ADMIN_PIN
         if (!authorizedUser && typeof ADMIN_PIN !== "undefined" && String(pinInput) === String(ADMIN_PIN)) {
             authorizedUser = { name: "Admin", role: "Master" };
         }
+
+        // Fallback 2: Check Firestore settings/security
+        if (!authorizedUser) {
+            try {
+                const secDoc = await db.collection("settings").doc("security").get();
+                if (secDoc.exists && String(secDoc.data().adminPin || secDoc.data().pin) === String(pinInput)) {
+                    authorizedUser = { name: "Admin", role: "Master" };
+                }
+            } catch (e) {}
+        }
         
         if (!authorizedUser) {
-            document.getElementById("adminPin").value = ""; 
-            return alert("❌ ACCESS DENIED: Invalid PIN or your account doesn't have Manager privileges.");
+            if (pinElement) {
+                pinElement.value = "";
+                pinElement.focus();
+            }
+            return alert("ACCESS DENIED: Invalid PIN or your account doesn't have Manager privileges.");
         }
         
         // Hide modal and clear input
-        const pinElement = document.getElementById("adminPin");
         if (pinElement) {
             pinElement.value = ""; 
             const modal = pinElement.closest('.modal-overlay');
             if (modal) modal.classList.add("hidden");
-            
-            const mainModal = document.getElementById("pinModal");
-            if (mainModal) mainModal.classList.add("hidden");
         }
+        const mainModal = document.getElementById("pinModal");
+        if (mainModal) mainModal.classList.add("hidden");
 
         // 1. IF AUTHORIZING A VOID ACTION (from pos-billing.js or reports.js)
         if (typeof pinResolvePromise === "function" && pinResolvePromise !== null) {
@@ -77,6 +96,7 @@ async function verifyPin() {
 
         // 2. OTHERWISE, UNLOCK SIDEBAR TABS
         isAdminUnlocked = true; 
+        window.isAdminUnlocked = true;
         
         const allSidebarTabs = document.querySelectorAll('.sidebar .nav-btn, .sidebar li');
         allSidebarTabs.forEach(tab => {
@@ -90,9 +110,7 @@ async function verifyPin() {
         const roleStr = String(authorizedUser.role).toLowerCase();
         if (!roleStr.includes("master") && !roleStr.includes("it")) {
             const auditTab = document.getElementById("navAudit") || document.getElementById("auditTab");
-            if (auditTab) {
-                auditTab.style.display = "none";
-            }
+            if (auditTab) auditTab.style.display = "none";
         }
         
         const lockBtn = document.getElementById("lockBtn");
@@ -100,12 +118,14 @@ async function verifyPin() {
         if (lockBtn) lockBtn.classList.remove("hidden");
         if (changePinBtn) changePinBtn.classList.remove("hidden");
         
-        alert(`✅ System unlocked by ${authorizedUser.name || "Admin"}`);
+        alert(`System unlocked by ${authorizedUser.name || "Admin"}`);
         
         if (typeof pendingViewId !== "undefined" && pendingViewId) {
-            switchView(pendingViewId, pendingNavElement);
+            const nextView = pendingViewId;
+            const nextNav = pendingNavElement;
             pendingViewId = null;
             pendingNavElement = null;
+            switchView(nextView, nextNav);
         }
         
     } catch (error) {
@@ -115,7 +135,8 @@ async function verifyPin() {
 }
 
 function closePinModal() { 
-    document.getElementById('pinModal').classList.add('hidden'); 
+    const mainModal = document.getElementById('pinModal');
+    if (mainModal) mainModal.classList.add('hidden'); 
     const pinElement = document.getElementById("adminPin");
     if (pinElement) pinElement.value = "";
 
@@ -129,12 +150,11 @@ function closePinModal() {
     }
 }
 
-// Keep a backup alias just in case any cached HTML still calls submitClassicPin()
 window.submitClassicPin = verifyPin;
-
 
 function lockAdmin() {
     isAdminUnlocked = false;
+    window.isAdminUnlocked = false;
     document.getElementById("lockBtn").classList.add("hidden");
     document.getElementById("changePinBtn").classList.add("hidden");
     showToast("System locked. Returned to POS.");
@@ -160,10 +180,9 @@ function saveNewPin() {
     if (newPin.length !== 4 || isNaN(newPin)) return showToast("PIN must be exactly 4 numbers.");
     if (newPin !== confirmPin) return showToast("PINs do not match.");
 
-    // Use .set with merge:true to avoid errors if the document doesn't exist yet
     db.collection("settings").doc("security").set({ adminPin: newPin }, { merge: true })
     .then(() => {
-        ADMIN_PIN = newPin; // NEW: Update the active PIN immediately without refreshing
+        ADMIN_PIN = newPin;
         showToast("Admin PIN successfully updated!");
         closeChangePinModal();
     })
@@ -173,5 +192,11 @@ function saveNewPin() {
     });
 }
 
-function login() { auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value).catch(() => document.getElementById('errorMessage').innerText = "Login failed."); }
+function login() {
+    auth.signInWithEmailAndPassword(
+        document.getElementById('email').value,
+        document.getElementById('password').value
+    ).catch(() => document.getElementById('errorMessage').innerText = "Login failed.");
+}
+
 function logout() { auth.signOut(); }

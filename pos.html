@@ -1251,7 +1251,6 @@
                     <strong>Change Due:</strong> <span id="invChangeDue"></span>
                 </div>
             </div>
-            </table>
             <div style="margin-top: 50px; text-align: center; color: #666; font-size: 14px;">
                 <p style="font-weight: bold; font-size: 16px; color: #2b4227; margin-bottom: 5px;">Thank you for staying with us!</p>
                 <p style="margin: 0;">We hope to welcome you back to Hilom Resort soon.</p>
@@ -1584,12 +1583,12 @@ function createProductCard(product) {
         }
 
         async function deleteStaffMember(staffId, staffName) {
-            const pin = prompt(`🔒 SECURITY CHECK: Enter a Manager PIN to delete ${staffName}:`);
+            const pin = await hilomPrompt(`🔒 SECURITY CHECK: Enter a Manager PIN to delete ${staffName}:`);
             if (!pin) return;
             try {
                 const staffQuery = await db.collection("staff").where("pinCode", "==", pin).where("role", "==", "Manager").get();
                 if (staffQuery.empty) return alert("❌ ACCESS DENIED: Invalid PIN or you do not have Manager privileges.");
-                if (confirm(`Manager verified.\n\nAre you sure you want to permanently remove ${staffName} from the system?`)) {
+                if (await hilomConfirm(`Manager verified.\n\nAre you sure you want to permanently remove ${staffName} from the system?`)) {
                     await db.collection("staff").doc(staffId).delete();
                     alert(`${staffName} has been removed.`);
                 }
@@ -1887,10 +1886,10 @@ firebase.auth().onAuthStateChanged(async (user) => {
             if (!email || !password) return errorMsg.innerText = "Please type an email and password to register.";
             if (password.length < 6) return errorMsg.innerText = "Password must be at least 6 characters long.";
 
-            const fullName = prompt("Please enter the FULL NAME for this new employee:");
+            const fullName = await hilomPrompt("Please enter the FULL NAME for this new employee:");
             if (!fullName) return errorMsg.innerText = "Registration cancelled: Name is required.";
 
-            const securityCheck = prompt("SECURITY CHECK: Type 'CONFIRM' to request an account.");
+            const securityCheck = await hilomPrompt("SECURITY CHECK: Type 'CONFIRM' to request an account.");
             if (securityCheck !== "CONFIRM") return;
 
             // 🚨 TURN ON THE PAUSE FLAG
@@ -1994,12 +1993,12 @@ firebase.auth().onAuthStateChanged(async (user) => {
             const selectedRole = document.getElementById(`role-${uid}`).value;
             
             // 1. Prompt for a PIN right when you hit approve
-            let pin = prompt(`Assign a 4-digit PIN for ${name}'s POS and Time Clock access:`);
+            let pin = await hilomPrompt(`Assign a 4-digit PIN for ${name}'s POS and Time Clock access:`);
             if (!pin || pin.length !== 4 || isNaN(pin)) {
                 return alert("Approval cancelled: A valid 4-digit numeric PIN is required for staff access.");
             }
 
-            if(confirm(`Approve ${name} as a ${selectedRole} with PIN ${pin}?`)) {
+            if (await hilomConfirm(`Approve ${name} as a ${selectedRole} with PIN ${pin}?`)) {
                 
                 // Use a batch to update both databases simultaneously
                 const batch = db.batch();
@@ -2037,7 +2036,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
         }
         
         async function declineAdmin(uid, email) {
-            if(confirm(`Decline ${email}? They will be blocked from logging in.`)) {
+            if (await hilomConfirm(`Decline ${email}? They will be blocked from logging in.`)) {
                 await db.collection("admin_users").doc(uid).update({ status: "DECLINED" });
             }
         }
@@ -2045,8 +2044,8 @@ firebase.auth().onAuthStateChanged(async (user) => {
         // 6. MENU BUILDER CONTROLS
         let currentEditItemId = null;
 
-        function deleteMenuItem(itemId) {
-            if (confirm("Permanently delete this menu item?")) {
+        async function deleteMenuItem(itemId) {
+            if (await hilomConfirm("Permanently delete this menu item?")) {
                 db.collection("menu").doc(itemId).delete().catch(err => alert("Error deleting item."));
             }
         }
@@ -2143,7 +2142,7 @@ function loadAuditLogs() {
                     <td style="padding: 10px;"><strong>${data.name}</strong><br><span style="font-size: 11px; color: #888;">${data.role}</span></td>
                     <td style="padding: 10px; font-family: monospace; color: #bd4b4b;">${data.ipAddress}</td>
                     <td style="padding: 10px;">${data.location}<br><span style="font-size: 11px; color: #888;">${data.isp}</span></td>
-                    <td style="padding: 10px;"><span style="background: #e0e5e0; padding: 3px 6px; border-radius: 4px; font-size: 11px;">${data.networkConnection}</span></td>
+                    <td style="padding: 10px;"><span style="background: #e0e5e0; padding: 3px 6px; border-radius: 4px; font-size: 11px;">${data.networkType || "Unknown"}</span></td>
                 </tr>
             `;
         });

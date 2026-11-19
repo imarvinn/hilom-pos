@@ -181,8 +181,14 @@
 
     <!-- SINGLE UNIFIED SCRIPT BLOCK (NO DUPLICATES) -->
     <script>
-        // 1. Set Footer Year
+        // 1. Set Footer Year & XSS Escaper
         document.getElementById('year').innerText = new Date().getFullYear();
+        const escapeHTML = (str) => String(str ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
 
         // 2. Custom Hilom Luxury Alert Modal Functions
         function showHilomAlert(message) {
@@ -343,8 +349,8 @@
 
             try {
                 const writePromise = db.collection("web_reservations").add({
-                    guestName: document.getElementById("guestName").value.trim(),
-                    contact: document.getElementById("contact").value.trim(),
+                    guestName: document.getElementById("guestName").value.replace(/[<>]/g, "").trim(),
+                    contact: document.getElementById("contact").value.replace(/[<>]/g, "").trim(),
                     roomType: document.getElementById("roomType").value,
                     roomQty: document.getElementById("roomQty").value,
                     checkInDate: checkIn,
@@ -419,9 +425,9 @@
                     }
                     html += `
                         <div style="border: 1px solid #e0e5e0; padding: 15px; border-radius: 8px; margin-bottom: 10px; background: #f9f9f9;">
-                            <div style="font-weight: bold; font-size: 18px; color: var(--primary-dark); margin-bottom: 5px;">${data.guestName}</div>
-                            <div style="font-size: 14px; color: #555; margin-bottom: 3px;"><strong>Room:</strong> ${data.roomType}</div>
-                            <div style="font-size: 14px; color: #555; margin-bottom: 15px;"><strong>Dates:</strong> ${data.checkInDate} to ${data.checkOutDate}</div>
+                            <div style="font-weight: bold; font-size: 18px; color: var(--primary-dark); margin-bottom: 5px;">${escapeHTML(data.guestName)}</div>
+                            <div style="font-size: 14px; color: #555; margin-bottom: 3px;"><strong>Room:</strong> ${escapeHTML(data.roomType)}</div>
+                            <div style="font-size: 14px; color: #555; margin-bottom: 15px;"><strong>Dates:</strong> ${escapeHTML(data.checkInDate)} to ${escapeHTML(data.checkOutDate)}</div>
                             <div style="font-size: 15px; font-weight: bold; color: ${statusColor}; border-top: 1px dashed #ccc; padding-top: 10px;">⬤ STATUS: ${statusText}</div>
                         </div>`;
                 });
