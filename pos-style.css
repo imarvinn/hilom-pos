@@ -6,9 +6,9 @@ body {
     margin: 0; 
     padding: 0;
     height: 100vh;
+    height: 100dvh;
     overflow: hidden; 
 }
-.hidden { display: none !important; }
 
 /* =========================================
    1. DESKTOP DASHBOARD & SIDEBAR (Default)
@@ -16,6 +16,7 @@ body {
 .dashboard-layout { 
     display: flex; 
     height: 100vh; 
+    height: 100dvh;
     width: 100vw; 
 }
 
@@ -235,7 +236,21 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
 @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
 @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
-#loginScreen { max-width: 350px; margin: 80px auto; text-align: center; padding: 40px;}
+/* Login Card (Clean Centered Layout on Desktop & Mobile) */
+#loginScreen {
+    max-width: 380px;
+    width: calc(100% - 32px);
+    margin: 80px auto;
+    text-align: center;
+    padding: 36px 28px;
+    box-sizing: border-box;
+}
+#loginScreen input,
+#loginScreen button {
+    width: 100%;
+    margin-right: 0;
+    box-sizing: border-box;
+}
 
 /* --- ADVANCED DIGITAL RECEIPT ANIMATIONS --- */
 .animate-slide-out { animation: receiptSlideOut 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
@@ -267,15 +282,23 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
    2. IPAD & MOBILE OVERRIDES (<= 1024px)
    ========================================= */
 @media screen and (max-width: 1024px) {
-    .dashboard-layout {
+    #loginScreen {
+        margin: 40px auto;
+        max-height: calc(100dvh - 80px);
+        overflow-y: auto;
+    }
+
+    /* Notice :not(.hidden) so the dashboard NEVER peeks out on the login screen */
+    .dashboard-layout:not(.hidden) {
         flex-direction: column !important;
         height: 100vh !important;
+        height: 100dvh !important;
         display: flex !important;
         overflow: hidden;
     }
 
-    /* Show top hamburger bar only on tablet/mobile */
-    .mobile-menu-btn {
+    /* Show top hamburger bar only when dashboard is visible on tablet/mobile */
+    .dashboard-layout:not(.hidden) .mobile-menu-btn:not(.hidden) {
         display: flex !important;
         align-items: center;
         gap: 10px;
@@ -290,6 +313,7 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
         left: -260px;
         width: 250px !important;
         height: calc(100vh - 50px) !important;
+        height: calc(100dvh - 50px) !important;
         background: #2b4227;
         z-index: 999;
         transition: left 0.3s ease-in-out;
@@ -310,6 +334,7 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
     .main-content {
         padding: 15px !important;
         height: calc(100vh - 50px) !important;
+        height: calc(100dvh - 50px) !important;
         overflow-y: auto !important;
     }
 
@@ -641,25 +666,12 @@ th { background-color: #e9ece9; color: #555; font-size: 12px;}
     }
 }
 
-/* 1. Force .hidden to ALWAYS override mobile @media display rules */
-.hidden {
+/* =======================================================
+   5. GLOBAL VISIBILITY OVERRIDE (Must Stay at Bottom)
+   ======================================================= */
+.hidden,
+#loginScreen.hidden,
+.dashboard-layout.hidden,
+.mobile-menu-btn.hidden {
     display: none !important;
-}
-
-/* 2. Lock the Login Screen to full viewport so nothing peeks underneath on mobile */
-#loginScreen,
-#loginContainer,
-.login-container {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    min-height: 100dvh;
-    width: 100%;
-    background: #f4f6f4;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    box-sizing: border-box;
-    overflow-y: auto;
 }
