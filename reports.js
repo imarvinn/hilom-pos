@@ -284,7 +284,24 @@ function addExpense() {
 
 async function deleteExpense(id) {
     if (await hilomConfirm("Delete this expense record?")) {
-        db.collection("expenses").doc(id).delete();
+        try {
+            const expDoc = await db.collection("expenses").doc(id).get();
+            const expData = expDoc.exists ? expDoc.data() : {};
+            await db.collection("expenses").doc(id).delete();
+            if (typeof window.recordAuditEvent === "function") {
+                window.recordAuditEvent({
+                    category: "TRANSACTION",
+                    action: "DELETE_EXPENSE",
+                    tableNo: "Expenses",
+                    amount: Number(expData.amount) || 0,
+                    details: `Deleted expense: ${expData.name || id} (₱${(Number(expData.amount) || 0).toFixed(2)})`
+                });
+            }
+            showToast("Expense deleted and logged.");
+        } catch (err) {
+            console.error(err);
+            showToast("Error deleting expense.");
+        }
     }
 }
 
@@ -326,8 +343,28 @@ async function voidSale(saleId) {
         });
         
         batch.update(db.collection("sales").doc(saleId), { status: 'VOID', voidedAt: new Date() });
+
+        const voidAmt = (saleData.netAmount !== undefined ? saleData.netAmount : saleData.price) || 0;
+        const invLabel = saleData.invoiceNo || saleId;
+        const itemSummary = saleData.items
+            ? Object.entries(saleData.items).map(([n, d]) => `${d.qty}x ${n}`).join(", ")
+            : (saleData.itemName || "Sale items");
+        const actorName = typeof window.getAuditActor === "function" ? window.getAuditActor() : "Staff";
+        const authorizerName = window.lastPinAuthorizer || "Manager PIN";
+
+        batch.set(db.collection("audit_logs").doc(), {
+            category: "TRANSACTION",
+            action: "VOID_SALE",
+            tableNo: `${invLabel} (${saleData.tableNo || "N/A"})`,
+            amount: Number(voidAmt) || 0,
+            performedBy: actorName,
+            authorizedBy: authorizerName,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            details: `Voided paid invoice ${invLabel} [${saleData.paymentMethod || "Cash"}]: ${itemSummary}. Inventory restored.`
+        });
+
         await batch.commit(); 
-        showToast("Transaction voided. Record kept for audit.");
+        showToast("Transaction voided and recorded in Audit Logs.");
     } catch (error) { 
         showToast("Error voiding order."); 
         console.error(error); 
@@ -414,6 +451,16 @@ async function reprintReceipt(saleId) {
 
         document.getElementById("receiptPaymentSection").classList.remove("hidden");
         document.getElementById("receiptPaymentSection").style.display = "block";
+
+        if (typeof window.recordAuditEvent === "function") {
+            window.recordAuditEvent({
+                category: "TRANSACTION",
+                action: "REPRINT_RECEIPT",
+                tableNo: `${s.invoiceNo || saleId} (${s.tableNo || "N/A"})`,
+                amount: Number(net) || 0,
+                details: `Reprinted invoice ${s.invoiceNo || saleId} (${s.paymentMethod || "Cash"}, Net ₱${(Number(net) || 0).toFixed(2)})`
+            });
+        }
 
         // Trigger the animation from pos-billing.js
         if(typeof showDigitalReceipt === "function") showDigitalReceipt('customerReceiptArea');
@@ -544,6 +591,19 @@ async function closeShift() {
         });
 
         batch.update(configRef, { zCount: zCount + 1 });
+
+        const zActor = typeof window.getAuditActor === "function" ? window.getAuditActor() : "Manager";
+        batch.set(db.collection("audit_logs").doc(), {
+            category: "TRANSACTION",
+            action: "Z_READING_CLOSE",
+            tableNo: `Z-${String(zCount).padStart(4, '0')}`,
+            amount: Number(net) || 0,
+            performedBy: zActor,
+            authorizedBy: window.lastPinAuthorizer || zActor,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            details: `Closed shift Z-${String(zCount).padStart(4, '0')} (${begInv ? "INV-" + begInv : "-"} to ${endInv ? "INV-" + endInv : "-"}). Gross: ₱${gross.toFixed(2)}, Voids: ₱${voids.toFixed(2)}, Discounts: ₱${discounts.toFixed(2)}, Net: ₱${net.toFixed(2)}, Expected Drawer: ₱${expectedCash.toFixed(2)}.`
+        });
+
         await batch.commit();
 
         document.getElementById("zReadTime").innerText = new Date().toLocaleString();
@@ -686,23 +746,23 @@ async function exportAuditLogs() {
         }
 
         // Set up the CSV headers
-        let csvContent = "Timestamp,Action,Table/Order,Amount,Authorized By,Details\n";
+        let csvContent = "Timestamp,Category,Action,Ref/Table,Amount,Performed By,Authorized By,Details\n";
 
         snapshot.forEach(doc => {
             const data = doc.data();
-            
-            // Format the timestamp
+            const isLegacyLogin = !data.action && (data.ipAddress || data.email);
             const time = data.timestamp ? data.timestamp.toDate().toLocaleString() : "N/A";
-            
-            // Sanitize details to prevent CSV formatting breaks if there are commas in the text
-            const safeDetails = `"${(data.details || "").replace(/"/g, '""')}"`;
-            const safeAction = `"${data.action || "UNKNOWN"}"`;
-            const safeTable = `"${data.tableNo || "N/A"}"`;
-            const safeAuth = `"${data.authorizedBy || "Manager"}"`;
-            const amountStr = data.amount ? data.amount.toFixed(2) : "0.00";
-            
-            // Append the row
-            csvContent += `"${time}",${safeAction},${safeTable},"${amountStr}",${safeAuth},${safeDetails}\n`;
+
+            const catVal = data.category || (isLegacyLogin ? "LOGIN" : "TRANSACTION");
+            const actionVal = data.action || (isLegacyLogin ? "USER_LOGIN" : "SYSTEM_EVENT");
+            const tableVal = data.tableNo || (isLegacyLogin ? "System Login" : "N/A");
+            const performedVal = data.performedBy || (data.name ? `${data.name} (${data.role || "Staff"})` : "System");
+            const authVal = data.authorizedBy || performedVal;
+            const detailsVal = data.details || (isLegacyLogin ? `IP: ${data.ipAddress || "Unknown"} | ${data.location || "Unknown"} | ISP: ${data.isp || "Unknown"} (${data.networkType || "Unknown"})` : "");
+            const amountStr = data.amount ? Number(data.amount).toFixed(2) : "0.00";
+
+            const escCsv = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+            csvContent += `${escCsv(time)},${escCsv(catVal)},${escCsv(actionVal)},${escCsv(tableVal)},${escCsv(amountStr)},${escCsv(performedVal)},${escCsv(authVal)},${escCsv(detailsVal)}\n`;
         });
 
         // Trigger the automatic download

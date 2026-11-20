@@ -1,7 +1,7 @@
 {
   "name": "HILOM POS & Inventory",
   "short_name": "HILOM",
-  "start_url": "./index.html",
+  "start_url": "./pos.html",
   "display": "standalone",
   "background_color": "#f4f6f4",
   "theme_color": "#2b4227",

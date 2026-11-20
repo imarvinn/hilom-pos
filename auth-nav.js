@@ -1,3 +1,32 @@
+// --- CENTRAL AUDIT LOGGING HELPER ---
+window.getAuditActor = function() {
+    if (window.currentStaffProfile && window.currentStaffProfile.name) {
+        return `${window.currentStaffProfile.name} (${window.currentStaffProfile.role || "Staff"})`;
+    }
+    const u = (typeof firebase !== "undefined" && firebase.auth) ? firebase.auth().currentUser : null;
+    if (u) return u.displayName || u.email || "Authenticated Staff";
+    return "System";
+};
+
+window.recordAuditEvent = async function({ category = "TRANSACTION", action = "SYSTEM_EVENT", tableNo = "System", amount = 0, authorizedBy = null, details = "" } = {}) {
+    try {
+        if (typeof db === "undefined") return;
+        const actor = window.getAuditActor();
+        await db.collection("audit_logs").add({
+            category: category,
+            action: action,
+            tableNo: String(tableNo || "System"),
+            amount: Number(amount) || 0,
+            performedBy: actor,
+            authorizedBy: authorizedBy || actor,
+            details: String(details || ""),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (err) {
+        console.warn("Audit log write skipped:", err);
+    }
+};
+
 // --- SECURITY & NAVIGATION ---
 function switchView(viewId, navElement) {
     const protectedViews = ['inventoryView', 'menuManageView', 'salesView'];
@@ -70,6 +99,16 @@ async function verifyPin() {
         }
         
         if (!authorizedUser) {
+            if (typeof window.recordAuditEvent === "function") {
+                window.recordAuditEvent({
+                    category: "SECURITY",
+                    action: "FAILED_PIN_ATTEMPT",
+                    tableNo: pendingViewId || "PIN Prompt",
+                    amount: 0,
+                    authorizedBy: "DENIED",
+                    details: "Invalid or unauthorized 4-digit PIN entered."
+                });
+            }
             if (pinElement) {
                 pinElement.value = "";
                 pinElement.focus();
@@ -111,7 +150,7 @@ async function verifyPin() {
         });
 
         const roleStr = String(authorizedUser.role).toLowerCase();
-        if (!roleStr.includes("master") && !roleStr.includes("it")) {
+        if (!roleStr.includes("master") && !roleStr.includes("manager") && !roleStr.includes("it")) {
             const auditTab = document.getElementById("navAudit") || document.getElementById("auditTab");
             if (auditTab) auditTab.style.display = "none";
         }
@@ -186,6 +225,16 @@ function saveNewPin() {
     db.collection("settings").doc("security").set({ adminPin: newPin }, { merge: true })
     .then(() => {
         ADMIN_PIN = newPin;
+        if (typeof window.recordAuditEvent === "function") {
+            window.recordAuditEvent({
+                category: "SECURITY",
+                action: "CHANGE_ADMIN_PIN",
+                tableNo: "System Security",
+                amount: 0,
+                authorizedBy: window.lastPinAuthorizer || window.getAuditActor(),
+                details: "Master/Admin security PIN was changed."
+            });
+        }
         showToast("Admin PIN successfully updated!");
         closeChangePinModal();
     })

@@ -454,14 +454,19 @@ async function voidActiveTable(tableId) {
         }
     });
 
+    const voidedSummary = Object.entries(tableData.items || {}).map(([n, d]) => `${d.qty}x ${n}`).join(", ");
+    const actorName = typeof window.getAuditActor === "function" ? window.getAuditActor() : "Staff";
+    const authorizerName = window.lastPinAuthorizer || "Manager PIN";
     const auditRef = db.collection("audit_logs").doc();
     batch.set(auditRef, {
+        category: "TRANSACTION",
         action: "VOID_ORDER",
         tableNo: tableData.tableNo,
-        amount: tableData.subtotal,
-        authorizedBy: "Manager PIN",
+        amount: Number(tableData.subtotal) || 0,
+        performedBy: actorName,
+        authorizedBy: authorizerName,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        details: `Voided ${Object.keys(tableData.items).length} items. Inventory restored.`
+        details: `Voided open table (${voidedSummary || Object.keys(tableData.items || {}).length + " items"}). Inventory restored.`
     });
 
     batch.delete(db.collection("active_tables").doc(tableId));
@@ -820,13 +825,16 @@ async function processPayment() {
 
             if (totalDiscount > 0) {
                 const discAuditRef = db.collection("audit_logs").doc();
+                const actorName = typeof window.getAuditActor === "function" ? window.getAuditActor() : "Staff";
                 transaction.set(discAuditRef, {
+                    category: "TRANSACTION",
                     action: "DISCOUNT_APPLIED",
-                    tableNo: data.tableNo,
-                    amount: totalDiscount,
+                    tableNo: `${invString} (${data.tableNo})`,
+                    amount: Number(totalDiscount) || 0,
+                    performedBy: actorName,
                     authorizedBy: discountAuthorizedBy || "Manager PIN",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    details: `${invString}: ${isSenior ? "Senior/PWD (20%)" : ""}${isSenior && isFreeBF ? " + " : ""}${isFreeBF ? "Complimentary Breakfast" : ""} (-₱${totalDiscount.toFixed(2)})`
+                    details: `${invString}: ${isSenior ? "Senior/PWD (20%)" : ""}${isSenior && isFreeBF ? " + " : ""}${isFreeBF ? "Complimentary Breakfast" : ""} (-₱${totalDiscount.toFixed(2)} off ₱${subtotal.toFixed(2)})`
                 });
             }
 
@@ -981,7 +989,19 @@ async function deleteMenu(id) {
     const confirmed = window.hilomConfirm
         ? await hilomConfirm("Are you sure you want to delete this menu item?")
         : confirm("Delete menu item?");
-    if (confirmed) db.collection("menu").doc(id).delete();
+    if (confirmed) {
+        const itemInfo = dynamicMenuDocs[id];
+        await db.collection("menu").doc(id).delete();
+        if (typeof window.recordAuditEvent === "function") {
+            window.recordAuditEvent({
+                category: "SECURITY",
+                action: "DELETE_MENU",
+                tableNo: "Menu Builder",
+                amount: itemInfo ? (Number(itemInfo.price) || 0) : 0,
+                details: `Deleted menu item: ${itemInfo ? itemInfo.name : id}`
+            });
+        }
+    }
 }
 // ==========================================
 // --- SPLIT BILL LOGIC (SENIOR/PWD SAFE) ---
@@ -1109,6 +1129,19 @@ async function confirmSplitBill() {
         items: newTableItems, subtotal: newSubtotal, timestamp: new Date()
     });
 
+    const splitAuditRef = db.collection("audit_logs").doc();
+    const splitActor = typeof window.getAuditActor === "function" ? window.getAuditActor() : "Staff";
+    batch.set(splitAuditRef, {
+        category: "TRANSACTION",
+        action: "BILL_SPLIT",
+        tableNo: `${originalData.tableNo} → ${newTableName}`,
+        amount: Number(newSubtotal) || 0,
+        performedBy: splitActor,
+        authorizedBy: splitActor,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        details: `Split ₱${newSubtotal.toFixed(2)} (${Object.keys(newTableItems).length} item type/s) off ${originalData.tableNo}. Remaining: ₱${originalNewSubtotal.toFixed(2)}.`
+    });
+
     try {
         await batch.commit();
         closeSplitModal(); closeBillingModal();
@@ -1174,6 +1207,15 @@ async function deleteCategory(catName) {
     
     let updatedList = menuCategories.filter(c => c !== catName);
     db.collection("settings").doc("categories").update({ list: updatedList }).then(() => {
+        if (typeof window.recordAuditEvent === "function") {
+            window.recordAuditEvent({
+                category: "SECURITY",
+                action: "DELETE_CATEGORY",
+                tableNo: "Menu Builder",
+                amount: 0,
+                details: `Removed menu category: ${catName}`
+            });
+        }
         showToast("Category removed!");
     });
 }
@@ -1269,7 +1311,18 @@ async function clearKitchenOrder(tableId) {
         : confirm("Clear this order from the kitchen queue?");
     if (!confirmed) return;
     try {
+        const tData = activeTablesData[tableId] || {};
+        const itemsSummary = Object.entries(tData.items || {}).map(([n, d]) => `${d.qty}x ${n}`).join(", ");
         await db.collection("active_tables").doc(tableId).delete();
+        if (typeof window.recordAuditEvent === "function") {
+            window.recordAuditEvent({
+                category: "TRANSACTION",
+                action: "KITCHEN_ORDER_CLEARED",
+                tableNo: tData.tableNo || tableId,
+                amount: Number(tData.subtotal) || 0,
+                details: `Cleared unpaid active order directly from Kitchen KDS (${itemsSummary || "items"}).`
+            });
+        }
         showToast("Order cleared from queue.");
     } catch (err) {
         showToast("Error clearing order.");
