@@ -86,7 +86,10 @@ async function verifyPin() {
         const mainModal = document.getElementById("pinModal");
         if (mainModal) mainModal.classList.add("hidden");
 
-        // 1. IF AUTHORIZING A VOID ACTION (from pos-billing.js or reports.js)
+        // Save authorizing Manager name for audit logs & discount tracking
+        window.lastPinAuthorizer = authorizedUser.name || "Manager";
+
+        // 1. IF AUTHORIZING A VOID OR DISCOUNT ACTION (from pos-billing.js or reports.js)
         if (typeof pinResolvePromise === "function" && pinResolvePromise !== null) {
             const resolve = pinResolvePromise;
             pinResolvePromise = null;

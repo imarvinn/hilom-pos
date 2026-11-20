@@ -897,7 +897,7 @@
             </div>
 
             <label class="discount-row" style="background: #e9ece9; border: 1px solid #c8dac8; color: #2b4227; margin-top: 0;">
-                <input type="checkbox" id="freeBreakfastCheck" onchange="updateBillingTotal()" style="margin: 0 10px 0 0; width: 18px; height: 18px;">
+                <input type="checkbox" id="freeBreakfastCheck" onchange="toggleFreeBreakfast()" style="margin: 0 10px 0 0; width: 18px; height: 18px;">
                 Complimentary Breakfast (Waives Meals)
             </label>
             
@@ -1638,8 +1638,9 @@ let rowHtml = `<tr><td style="width: 150px; min-width: 150px; max-width: 150px; 
                 if (String(res.roomNumber) === String(currentRoomNo)) { 
                     if (dateStr >= res.checkIn && dateStr < res.checkOut) {
                         isBooked = true; activeResId = res.id;
-                        guestNameDisplay = (res.guestName || "RSV").split(' ')[0].substring(0, 6);
-                        hoverTooltip = `Guest: ${res.guestName}\nIn: ${res.checkIn}\nOut: ${res.checkOut}`;
+                        const escCal = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+                        guestNameDisplay = escCal((res.guestName || "RSV").split(' ')[0].substring(0, 6));
+                        hoverTooltip = escCal(`Guest: ${res.guestName || "Guest"}\nIn: ${res.checkIn}\nOut: ${res.checkOut}`);
                         break;
                     }
                 }

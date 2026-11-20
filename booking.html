@@ -404,7 +404,7 @@
             resultDiv.innerHTML = "<p style='text-align:center; color: #666;'>Searching...</p>";
 
             try {
-                const snapshot = await db.collection("web_reservations").where("contact", "==", contact).get();
+                const snapshot = await db.collection("web_reservations").where("contact", "==", contact).limit(10).get();
                 if (snapshot.empty) {
                     resultDiv.innerHTML = "<p style='color: #bd4b4b; text-align:center; font-weight: bold;'>No reservation found.</p>";
                     return;

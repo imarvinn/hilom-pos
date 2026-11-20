@@ -484,8 +484,12 @@ async function voidActiveTable(tableId) {
 function voidActiveTableModal() { if(activeBillingTableId) { voidActiveTable(activeBillingTableId).then(() => { closeBillingModal(); }); } }
 
 // --- BILLING MODAL & MATH ---
+let discountAuthorizedBy = null;
+
 function openBillingModal(tableId) {
-    activeBillingTableId = tableId; const data = activeTablesData[tableId];
+    activeBillingTableId = tableId;
+    discountAuthorizedBy = null;
+    const data = activeTablesData[tableId];
     document.getElementById("billingTableNo").innerText = `${data.tableNo}`;
     document.getElementById("discountCheck").checked = false; document.getElementById("freeBreakfastCheck").checked = false;
     document.getElementById("paymentMethod").value = "Cash"; document.getElementById("amountTendered").value = "";
@@ -518,12 +522,53 @@ function addMoreToActiveTable() {
     showToast(`Adding items to ${tableName}. Select menu items and click Send to Kitchen.`);
 }
 
-function toggleDiscountInputs() {
-    const isSenior = document.getElementById("discountCheck").checked;
-    if(isSenior) { document.getElementById("seniorDetailsRow").classList.remove("hidden"); } 
-    else { 
+async function toggleDiscountInputs() {
+    const checkEl = document.getElementById("discountCheck");
+    const isSenior = checkEl.checked;
+    if (isSenior) {
+        if (!discountAuthorizedBy) {
+            const isAuth = await requestAdminPin();
+            if (!isAuth) {
+                checkEl.checked = false;
+                document.getElementById("seniorDetailsRow").classList.add("hidden");
+                showToast("Manager PIN required for Senior/PWD discount.");
+                updateBillingTotal();
+                return;
+            }
+            discountAuthorizedBy = window.lastPinAuthorizer || "Manager PIN";
+            showToast(`Discount authorized by ${discountAuthorizedBy}`);
+        }
+        document.getElementById("seniorDetailsRow").classList.remove("hidden");
+    } else {
         document.getElementById("seniorDetailsRow").classList.add("hidden");
-        document.getElementById("seniorNameInput").value = ""; document.getElementById("seniorIdInput").value = "";
+        document.getElementById("seniorNameInput").value = "";
+        document.getElementById("seniorIdInput").value = "";
+        if (!document.getElementById("freeBreakfastCheck").checked) {
+            discountAuthorizedBy = null;
+        }
+    }
+    updateBillingTotal();
+}
+
+async function toggleFreeBreakfast() {
+    const checkEl = document.getElementById("freeBreakfastCheck");
+    const isFreeBF = checkEl.checked;
+    if (isFreeBF) {
+        if (!discountAuthorizedBy) {
+            const isAuth = await requestAdminPin();
+            if (!isAuth) {
+                checkEl.checked = false;
+                showToast("Manager PIN required for Complimentary Breakfast.");
+                updateBillingTotal();
+                return;
+            }
+            discountAuthorizedBy = window.lastPinAuthorizer || "Manager PIN";
+            showToast(`Complimentary waiver authorized by ${discountAuthorizedBy}`);
+        }
+    } else {
+        if (!document.getElementById("discountCheck").checked) {
+            discountAuthorizedBy = null;
+        }
     }
     updateBillingTotal();
 }
@@ -695,6 +740,15 @@ async function processPayment() {
     const method = document.getElementById("paymentMethod").value;
     const payTime = new Date();
 
+    // Defense-in-depth: Re-verify Manager authorization if any discount/waiver is active
+    if ((isSenior || isFreeBF) && !discountAuthorizedBy) {
+        const isAuth = await requestAdminPin();
+        if (!isAuth) {
+            return showToast("Payment paused: Manager PIN required to apply discounts.");
+        }
+        discountAuthorizedBy = window.lastPinAuthorizer || "Manager PIN";
+    }
+
     const bName = sanitizeHTML(document.getElementById("buyerNameInput").value.trim());
     const bTin = sanitizeHTML(document.getElementById("buyerTinInput").value.trim());
     const bAddress = sanitizeHTML(document.getElementById("buyerAddressInput").value.trim());
@@ -759,9 +813,22 @@ async function processPayment() {
                 status: 'COMPLETED',
                 archived: false,
                 timestamp: payTime,
+                discountAuthorizedBy: (isSenior || isFreeBF) ? (discountAuthorizedBy || "Manager PIN") : null,
                 seniorDetails: isSenior ? { name: sanitizeHTML(document.getElementById('seniorNameInput').value), id: sanitizeHTML(document.getElementById('seniorIdInput').value) } : null,
                 buyerDetails: (bName || bTin || bAddress) ? { name: bName, tin: bTin, address: bAddress } : null
             });
+
+            if (totalDiscount > 0) {
+                const discAuditRef = db.collection("audit_logs").doc();
+                transaction.set(discAuditRef, {
+                    action: "DISCOUNT_APPLIED",
+                    tableNo: data.tableNo,
+                    amount: totalDiscount,
+                    authorizedBy: discountAuthorizedBy || "Manager PIN",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    details: `${invString}: ${isSenior ? "Senior/PWD (20%)" : ""}${isSenior && isFreeBF ? " + " : ""}${isFreeBF ? "Complimentary Breakfast" : ""} (-₱${totalDiscount.toFixed(2)})`
+                });
+            }
 
             // 3. Update the master counter and grand total
 transaction.set(configRef, { 
