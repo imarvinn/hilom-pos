@@ -1,3 +1,13 @@
+// Safe HTML escaper for inventory & asset labels
+function escapeInvHTML(val) {
+    return String(val ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 // --- INVENTORY LOGIC WITH PAGINATION ---
 let allInventoryItems = [];
 let currentInvPage = 1;
@@ -196,9 +206,28 @@ function addItem() {
     });
 }
 
-function deleteItem(id) { 
-    if(confirm("Delete inventory item?")) {
-        db.collection("inventory").doc(id).delete(); 
+async function deleteItem(id) {
+    const confirmed = window.hilomConfirm
+        ? await hilomConfirm("Delete this inventory item?")
+        : confirm("Delete inventory item?");
+    if (confirmed) {
+        try {
+            const itemObj = allInventoryItems.find(i => i.id === id);
+            await db.collection("inventory").doc(id).delete();
+            if (typeof window.recordAuditEvent === "function") {
+                window.recordAuditEvent({
+                    category: "SECURITY",
+                    action: "DELETE_INVENTORY",
+                    tableNo: "Inventory",
+                    amount: 0,
+                    details: `Deleted inventory item: ${itemObj ? itemObj.name : id}`
+                });
+            }
+            showToast("Inventory item deleted.");
+        } catch (err) {
+            console.error("Error deleting inventory item:", err);
+            showToast("Failed to delete inventory item.");
+        }
     }
 }
 
@@ -263,119 +292,240 @@ function printInventoryReport() {
 }
 
 // ==========================================
-// FIXED ASSETS LOGIC
+// FIXED ASSETS LOGIC (WITH DEPARTMENT & EDITING)
 // ==========================================
 
-// 1. Add Asset to Firebase
+let editingAssetId = null;
+
+// 1. Add or Update Asset in Firebase
 async function addAsset() {
-    const name = document.getElementById("assetName").value.trim();
+    const rawName = document.getElementById("assetName").value.trim();
+    const name = typeof sanitizeHTML === "function" ? sanitizeHTML(rawName) : rawName.replace(/[<>]/g, "");
     const category = document.getElementById("assetCategory").value;
+    const deptEl = document.getElementById("assetDepartment");
+    const department = deptEl ? deptEl.value : "General / Shared";
     const qty = parseInt(document.getElementById("assetQty").value);
     const cost = parseFloat(document.getElementById("assetCost").value) || 0;
     const date = document.getElementById("assetDate").value;
-    const serial = document.getElementById("assetSerial").value.trim() || "-";
+    const rawSerial = document.getElementById("assetSerial").value.trim() || "-";
+    const serial = typeof sanitizeHTML === "function" ? sanitizeHTML(rawSerial) : rawSerial.replace(/[<>]/g, "");
     const status = document.getElementById("assetStatus").value;
 
-    if (!name || isNaN(qty)) return alert("Please provide a valid name and quantity.");
+    if (!name || isNaN(qty) || qty < 0) return alert("Please provide a valid name and quantity.");
+
+    const payload = {
+        name: name,
+        category: category,
+        department: department,
+        quantity: qty,
+        purchaseCost: cost,
+        purchaseDate: date,
+        serialNumber: serial,
+        status: status
+    };
 
     try {
-        await db.collection("fixed_assets").add({
-            name: name,
-            category: category,
-            quantity: qty,
-            purchaseCost: cost,
-            purchaseDate: date,
-            serialNumber: serial,
-            status: status,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        document.getElementById("assetName").value = "";
-        document.getElementById("assetQty").value = "";
-        document.getElementById("assetCost").value = "";
-        document.getElementById("assetDate").value = "";
-        document.getElementById("assetSerial").value = "";
-        showToast("Asset added successfully!");
+        if (editingAssetId) {
+            const oldAsset = allFixedAssetsData.find(a => a.id === editingAssetId) || {};
+            payload.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection("fixed_assets").doc(editingAssetId).update(payload);
+
+            if (typeof window.recordAuditEvent === "function") {
+                window.recordAuditEvent({
+                    category: "SECURITY",
+                    action: "EDIT_ASSET",
+                    tableNo: department,
+                    amount: qty * cost,
+                    details: `Updated fixed asset "${name}": Cat [${oldAsset.category || "-"} → ${category}], Dept [${oldAsset.department || "Unassigned"} → ${department}], Qty [${oldAsset.quantity ?? 0} → ${qty}], Cost [₱${(oldAsset.purchaseCost || 0).toFixed(2)} → ₱${cost.toFixed(2)}], Status [${oldAsset.status || "Active"} → ${status}].`
+                });
+            }
+
+            showToast(`Asset "${name}" updated!`);
+            resetAssetForm();
+        } else {
+            payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection("fixed_assets").add(payload);
+            showToast(`Asset added to ${department} (${category})!`);
+            resetAssetForm();
+        }
     } catch (error) {
-        console.error("Error adding asset:", error);
-        alert("Failed to add asset.");
+        console.error("Error saving asset:", error);
+        alert("Failed to save asset.");
     }
 }
 
-// 2. Listen to Assets Collection & Calculate Analysis Metrics
+// 1b. Load Existing Asset Into Form for Editing
+function editAsset(id) {
+    const asset = allFixedAssetsData.find(a => a.id === id);
+    if (!asset) return showToast("Asset record not found.");
+
+    editingAssetId = id;
+
+    document.getElementById("assetName").value = asset.name || "";
+
+    const catSelect = document.getElementById("assetCategory");
+    if (catSelect) {
+        const hasCat = Array.from(catSelect.options).some(opt => opt.value === asset.category);
+        catSelect.value = hasCat ? asset.category : "Other";
+    }
+
+    const deptSelect = document.getElementById("assetDepartment");
+    if (deptSelect) {
+        const hasDept = Array.from(deptSelect.options).some(opt => opt.value === asset.department);
+        deptSelect.value = hasDept ? asset.department : "General / Shared";
+    }
+
+    document.getElementById("assetQty").value = asset.quantity ?? 0;
+    document.getElementById("assetCost").value = asset.purchaseCost ?? 0;
+    document.getElementById("assetDate").value = asset.purchaseDate || "";
+    document.getElementById("assetSerial").value = (asset.serialNumber && asset.serialNumber !== "-") ? asset.serialNumber : "";
+
+    const statusSelect = document.getElementById("assetStatus");
+    if (statusSelect) {
+        const hasStatus = Array.from(statusSelect.options).some(opt => opt.value === asset.status);
+        statusSelect.value = hasStatus ? asset.status : "Active";
+    }
+
+    const submitBtn = document.getElementById("assetSubmitBtn");
+    if (submitBtn) {
+        submitBtn.innerText = "💾 Update Asset";
+        submitBtn.style.backgroundColor = "#4a6fa5";
+    }
+
+    const cancelBtn = document.getElementById("cancelEditAssetBtn");
+    if (cancelBtn) cancelBtn.classList.remove("hidden");
+
+    const banner = document.getElementById("assetEditBanner");
+    const bannerName = document.getElementById("assetEditNameDisplay");
+    if (bannerName) bannerName.innerText = asset.name || "Unnamed Asset";
+    if (banner) banner.classList.remove("hidden");
+
+    document.getElementById("assetName").scrollIntoView({ behavior: "smooth", block: "center" });
+    document.getElementById("assetName").focus();
+}
+
+// 1c. Reset Asset Form Back to Add Mode
+function resetAssetForm() {
+    editingAssetId = null;
+    document.getElementById("assetName").value = "";
+    document.getElementById("assetQty").value = "";
+    document.getElementById("assetCost").value = "";
+    document.getElementById("assetDate").value = "";
+    document.getElementById("assetSerial").value = "";
+
+    const statusSelect = document.getElementById("assetStatus");
+    if (statusSelect) statusSelect.value = "Active";
+
+    const submitBtn = document.getElementById("assetSubmitBtn");
+    if (submitBtn) {
+        submitBtn.innerText = "+ Add Asset";
+        submitBtn.style.backgroundColor = "";
+    }
+
+    const cancelBtn = document.getElementById("cancelEditAssetBtn");
+    if (cancelBtn) cancelBtn.classList.add("hidden");
+
+    const banner = document.getElementById("assetEditBanner");
+    if (banner) banner.classList.add("hidden");
+}
+
+// 2. Listen to Assets Collection & Render Filtered Table + Metrics
 let assetsListener = null;
 let allFixedAssetsData = [];
 
 function loadAssets() {
-    if (assetsListener !== null) return; // Prevent duplicate listeners
+    if (assetsListener !== null) {
+        renderAssetsTable();
+        return; // Prevent duplicate listeners
+    }
 
     assetsListener = db.collection("fixed_assets").orderBy("name").onSnapshot(snapshot => {
-        const list = document.getElementById("assetsList");
-        if (!list) return;
-        
-        list.innerHTML = "";
         allFixedAssetsData = [];
-
-        if (snapshot.empty) {
-            list.innerHTML = "<tr><td colspan='8' style='text-align: center; color: #888; padding: 15px;'>No assets recorded yet.</td></tr>";
-            document.getElementById("assetMetricTotalUnits").innerText = "0";
-            document.getElementById("assetMetricTotalValuation").innerText = "₱0.00";
-            document.getElementById("assetMetricActiveUnits").innerText = "0";
-            document.getElementById("assetMetricMaintUnits").innerText = "0";
-            document.getElementById("assetMetricDisposedUnits").innerText = "0";
-            return;
-        }
-
-        let totalUnits = 0;
-        let totalValuation = 0;
-        let activeUnits = 0;
-        let maintUnits = 0;
-        let disposedUnits = 0;
-
         snapshot.forEach(doc => {
-            const data = { id: doc.id, ...doc.data() };
-            allFixedAssetsData.push(data);
-
-            const qty = data.quantity || 0;
-            const cost = data.purchaseCost || 0;
-            const itemTotalCost = cost * qty;
-            const status = data.status || "Active";
-
-            totalUnits += qty;
-            totalValuation += itemTotalCost;
-
-            if (status === "Active") activeUnits += qty;
-            else if (status === "Maintenance") maintUnits += qty;
-            else if (status === "Disposed") disposedUnits += qty;
-
-            let statusColor = "#557a46"; let bgStatus = "#e8f5e9";
-            if (status === "Maintenance") { statusColor = "#d4a373"; bgStatus = "#fff3cd"; }
-            else if (status === "Disposed") { statusColor = "#bd4b4b"; bgStatus = "#ffebee"; }
-
-            list.innerHTML += `
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 10px; font-weight: bold; color: #333;">${data.name}</td>
-                    <td style="padding: 10px;"><span style="background: #e9ece9; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #555; font-weight: bold;">${data.category}</span></td>
-                    <td style="padding: 10px; font-weight: bold; font-size: 15px; color: #2b4227;">${qty}</td>
-                    <td style="padding: 10px; color: #555;">₱${cost.toFixed(2)}<br><small style="color:#888;">(Tot: ₱${itemTotalCost.toFixed(2)})</small></td>
-                    <td style="padding: 10px; color: #888; font-family: monospace;">${data.serialNumber || "-"}</td>
-                    <td style="padding: 10px;"><span style="background: ${bgStatus}; color: ${statusColor}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">${status}</span></td>
-                    <td style="padding: 10px; color: #666;">${data.purchaseDate || "-"}</td>
-                    <td class="no-print" style="padding: 10px;">
-                        <button onclick="updateAssetQty('${data.id}', ${qty}, 1)" style="background: #557a46; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">+1</button>
-                        <button onclick="updateAssetQty('${data.id}', ${qty}, -1)" style="background: #d4a373; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 2px;">-1</button>
-                        <button onclick="deleteAsset('${data.id}')" style="background: transparent; color: #bd4b4b; border: 1px solid #bd4b4b; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-left: 5px; font-size: 11px;">Remove</button>
-                    </td>
-                </tr>
-            `;
+            allFixedAssetsData.push({ id: doc.id, ...doc.data() });
         });
-
-        document.getElementById("assetMetricTotalUnits").innerText = totalUnits;
-        document.getElementById("assetMetricTotalValuation").innerText = `₱${totalValuation.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        document.getElementById("assetMetricActiveUnits").innerText = activeUnits;
-        document.getElementById("assetMetricMaintUnits").innerText = maintUnits;
-        document.getElementById("assetMetricDisposedUnits").innerText = disposedUnits;
+        renderAssetsTable();
+    }, error => {
+        console.error("Error loading fixed assets:", error);
     });
+}
+
+function renderAssetsTable() {
+    const list = document.getElementById("assetsList");
+    if (!list) return;
+
+    const filterEl = document.getElementById("assetDeptFilter");
+    const activeDept = filterEl ? filterEl.value : "ALL";
+
+    const filteredAssets = allFixedAssetsData.filter(data => {
+        const dept = data.department || "Unassigned";
+        return activeDept === "ALL" || dept === activeDept;
+    });
+
+    list.innerHTML = "";
+
+    if (filteredAssets.length === 0) {
+        const emptyMsg = activeDept === "ALL"
+            ? "No assets recorded yet."
+            : `No assets recorded under ${escapeInvHTML(activeDept)}.`;
+        list.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #888; padding: 15px;">${emptyMsg}</td></tr>`;
+        document.getElementById("assetMetricTotalUnits").innerText = "0";
+        document.getElementById("assetMetricTotalValuation").innerText = "₱0.00";
+        document.getElementById("assetMetricActiveUnits").innerText = "0";
+        document.getElementById("assetMetricMaintUnits").innerText = "0";
+        document.getElementById("assetMetricDisposedUnits").innerText = "0";
+        return;
+    }
+
+    let totalUnits = 0;
+    let totalValuation = 0;
+    let activeUnits = 0;
+    let maintUnits = 0;
+    let disposedUnits = 0;
+
+    filteredAssets.forEach(data => {
+        const qty = data.quantity || 0;
+        const cost = data.purchaseCost || 0;
+        const itemTotalCost = cost * qty;
+        const status = data.status || "Active";
+        const department = data.department || "Unassigned";
+
+        totalUnits += qty;
+        totalValuation += itemTotalCost;
+
+        if (status === "Active") activeUnits += qty;
+        else if (status === "Maintenance") maintUnits += qty;
+        else if (status === "Disposed") disposedUnits += qty;
+
+        let statusColor = "#557a46"; let bgStatus = "#e8f5e9";
+        if (status === "Maintenance") { statusColor = "#d4a373"; bgStatus = "#fff3cd"; }
+        else if (status === "Disposed") { statusColor = "#bd4b4b"; bgStatus = "#ffebee"; }
+
+        list.innerHTML += `
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; font-weight: bold; color: #333;">${escapeInvHTML(data.name)}</td>
+                <td style="padding: 10px;"><span style="background: #e9ece9; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #555; font-weight: bold;">${escapeInvHTML(data.category)}</span></td>
+                <td style="padding: 10px;"><span style="background: #eef4fb; border: 1px solid #c5daf2; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #2d5986; font-weight: bold;">${escapeInvHTML(department)}</span></td>
+                <td style="padding: 10px; font-weight: bold; font-size: 15px; color: #2b4227;">${qty}</td>
+                <td style="padding: 10px; color: #555;">₱${cost.toFixed(2)}<br><small style="color:#888;">(Tot: ₱${itemTotalCost.toFixed(2)})</small></td>
+                <td style="padding: 10px; color: #888; font-family: monospace;">${escapeInvHTML(data.serialNumber || "-")}</td>
+                <td style="padding: 10px;"><span style="background: ${bgStatus}; color: ${statusColor}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">${escapeInvHTML(status)}</span></td>
+                <td style="padding: 10px; color: #666;">${escapeInvHTML(data.purchaseDate || "-")}</td>
+                <td class="no-print" style="padding: 10px; white-space: nowrap;">
+                    <button onclick="updateAssetQty('${data.id}', ${qty}, 1)" style="background: #557a46; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold;">+1</button>
+                    <button onclick="updateAssetQty('${data.id}', ${qty}, -1)" style="background: #d4a373; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 2px;">-1</button>
+                    <button onclick="editAsset('${data.id}')" style="background: transparent; color: #4a6fa5; border: 1px solid #4a6fa5; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-left: 5px; font-size: 11px; font-weight: bold;">Edit</button>
+                    <button onclick="deleteAsset('${data.id}')" style="background: transparent; color: #bd4b4b; border: 1px solid #bd4b4b; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-left: 4px; font-size: 11px;">Remove</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    document.getElementById("assetMetricTotalUnits").innerText = totalUnits;
+    document.getElementById("assetMetricTotalValuation").innerText = `₱${totalValuation.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    document.getElementById("assetMetricActiveUnits").innerText = activeUnits;
+    document.getElementById("assetMetricMaintUnits").innerText = maintUnits;
+    document.getElementById("assetMetricDisposedUnits").innerText = disposedUnits;
 }
 
 // 3. Update Quantity
@@ -391,42 +541,67 @@ async function updateAssetQty(id, currentQty, change) {
 
 // 4. Delete Asset completely
 async function deleteAsset(id) {
-    if (confirm("Are you sure you want to permanently remove this asset?")) {
+    const confirmed = window.hilomConfirm
+        ? await hilomConfirm("Are you sure you want to permanently remove this asset?")
+        : confirm("Are you sure you want to permanently remove this asset?");
+    if (confirmed) {
         try {
+            const assetObj = allFixedAssetsData.find(a => a.id === id);
             await db.collection("fixed_assets").doc(id).delete();
+            if (editingAssetId === id) resetAssetForm();
+            if (typeof window.recordAuditEvent === "function") {
+                window.recordAuditEvent({
+                    category: "SECURITY",
+                    action: "DELETE_ASSET",
+                    tableNo: assetObj ? (assetObj.department || "Fixed Assets") : "Fixed Assets",
+                    amount: assetObj ? ((assetObj.quantity || 0) * (assetObj.purchaseCost || 0)) : 0,
+                    details: `Removed fixed asset: ${assetObj ? `${assetObj.name} (${assetObj.category}, Qty ${assetObj.quantity || 0})` : id}`
+                });
+            }
+            showToast("Asset removed.");
         } catch (error) {
             console.error("Error deleting asset:", error);
         }
     }
 }
 
-// 5. Print Asset Inventory & Valuation Report
+// 5. Print Asset Inventory & Valuation Report (Respects Department Filter)
 function printAssetReport() {
-    if (allFixedAssetsData.length === 0) return showToast("No asset data available to print.");
+    const filterEl = document.getElementById("assetDeptFilter");
+    const activeDept = filterEl ? filterEl.value : "ALL";
+    const itemsToPrint = allFixedAssetsData.filter(item => {
+        const dept = item.department || "Unassigned";
+        return activeDept === "ALL" || dept === activeDept;
+    });
+
+    if (itemsToPrint.length === 0) return showToast("No asset data available to print.");
 
     let totalVal = 0;
     let totalUnits = 0;
     let tableRows = "";
 
-    allFixedAssetsData.forEach(item => {
+    itemsToPrint.forEach(item => {
         let subtotal = (item.quantity || 0) * (item.purchaseCost || 0);
         totalVal += subtotal;
         totalUnits += (item.quantity || 0);
 
         tableRows += `
             <tr>
-                <td style="border: 1px solid #ccc; padding: 8px;"><b>${item.name}</b></td>
-                <td style="border: 1px solid #ccc; padding: 8px;">${item.category}</td>
+                <td style="border: 1px solid #ccc; padding: 8px;"><b>${escapeInvHTML(item.name)}</b></td>
+                <td style="border: 1px solid #ccc; padding: 8px;">${escapeInvHTML(item.category)}</td>
+                <td style="border: 1px solid #ccc; padding: 8px;">${escapeInvHTML(item.department || "Unassigned")}</td>
                 <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">${item.quantity || 0}</td>
                 <td style="border: 1px solid #ccc; padding: 8px; text-align: right;">₱${(item.purchaseCost || 0).toFixed(2)}</td>
                 <td style="border: 1px solid #ccc; padding: 8px; text-align: right;">₱${subtotal.toFixed(2)}</td>
-                <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">${item.status || "Active"}</td>
-                <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">${item.serialNumber || "-"}</td>
+                <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">${escapeInvHTML(item.status || "Active")}</td>
+                <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">${escapeInvHTML(item.serialNumber || "-")}</td>
             </tr>
         `;
     });
 
-    const printWin = window.open('', '_blank', 'width=900,height=700');
+    const deptSubtitle = activeDept === "ALL" ? "All Departments" : `Department: ${escapeInvHTML(activeDept)}`;
+
+    const printWin = window.open('', '_blank', 'width=950,height=700');
     printWin.document.write(`
         <html>
         <head>
@@ -442,13 +617,14 @@ function printAssetReport() {
         <body>
             <div style="border-bottom: 2px solid #2b4227; padding-bottom: 10px; margin-bottom: 20px;">
                 <h2>HILOM RESORT - FIXED ASSETS REGISTER & VALUATION</h2>
-                <h4>Generated on: ${new Date().toLocaleString()}</h4>
+                <h4>${deptSubtitle} &nbsp;|&nbsp; Generated on: ${new Date().toLocaleString()}</h4>
             </div>
             <table>
                 <thead>
                     <tr>
                         <th>Asset Name</th>
                         <th>Category</th>
+                        <th>Department</th>
                         <th style="text-align: center;">Qty</th>
                         <th style="text-align: right;">Unit Cost</th>
                         <th style="text-align: right;">Total Value</th>
@@ -471,4 +647,3 @@ function printAssetReport() {
     printWin.focus();
     setTimeout(() => { printWin.print(); printWin.close(); }, 350);
 }
-

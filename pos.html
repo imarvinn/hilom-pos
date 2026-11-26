@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="pos-style.css">
     <link rel="manifest" href="./manifest.json?v=2">
 <link rel="apple-touch-icon" href="hilom.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="HILOM POS">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -310,20 +310,52 @@
                     </div>
                 </div>
 
-                <div class="no-print" style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+                <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <label for="assetDeptFilter" style="font-size: 13px; font-weight: bold; color: #2b4227;">Filter by Department:</label>
+                        <select id="assetDeptFilter" onchange="renderAssetsTable()" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; margin: 0;">
+                            <option value="ALL">All Departments</option>
+                            <option value="Kitchen">Kitchen</option>
+                            <option value="Rooms">Rooms</option>
+                            <option value="Bar">Bar</option>
+                            <option value="Restaurant">Restaurant</option>
+                            <option value="Cleaning / Housekeeping">Cleaning / Housekeeping</option>
+                            <option value="Front Desk">Front Desk</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Admin / Office">Admin / Office</option>
+                            <option value="General / Shared">General / Shared</option>
+                            <option value="Unassigned">Unassigned</option>
+                        </select>
+                    </div>
                     <button class="save-btn" onclick="printAssetReport()" style="background: #2b4227; padding: 8px 16px;">🖨️ Print Asset Valuation Report</button>
+                </div>
+
+                <div id="assetEditBanner" class="hidden no-print" style="background: #eef4fb; border: 1px solid #4a6fa5; color: #2d5986; padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; font-weight: bold;">
+                    ✏️ Editing Asset: <span id="assetEditNameDisplay"></span>
                 </div>
 
                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 15px;">
                     <input type="text" id="assetName" placeholder="Item Name (e.g., POS Terminal)" required style="flex: 2; min-width: 150px; margin: 0;">
-                    <select id="assetCategory" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin: 0; flex: 1;">
+                    <select id="assetCategory" title="Asset Category" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin: 0; flex: 1; min-width: 140px;">
                         <option value="Linens">Linens & Towels</option>
-                        <option value="Other">Kitchenware</option>
+                        <option value="Kitchenware">Kitchenware</option>
                         <option value="Furniture">Furniture</option>
                         <option value="Appliances">Appliances</option>
                         <option value="IT/Electronics">IT / Electronics</option>
                         <option value="Decor">Decor & Fixtures</option>
+                        <option value="Cleaning Equipment">Cleaning Equipment</option>
                         <option value="Other">Other</option>
+                    </select>
+                    <select id="assetDepartment" title="Assigned Department" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin: 0; flex: 1; min-width: 150px;">
+                        <option value="Kitchen">Kitchen</option>
+                        <option value="Rooms">Rooms</option>
+                        <option value="Bar">Bar</option>
+                        <option value="Restaurant">Restaurant</option>
+                        <option value="Cleaning / Housekeeping">Cleaning / Housekeeping</option>
+                        <option value="Front Desk">Front Desk</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Admin / Office">Admin / Office</option>
+                        <option value="General / Shared">General / Shared</option>
                     </select>
                     <input type="number" id="assetQty" placeholder="Qty" required style="width: 80px; margin: 0;">
                     <input type="number" id="assetCost" placeholder="Unit Cost (₱)" style="width: 110px; margin: 0;">
@@ -336,7 +368,8 @@
                         <option value="Maintenance">🟠 Maintenance</option>
                         <option value="Disposed">🔴 Disposed</option>
                     </select>
-                    <button class="add-btn no-print" onclick="addAsset()" style="margin: 0; padding: 10px 20px;">+ Add Asset</button>
+                    <button id="assetSubmitBtn" class="add-btn no-print" onclick="addAsset()" style="margin: 0; padding: 10px 20px;">+ Add Asset</button>
+                    <button id="cancelEditAssetBtn" class="delete-btn hidden no-print" onclick="resetAssetForm()" style="margin: 0; padding: 10px 16px; background: #888; font-size: 13px;">Cancel Edit</button>
                 </div>
                 
                 <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
@@ -344,6 +377,7 @@
                         <tr style="background: #e9ece9; border-bottom: 2px solid #557a46; text-align: left;">
                             <th style="padding: 10px;">Item Name</th>
                             <th style="padding: 10px;">Category</th>
+                            <th style="padding: 10px;">Department</th>
                             <th style="padding: 10px;">Qty</th>
                             <th style="padding: 10px;">Cost (₱)</th>
                             <th style="padding: 10px;">Serial No.</th>
@@ -353,7 +387,7 @@
                         </tr>
                     </thead>
                     <tbody id="assetsList">
-                        <tr><td colspan="8" style="text-align: center; color: #888; padding: 15px;">Loading assets...</td></tr>
+                        <tr><td colspan="9" style="text-align: center; color: #888; padding: 15px;">Loading assets...</td></tr>
                     </tbody>
                 </table>
             </div>
