@@ -394,8 +394,7 @@
             }
         });
 
-        // 6. Guest Reservation Status Tracker
-        async function checkStatus() {
+      async function checkStatus() {
             const contact = document.getElementById("trackContact").value.trim();
             const resultDiv = document.getElementById("statusResult");
             if (!contact) return alert("Please enter a contact number.");
@@ -404,14 +403,23 @@
             resultDiv.innerHTML = "<p style='text-align:center; color: #666;'>Searching...</p>";
 
             try {
-                const snapshot = await db.collection("web_reservations").where("contact", "==", contact).limit(10).get();
-                if (snapshot.empty) {
+                const res = await fetch("/api/booking-status", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contact })
+                });
+                const payload = await res.json();
+
+                if (!res.ok) {
+                    resultDiv.innerHTML = `<p style='color: #bd4b4b; text-align:center; font-weight: bold;'>${escapeHTML(payload.error || "Unable to search right now.")}</p>`;
+                    return;
+                }
+
+                const bookings = payload.bookings || [];
+                if (bookings.length === 0) {
                     resultDiv.innerHTML = "<p style='color: #bd4b4b; text-align:center; font-weight: bold;'>No reservation found.</p>";
                     return;
                 }
-                let bookings = [];
-                snapshot.forEach(doc => bookings.push(doc.data()));
-                bookings.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
                 let html = "";
                 bookings.forEach(data => {
@@ -428,7 +436,7 @@
                             <div style="font-weight: bold; font-size: 18px; color: var(--primary-dark); margin-bottom: 5px;">${escapeHTML(data.guestName)}</div>
                             <div style="font-size: 14px; color: #555; margin-bottom: 3px;"><strong>Room:</strong> ${escapeHTML(data.roomType)}</div>
                             <div style="font-size: 14px; color: #555; margin-bottom: 15px;"><strong>Dates:</strong> ${escapeHTML(data.checkInDate)} to ${escapeHTML(data.checkOutDate)}</div>
-                            <div style="font-size: 15px; font-weight: bold; color: ${statusColor}; border-top: 1px dashed #ccc; padding-top: 10px;">⬤ STATUS: ${statusText}</div>
+                            <div style="font-size: 15px; font-weight: bold; color: ${statusColor}; border-top: 1px dashed #ccc; padding-top: 10px;">⬤ STATUS: ${escapeHTML(statusText)}</div>
                         </div>`;
                 });
                 resultDiv.innerHTML = html;

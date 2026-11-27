@@ -1796,13 +1796,15 @@ function createProductCard(product) {
             });
         }
 
-        async function deleteStaffMember(staffId, staffName) {
+       async function deleteStaffMember(staffId, staffName) {
             const pin = await hilomPrompt(`🔒 SECURITY CHECK: Enter a Manager PIN to delete ${staffName}:`);
             if (!pin) return;
             try {
-                const staffQuery = await db.collection("staff").where("pinCode", "==", pin).where("role", "in", ["Manager", "Master"]).get();
-                if (staffQuery.empty) return alert("❌ ACCESS DENIED: Invalid PIN or you do not have Manager privileges.");
-                const mgrName = staffQuery.docs[0].data().name || "Manager";
+                const authResult = await window.verifyManagerPinServer(pin, "DELETE_STAFF");
+                if (!authResult.valid) {
+                    return alert(`❌ ACCESS DENIED: ${authResult.error || "Invalid PIN or insufficient privileges."}`);
+                }
+                const mgrName = authResult.authorizedBy || "Manager";
                 if (await hilomConfirm(`Manager verified (${mgrName}).\n\nAre you sure you want to permanently remove ${staffName} from the system?`)) {
                     await db.collection("staff").doc(staffId).delete();
                     if (typeof window.recordAuditEvent === "function") {
@@ -1898,7 +1900,7 @@ firebase.auth().onAuthStateChanged(async (user) => {
             // GATEKEEPER CHECK: Ensure document exists AND is approved
             // ==========================================
             const adminDoc = await db.collection("admin_users").doc(user.uid).get();
-            
+
             if (!adminDoc.exists || adminDoc.data().status !== "APPROVED") {
                 await firebase.auth().signOut();
                 document.getElementById("loginScreen").classList.remove("hidden");
@@ -1907,15 +1909,16 @@ firebase.auth().onAuthStateChanged(async (user) => {
             }
 
             // --- ALL CODE BELOW ONLY RUNS FOR VERIFIED, APPROVED USERS ---
-
             document.getElementById("loginScreen").classList.add("hidden");
             document.getElementById("appScreen").classList.remove("hidden");
 
             const userData = adminDoc.data();
+            const userRole = userData.role || "";
+
             window.currentStaffProfile = {
                 uid: user.uid,
                 name: userData.name || userData.fullName || user.displayName || user.email || "Staff",
-                role: userData.role || "Front Desk",
+                role: userRole,
                 email: user.email || userData.email || ""
             };
 
@@ -1929,87 +1932,89 @@ firebase.auth().onAuthStateChanged(async (user) => {
             // ==========================================
             // ROLE-BASED ACCESS CONTROL (RBAC) UI ROUTING
             // ==========================================
-            let userRole = userData.role ? userData.role : "Front Desk";
-            const navAudit = document.getElementById("navAudit");
-            
-            // 1. DEFAULT SECURE STATE: Hide absolutely everything first
-            document.getElementById("navFrontDesk").style.display = "none";
-            document.getElementById("navPos").style.display = "none";
-            document.getElementById("navKitchen").style.display = "none";
-            document.getElementById("navInv").style.display = "none";
-            document.getElementById("navMenu").style.display = "none";
-            document.getElementById("navSales").style.display = "none";
-            document.getElementById("navTimeClock").style.display = "none"; 
-            if (navAudit) navAudit.style.display = "none"; 
+            const navFrontDesk = document.getElementById("navFrontDesk");
+            const navPos       = document.getElementById("navPos");
+            const navKitchen   = document.getElementById("navKitchen");
+            const navInv       = document.getElementById("navInv");
+            const navMenu      = document.getElementById("navMenu");
+            const navSales     = document.getElementById("navSales");
+            const navTimeClock = document.getElementById("navTimeClock");
+            const navAudit     = document.getElementById("navAudit");
 
-            // 2. REVEAL BASED ON EXACT ROLE
-            if (userRole === "Master" || userRole === "Manager" || userRole === "IT") {
-                // Master, Manager, and IT see absolutely everything
-                document.getElementById("navFrontDesk").style.display = "block";
-                document.getElementById("navPos").style.display = "block";
-                document.getElementById("navKitchen").style.display = "block";
-                document.getElementById("navInv").style.display = "block";
-                document.getElementById("navMenu").style.display = "block";
-                document.getElementById("navSales").style.display = "block";
-                document.getElementById("navTimeClock").style.display = "block";
-                if (navAudit) navAudit.style.display = "block";
-                
-                // IT starts on Audit screen, Master/Manager start on Front Desk
-                if (userRole === "IT" && navAudit) {
-                    navAudit.click(); 
-                } else {
-                    document.getElementById("navFrontDesk").click(); // Changed from navPos
+            // 1. DEFAULT SECURE STATE: Hide everything first
+            [navFrontDesk, navPos, navKitchen, navInv, navMenu, navSales, navTimeClock, navAudit]
+                .forEach(btn => { if (btn) btn.style.display = "none"; });
+
+            // 2. REVEAL BASED ON EXACT ROLE (LEAST PRIVILEGE)
+            const isMgmt = (userRole === "Master" || userRole === "Manager");
+
+            if (isMgmt) {
+                [navFrontDesk, navPos, navKitchen, navInv, navMenu, navSales, navTimeClock, navAudit]
+                    .forEach(btn => { if (btn) btn.style.display = "block"; });
+                if (navFrontDesk) navFrontDesk.click();
+
+            } else if (userRole === "IT") {
+                // IT Support: Audit monitoring only (least privilege)
+                if (navAudit) {
+                    navAudit.style.display = "block";
+                    navAudit.click();
                 }
 
             } else if (userRole === "Front Desk") {
-                // Front Desk ONLY sees Front Desk Rack
-                document.getElementById("navFrontDesk").style.display = "block";
-                document.getElementById("navFrontDesk").click();
+                if (navFrontDesk) {
+                    navFrontDesk.style.display = "block";
+                    navFrontDesk.click();
+                }
 
             } else if (userRole === "F&B" || userRole === "Waiter") {
-                // Waiter ONLY sees POS and Kitchen KDS
-                document.getElementById("navPos").style.display = "block";
-                document.getElementById("navKitchen").style.display = "block";
-                document.getElementById("navPos").click();
+                if (navPos) navPos.style.display = "block";
+                if (navKitchen) navKitchen.style.display = "block";
+                if (navPos) navPos.click();
 
             } else if (userRole === "Kitchen") {
-                // Kitchen ONLY sees KDS, Menu Builder, and Inventory
-                document.getElementById("navKitchen").style.display = "block";
-                document.getElementById("navMenu").style.display = "block";
-                document.getElementById("navInv").style.display = "block";
-                document.getElementById("navKitchen").click();
+                if (navKitchen) navKitchen.style.display = "block";
+                if (navMenu) navMenu.style.display = "block";
+                if (navInv) navInv.style.display = "block";
+                if (navKitchen) navKitchen.click();
 
             } else {
-                // Fallback for any unknown roles
-                document.getElementById("navFrontDesk").style.display = "block";
-                document.getElementById("navFrontDesk").click();
+                // Deny unknown or unassigned roles instead of falling back to Front Desk
+                alert("ACCESS DENIED: Your account does not have a valid assigned role. Please contact Management.");
+                await firebase.auth().signOut();
+                return;
             }
 
-           // ==========================================
+            // ==========================================
             // SAFE STARTUP: ROLE-RESTRICTED DATA LOADERS
             // (Staggered to reduce Total Blocking Time)
             // ==========================================
-            
-            // 1. Data needed by ALL approved staff
-            setTimeout(() => { if (typeof loadSecuritySettings === "function") loadSecuritySettings(); }, 0);
-            setTimeout(() => { if (typeof loadMenu === "function") loadMenu(); }, 50);
-            setTimeout(() => { if (typeof loadCategories === "function") loadCategories(); }, 100);
-            setTimeout(() => { if (typeof loadActiveTables === "function") loadActiveTables(); }, 150);
-            setTimeout(() => { if (typeof loadAdminMenuBoard === "function") loadAdminMenuBoard(); }, 200);
 
-            // 2. Data strictly for MANAGEMENT
-            if (userRole === "Master" || userRole === "Manager") {
-                setTimeout(() => { if (typeof initializeConfig === "function") initializeConfig(); }, 250);
-                setTimeout(() => { if (typeof loadPendingAdmins === "function") loadPendingAdmins(); }, 300);
-                setTimeout(() => { if (typeof loadInventory === "function") loadInventory(); }, 350);
-                setTimeout(() => { if (typeof loadPins === "function") loadPins(); }, 400);
+            // 1. POS, Kitchen & Menu loaders (NOT loaded for IT or Front Desk)
+            if (isMgmt || userRole === "F&B" || userRole === "Waiter" || userRole === "Kitchen") {
+                setTimeout(() => { if (typeof loadMenu === "function") loadMenu(); }, 50);
+                setTimeout(() => { if (typeof loadCategories === "function") loadCategories(); }, 100);
+                setTimeout(() => { if (typeof loadActiveTables === "function") loadActiveTables(); }, 150);
             }
 
-            // 3. Data strictly for FRONT DESK and MANAGEMENT
-            if (userRole === "Master" || userRole === "Manager" || userRole === "Front Desk") {
-                setTimeout(() => { if (typeof listenForWebReservations === "function") listenForWebReservations(); }, 450);
-                setTimeout(() => { if (typeof loadCalendar === "function") loadCalendar(); }, 500);
-                setTimeout(() => { if (typeof loadRoomRack === "function") loadRoomRack(); }, 550);
+            // 2. Menu Builder & Inventory loaders (Management + Kitchen)
+            if (isMgmt || userRole === "Kitchen") {
+                setTimeout(() => { if (typeof loadAdminMenuBoard === "function") loadAdminMenuBoard(); }, 200);
+                setTimeout(() => { if (typeof loadInventory === "function") loadInventory(); }, 250);
+            }
+
+            // 3. Strictly MANAGEMENT (Master & Manager only — matches hardened Firestore rules)
+            if (isMgmt) {
+                setTimeout(() => { if (typeof loadSecuritySettings === "function") loadSecuritySettings(); }, 300);
+                setTimeout(() => { if (typeof initializeConfig === "function") initializeConfig(); }, 350);
+                setTimeout(() => { if (typeof loadPendingAdmins === "function") loadPendingAdmins(); }, 400);
+                setTimeout(() => { if (typeof loadPins === "function") loadPins(); }, 450);
+            }
+
+            // 4. Strictly FRONT DESK and MANAGEMENT
+            if (isMgmt || userRole === "Front Desk") {
+                setTimeout(() => { if (typeof listenForWebReservations === "function") listenForWebReservations(); }, 500);
+                setTimeout(() => { if (typeof loadCalendar === "function") loadCalendar(); }, 550);
+                setTimeout(() => { if (typeof loadRoomRack === "function") loadRoomRack(); }, 600);
             }
 
         } catch (error) {

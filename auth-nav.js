@@ -1,3 +1,24 @@
+window.verifyManagerPinServer = async function (pin, context = "POS_AUTHORIZATION") {
+    const user = firebase.auth().currentUser;
+    if (!user) return { valid: false, error: "Not signed in." };
+
+    try {
+        const idToken = await user.getIdToken();
+        const res = await fetch("/api/verify-pin", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${idToken}`
+            },
+            body: JSON.stringify({ pin: String(pin || "").trim(), context })
+        });
+        return await res.json();
+    } catch (err) {
+        console.error("PIN verification request failed:", err);
+        return { valid: false, error: "Unable to reach authorization server." };
+    }
+};
+
 // --- CENTRAL AUDIT LOGGING HELPER ---
 window.getAuditActor = function() {
     if (window.currentStaffProfile && window.currentStaffProfile.name) {
@@ -62,118 +83,27 @@ function switchView(viewId, navElement) {
 }
 
 async function verifyPin() {
-    const pinElement = document.getElementById("adminPin");
-    const pinInput = pinElement ? pinElement.value.trim() : "";
-    
-    if (!pinInput) {
-        return alert("Please enter a PIN.");
-    }
+    const pinInput = document.getElementById("adminPin");
+    const enteredPin = pinInput ? pinInput.value.trim() : "";
+    if (!enteredPin) return showToast("Please enter a 4-digit PIN.");
 
-    try {
-        const staffQuery = await db.collection("staff").get();
-        let authorizedUser = null;
+    const result = await window.verifyManagerPinServer(enteredPin, "POS_MODAL_AUTH");
 
-        staffQuery.forEach(doc => {
-            const data = doc.data();
-            if (String(data.pinCode) === pinInput) {
-                const role = String(data.role).toLowerCase();
-                if (role.includes("manager") || role.includes("master") || role.includes("it")) {
-                    authorizedUser = data;
-                }
-            }
-        });
+    if (result.valid) {
+        window.lastPinAuthorizer = result.authorizedBy || "Manager PIN";
+        if (pinInput) pinInput.value = "";
+        document.getElementById("pinModal").classList.add("hidden");
 
-        // Fallback 1: Check loaded ADMIN_PIN
-        if (!authorizedUser && typeof ADMIN_PIN !== "undefined" && String(pinInput) === String(ADMIN_PIN)) {
-            authorizedUser = { name: "Admin", role: "Master" };
-        }
-
-        // Fallback 2: Check Firestore settings/security
-        if (!authorizedUser) {
-            try {
-                const secDoc = await db.collection("settings").doc("security").get();
-                if (secDoc.exists && String(secDoc.data().adminPin || secDoc.data().pin) === String(pinInput)) {
-                    authorizedUser = { name: "Admin", role: "Master" };
-                }
-            } catch (e) {}
-        }
-        
-        if (!authorizedUser) {
-            if (typeof window.recordAuditEvent === "function") {
-                window.recordAuditEvent({
-                    category: "SECURITY",
-                    action: "FAILED_PIN_ATTEMPT",
-                    tableNo: pendingViewId || "PIN Prompt",
-                    amount: 0,
-                    authorizedBy: "DENIED",
-                    details: "Invalid or unauthorized 4-digit PIN entered."
-                });
-            }
-            if (pinElement) {
-                pinElement.value = "";
-                pinElement.focus();
-            }
-            return alert("ACCESS DENIED: Invalid PIN or your account doesn't have Manager privileges.");
-        }
-        
-        // Hide modal and clear input
-        if (pinElement) {
-            pinElement.value = ""; 
-            const modal = pinElement.closest('.modal-overlay');
-            if (modal) modal.classList.add("hidden");
-        }
-        const mainModal = document.getElementById("pinModal");
-        if (mainModal) mainModal.classList.add("hidden");
-
-        // Save authorizing Manager name for audit logs & discount tracking
-        window.lastPinAuthorizer = authorizedUser.name || "Manager";
-
-        // 1. IF AUTHORIZING A VOID OR DISCOUNT ACTION (from pos-billing.js or reports.js)
-        if (typeof pinResolvePromise === "function" && pinResolvePromise !== null) {
+        if (typeof pinResolvePromise === "function") {
             const resolve = pinResolvePromise;
             pinResolvePromise = null;
             resolve(true);
-            return;
         }
-
-        // 2. OTHERWISE, UNLOCK SIDEBAR TABS
-        isAdminUnlocked = true; 
-        window.isAdminUnlocked = true;
-        
-        const allSidebarTabs = document.querySelectorAll('.sidebar .nav-btn, .sidebar li');
-        allSidebarTabs.forEach(tab => {
-            tab.style.display = "block"; 
-            tab.style.visibility = "visible";
-            tab.style.pointerEvents = "auto";
-            tab.style.opacity = "1";
-            tab.classList.remove("hidden");
-        });
-
-        const roleStr = String(authorizedUser.role).toLowerCase();
-        if (!roleStr.includes("master") && !roleStr.includes("manager") && !roleStr.includes("it")) {
-            const auditTab = document.getElementById("navAudit") || document.getElementById("auditTab");
-            if (auditTab) auditTab.style.display = "none";
-        }
-        
-        const lockBtn = document.getElementById("lockBtn");
-        const changePinBtn = document.getElementById("changePinBtn");
-        if (lockBtn) lockBtn.classList.remove("hidden");
-        if (changePinBtn) changePinBtn.classList.remove("hidden");
-        
-        alert(`System unlocked by ${authorizedUser.name || "Admin"}`);
-        
-        if (typeof pendingViewId !== "undefined" && pendingViewId) {
-            const nextView = pendingViewId;
-            const nextNav = pendingNavElement;
-            pendingViewId = null;
-            pendingNavElement = null;
-            switchView(nextView, nextNav);
-        }
-        
-    } catch (error) {
-        console.error("Error verifying PIN:", error);
-        alert("Database error verifying PIN. Check your connection.");
+        return;
     }
+
+    if (pinInput) pinInput.value = "";
+    showToast(result.error || "Invalid Manager PIN.");
 }
 
 function closePinModal() { 
