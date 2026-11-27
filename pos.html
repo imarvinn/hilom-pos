@@ -359,45 +359,46 @@
         </div>
 
         <!-- ================= VIEW 3: MENU BUILDER ================= -->
-        <div id="menuManageView" class="view-section hidden">
-            
-            <!-- DYNAMIC CATEGORY MANAGER -->
-            <div class="card" id="categoryManageCard" style="margin-bottom: 20px;">
-                <h2 style="color: #8c5d3a; border-bottom: 1px dashed #ccc;">Manage Menu Categories</h2>
-                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
-                    <input type="text" id="newCategoryName" placeholder="New Category (e.g., Pastries, Coffee)" style="flex:1; min-width: 200px; margin: 0;">
-                    <button class="add-btn" onclick="addCategory()">+ Add Category</button>
-                </div>
-                <div id="categoryList" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <p style="color:#888; font-size:14px; margin:0;">Loading categories...</p>
-                </div>
-            </div>
+            <div id="menuManageView" class="view-section hidden">
+                <div class="card">
+                    <h2 style="color: #2b4227;">Menu Builder & Recipes</h2>
+                    <p style="color: #666; font-size: 14px; margin-top: 0; margin-bottom: 15px;">Manage dishes, link inventory recipes for live profit margins, and toggle Sold Out (86) items in real time.</p>
 
-            <!-- MENU ITEM BUILDER -->
-            <div class="card" id="menuFormCard">
-                <h2 id="menuFormTitle">Create New Menu Item</h2>
-                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                    <input type="text" id="newMenuName" placeholder="Menu Name" style="flex: 1; min-width: 200px;">
-                    <input type="number" id="menuPrice" placeholder="Selling Price (₱)" style="width: 130px;">
-                    <select id="menuCategory"></select>
-                </div>
-                
-                <div id="ingredientInputs">
-                    <div class="ingredient-row"><input type="text" class="ing-name" placeholder="Ingredient Needed" style="flex: 1;"><input type="number" class="ing-qty" placeholder="Qty" style="width: 80px;"></div>
-                </div>
-                
-                <div style="margin-top: 10px; display: flex; gap: 10px;">
-                    <button class="add-btn" onclick="addIngredientRow()">+ Add Ingredient</button>
-                    <button class="save-btn" id="saveMenuBtn" onclick="saveMenuItem()">Save Menu Recipe</button>
-                    <button class="delete-btn hidden" id="cancelEditBtn" onclick="resetMenuForm()">Cancel Edit</button>
-                </div>
-            </div>
+                    <!-- MENU SUMMARY METRICS -->
+                    <div class="profit-dashboard" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <div style="flex:1; text-align:center; min-width: 130px; background:#fff; padding:10px; border-radius:8px; border:1px solid #e0e5e0;">
+                            <h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Total Menu Items</h4>
+                            <span id="menuMetricTotal" style="font-size:22px; font-weight:bold; color:#2b4227;">0</span>
+                        </div>
+                        <div style="flex:1; text-align:center; min-width: 130px; background:#fff; padding:10px; border-radius:8px; border:1px solid #e0e5e0;">
+                            <h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Available on POS</h4>
+                            <span id="menuMetricAvailable" style="font-size:22px; font-weight:bold; color:#2e7d32;">0</span>
+                        </div>
+                        <div style="flex:1; text-align:center; min-width: 130px; background:#fff; padding:10px; border-radius:8px; border:1px solid #e0e5e0;">
+                            <h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">Sold Out (86)</h4>
+                            <span id="menuMetricSoldOut" style="font-size:22px; font-weight:bold; color:#bd4b4b;">0</span>
+                        </div>
+                        <div style="flex:1; text-align:center; min-width: 130px; background:#fff; padding:10px; border-radius:8px; border:1px solid #e0e5e0;">
+                            <h4 style="margin:0; color:#666; text-transform:uppercase; font-size:11px;">No Recipe Linked</h4>
+                            <span id="menuMetricNoRecipe" style="font-size:22px; font-weight:bold; color:#8c5d3a;">0</span>
+                        </div>
+                    </div>
 
-                <!-- ADMIN MENU VIEWER -->
-                <div class="card" style="margin-top: 20px;">
-                    <h2 style="color: #bd4b4b; border-bottom: 1px dashed #ccc;">Manage Existing Menu Items</h2>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Edit or delete your menu items here. (Changes instantly sync to the Cashier POS).</p>
-                    
+                    <!-- TOOLBAR: SEARCH, CATEGORY FILTER & ACTION BUTTONS -->
+                    <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 18px;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; min-width: 260px;">
+                            <input type="text" id="menuSearchInput" placeholder="Search menu item..." oninput="renderAdminMenuBoard()" style="flex: 1; min-width: 160px; margin: 0; padding: 9px 12px;">
+                            <select id="menuAdminCatFilter" onchange="renderAdminMenuBoard()" style="padding: 9px 12px; border: 1px solid #ccc; border-radius: 6px; margin: 0;">
+                                <option value="ALL">All Categories</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="save-btn" onclick="openCategoryModal()" style="background: #8c5d3a; padding: 9px 14px; margin: 0;">🏷️ Manage Categories</button>
+                            <button class="add-btn" onclick="openMenuModal()" style="padding: 9px 16px; margin: 0;">+ Add Menu Item</button>
+                        </div>
+                    </div>
+
+                    <!-- MENU CARDS GRID -->
                     <div id="adminMenuGridContainer">
                         <p style="color:#888; font-size:14px;">Loading menu items...</p>
                     </div>
@@ -818,6 +819,92 @@
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-top: 20px;">
                 <button id="assetSubmitBtn" class="add-btn" onclick="addAsset()" style="padding: 12px; font-size: 15px; margin: 0;">+ Save Asset</button>
                 <button class="delete-btn" onclick="closeAssetModal()" style="padding: 12px; font-size: 15px; background: #888; margin: 0;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MENU ITEM ADD / EDIT MODAL -->
+    <div id="menuItemModal" class="modal-overlay hidden no-print" style="z-index: 2600;" onclick="if(event.target === this) closeMenuModal()">
+        <div class="modal-content" style="max-width: 580px; width: 94vw; text-align: left;">
+            <h2 id="menuModalTitle" style="border-bottom: 2px solid #e0e5e0; color: #2b4227; margin-top: 0; margin-bottom: 16px; padding-bottom: 10px;">Create New Menu Item</h2>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="grid-column: 1 / -1;">
+                    <label style="display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 4px;">Menu Item Name *</label>
+                    <input type="text" id="newMenuName" placeholder="e.g., Sizzling Bangus, Iced Latte" required style="width: 100%; margin: 0; padding: 10px; box-sizing: border-box;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 4px;">Selling Price (₱) *</label>
+                    <input type="number" id="menuPrice" placeholder="0.00" min="0" step="0.01" oninput="calculateMenuMargin()" style="width: 100%; margin: 0; padding: 10px; box-sizing: border-box;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 4px;">Category</label>
+                    <select id="menuCategory" style="width: 100%; margin: 0; padding: 10px; box-sizing: border-box;"></select>
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                    <label style="display: flex; align-items: center; gap: 8px; background: #f4f6f4; border: 1px solid #d5e2d5; padding: 9px 12px; border-radius: 6px; font-size: 13px; font-weight: bold; color: #2b4227; cursor: pointer;">
+                        <input type="checkbox" id="menuAvailableCheck" checked style="width: 17px; height: 17px; margin: 0;">
+                        Available on Cashier POS (uncheck to mark Sold Out / 86)
+                    </label>
+                </div>
+            </div>
+
+            <!-- RECIPE INGREDIENTS SECTION -->
+            <div style="margin-top: 16px; border-top: 1px dashed #ccc; padding-top: 14px;">
+                <div style="display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <div>
+                        <strong style="color: #2b4227; font-size: 14px;">Recipe Ingredients</strong>
+                        <div style="font-size: 11px; color: #777;">Select directly from Inventory for accurate auto-deduction & food cost.</div>
+                    </div>
+                    <button type="button" class="add-btn" onclick="addIngredientRow()" style="padding: 7px 12px; font-size: 12px; margin: 0;">+ Add Ingredient</button>
+                </div>
+
+                <div id="ingredientInputs" style="max-height: 210px; overflow-y: auto; padding-right: 4px;"></div>
+            </div>
+
+            <!-- LIVE COST & PROFIT MARGIN PREVIEW -->
+            <div id="menuMarginPreview" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: #f4f6f4; border: 1px solid #c8dac8; border-radius: 8px; padding: 12px; margin-top: 14px; text-align: center;">
+                <div>
+                    <div style="font-size: 11px; color: #666; text-transform: uppercase;">Recipe Cost</div>
+                    <div id="menuCalcCost" style="font-size: 17px; font-weight: bold; color: #bd4b4b;">₱0.00</div>
+                </div>
+                <div style="border-left: 1px dashed #ccc; border-right: 1px dashed #ccc;">
+                    <div style="font-size: 11px; color: #666; text-transform: uppercase;">Est. Gross Profit</div>
+                    <div id="menuCalcProfit" style="font-size: 17px; font-weight: bold; color: #2b4227;">₱0.00</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #666; text-transform: uppercase;">Profit Margin</div>
+                    <div id="menuCalcMargin" style="font-size: 17px; font-weight: bold; color: #2e7d32;">0.0%</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-top: 18px;">
+                <button id="saveMenuBtn" class="add-btn" onclick="saveMenuItem()" style="padding: 12px; font-size: 15px; margin: 0;">💾 Save Menu Item</button>
+                <button class="delete-btn" onclick="closeMenuModal()" style="padding: 12px; font-size: 15px; background: #888; margin: 0;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MANAGE MENU CATEGORIES MODAL -->
+    <div id="categoryModal" class="modal-overlay hidden no-print" style="z-index: 2600;" onclick="if(event.target === this) closeCategoryModal()">
+        <div class="modal-content" style="max-width: 460px; width: 92vw; text-align: left;">
+            <h2 style="border-bottom: 2px solid #e0e5e0; color: #8c5d3a; margin-top: 0; margin-bottom: 14px; padding-bottom: 10px;">Manage Menu Categories</h2>
+
+            <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 16px;">
+                <input type="text" id="newCategoryName" placeholder="New Category (e.g., Pastries, Coffee)" style="width: 100%; margin: 0; padding: 10px; box-sizing: border-box;">
+                <button class="add-btn" onclick="addCategory()" style="padding: 10px 14px; margin: 0;">+ Add</button>
+            </div>
+
+            <div id="categoryList" style="min-height: 44px; background: #f9f9f9; border: 1px solid #e0e5e0; border-radius: 8px; padding: 12px;">
+                <p style="color:#888; font-size:13px; margin:0;">Loading categories...</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr; margin-top: 16px;">
+                <button class="save-btn" onclick="closeCategoryModal()" style="padding: 11px; background: #2b4227; margin: 0;">Done</button>
             </div>
         </div>
     </div>
@@ -1769,49 +1856,6 @@ let rowHtml = `<tr><td style="width: 150px; min-width: 150px; max-width: 150px; 
 }
         }
 
-        function loadAdminMenuBoard() {
-            const adminGrid = document.getElementById("adminMenuGridContainer");
-            if(!adminGrid) return;
-            
-            db.collection("menu").onSnapshot(snapshot => {
-                adminGrid.innerHTML = "";
-                if(snapshot.empty) return adminGrid.innerHTML = "<p style='color:#888;'>No menu items found. Create one above!</p>";
-                
-                let categories = {};
-                snapshot.forEach(doc => {
-                    const item = doc.data(); const cat = item.category || "Uncategorized";
-                    if (!categories[cat]) categories[cat] = [];
-                    categories[cat].push({ id: doc.id, ...item });
-                });
-                
-                for (const [category, items] of Object.entries(categories)) {
-                    // Modernized Category Header and Grid Layout
-                    let catHTML = `
-                        <h4 style="width: 100%; border-bottom: 2px solid #e0e5e0; padding-bottom: 5px; margin-top: 25px; margin-bottom: 15px; color: #2b4227; font-size: 16px; letter-spacing: 0.5px; text-transform: uppercase;">${category}</h4>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    `;
-                    
-                    items.forEach(item => {
-                        // Professional Card Design with Integrated Footer Buttons
-                        catHTML += `
-                            <div style="background: white; border: 1px solid #e0e5e0; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                                <div style="padding: 15px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
-                                    <div style="font-weight: 600; color: #333; margin-bottom: 6px; font-size: 14px; line-height: 1.3;">${item.name}</div>
-                                    <div style="color: #557a46; font-size: 15px; font-weight: bold;">₱${parseFloat(item.price).toFixed(2)}</div>
-                                </div>
-                                <div style="display: flex; border-top: 1px solid #eee; background: #fcfbf8;">
-                                    <button onclick="editMenuItem('${item.id}')" style="flex: 1; padding: 10px 0; background: transparent; color: #8c5d3a; border: none; border-right: 1px solid #eee; cursor: pointer; font-size: 13px; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.background='#f4f6f4'" onmouseout="this.style.background='transparent'">Edit</button>
-                                    <button onclick="deleteMenuItem('${item.id}')" style="flex: 1; padding: 10px 0; background: transparent; color: #bd4b4b; border: none; cursor: pointer; font-size: 13px; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.background='#ffebee'" onmouseout="this.style.background='transparent'">Delete</button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    catHTML += `</div>`; 
-                    adminGrid.innerHTML += catHTML;
-                }
-            });
-        }
 
 // 1. MASTER STARTUP & SECURITY LISTENER (pos.html)
 firebase.auth().onAuthStateChanged(async (user) => {
@@ -2172,57 +2216,6 @@ firebase.auth().onAuthStateChanged(async (user) => {
             }
         }
 
-        // 6. MENU BUILDER CONTROLS
-        let currentEditItemId = null;
-
-        async function deleteMenuItem(itemId) {
-            if (await hilomConfirm("Permanently delete this menu item?")) {
-                try {
-                    const mDoc = await db.collection("menu").doc(itemId).get();
-                    const mData = mDoc.exists ? mDoc.data() : {};
-                    await db.collection("menu").doc(itemId).delete();
-                    if (typeof window.recordAuditEvent === "function") {
-                        window.recordAuditEvent({
-                            category: "SECURITY",
-                            action: "DELETE_MENU",
-                            tableNo: "Menu Builder",
-                            amount: Number(mData.price) || 0,
-                            details: `Deleted menu item: ${mData.name || itemId}`
-                        });
-                    }
-                } catch (err) {
-                    alert("Error deleting item.");
-                }
-            }
-        }
-
-        function editMenuItem(itemId) {
-            document.getElementById("menuFormCard").scrollIntoView({ behavior: 'smooth' });
-            db.collection("menu").doc(itemId).get().then(doc => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    document.getElementById("newMenuName").value = data.name || "";
-                    document.getElementById("menuPrice").value = data.price || "";
-                    const catSelect = document.getElementById("menuCategory");
-                    if (catSelect) catSelect.value = data.category || "";
-                    currentEditItemId = itemId; 
-                    document.getElementById("menuFormTitle").innerText = "Editing: " + data.name;
-                    document.getElementById("menuFormTitle").style.color = "#d4a373";
-                    document.getElementById("saveMenuBtn").innerText = "Update Menu Item";
-                    document.getElementById("cancelEditBtn").classList.remove("hidden");
-                }
-            });
-        }
-
-        function resetMenuForm() {
-            currentEditItemId = null;
-            document.getElementById("newMenuName").value = "";
-            document.getElementById("menuPrice").value = "";
-            document.getElementById("menuFormTitle").innerText = "Create New Menu Item";
-            document.getElementById("menuFormTitle").style.color = "#333";
-            document.getElementById("saveMenuBtn").innerText = "Save Menu Recipe";
-            document.getElementById("cancelEditBtn").classList.add("hidden");
-        }
 async function logITAuditAccess(user, userData) {
     try {
         // 1. Fetch public IP and location metadata with a reliable fallback

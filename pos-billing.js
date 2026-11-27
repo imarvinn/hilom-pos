@@ -931,78 +931,522 @@ transaction.set(configRef, {
     }
 }
 
-// --- MENU BUILDER LOGIC (STRICTLY FOOD & BEVERAGE) ---
-function loadMenu() {
-    db.collection("menu").orderBy("category").onSnapshot((snapshot) => {
-        const container = document.getElementById("menuGridContainer"); container.innerHTML = ""; 
-        dynamicMenuRecipes = {}; dynamicMenuDocs = {}; let categories = {};
+// ==========================================
+// --- MENU BUILDER & POS MENU (UNIFIED) ---
+// ==========================================
+let menuInventoryMap = {};
+let menuInventoryList = [];
+let menuInventoryListener = null;
+
+function escapeMenuHTML(val) {
+    return String(val ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function loadMenuInventory() {
+    if (menuInventoryListener !== null) return;
+    menuInventoryListener = db.collection("inventory").orderBy("name").onSnapshot((snapshot) => {
+        menuInventoryMap = {};
+        menuInventoryList = [];
         snapshot.forEach((doc) => {
-            const item = doc.data(); const cat = item.category || "Meals"; 
-            dynamicMenuRecipes[item.name] = { recipe: item.recipe || [], price: item.price || 0 }; dynamicMenuDocs[doc.id] = { id: doc.id, ...item };
-            if(!categories[cat]) categories[cat] = []; categories[cat].push(doc);
+            const d = doc.data();
+            const entry = {
+                id: doc.id,
+                name: d.name || "",
+                unit: d.unit || "pcs",
+                cost: Number(d.cost) || 0,
+                quantity: Number(d.quantity) || 0
+            };
+            menuInventoryMap[entry.name] = entry;
+            menuInventoryList.push(entry);
         });
-        for (let cat in categories) {
-            let catHTML = `<h3>${cat}</h3><div class="menu-grid">`;
-            categories[cat].forEach(doc => {
-                const item = doc.data();
-                catHTML += `<div class="menu-item-container"><button class="order-btn" onclick="addToCart('${item.name}', ${item.price || 0})"> ${item.name}<br><small>₱${(item.price||0).toFixed(2)}</small></button><div class="menu-actions no-print"><button class="action-circle" style="background:#d4a373;" onclick="editMenu('${doc.id}')">✎</button><button class="action-circle" style="background:#bd4b4b;" onclick="deleteMenu('${doc.id}')">✕</button></div></div>`;
-            });
-            catHTML += `</div>`; container.innerHTML += catHTML;
-        }
+        renderAdminMenuBoard();
+        refreshOpenIngredientSelects();
+        calculateMenuMargin();
+    }, (err) => {
+        console.warn("Menu inventory sync error:", err);
     });
 }
 
-function addIngredientRow() { document.getElementById("ingredientInputs").innerHTML += `<div class="ingredient-row"><input type="text" class="ing-name" placeholder="Ingredient Needed" style="flex: 1;"><input type="number" class="ing-qty" placeholder="Qty" style="width: 80px;"></div>`; }
-function editMenu(id) {
-    switchView('menuManageView', document.querySelectorAll('.nav-btn')[2]); 
-    const docData = dynamicMenuDocs[id]; editingMenuId = id;
-    document.getElementById("newMenuName").value = docData.name; document.getElementById("menuPrice").value = docData.price || 0; document.getElementById("menuCategory").value = docData.category || "Meals";
-    const container = document.getElementById("ingredientInputs"); container.innerHTML = ""; 
-    docData.recipe.forEach(ing => { container.innerHTML += `<div class="ingredient-row"><input type="text" class="ing-name" value="${ing.name}" style="flex: 1;"><input type="number" class="ing-qty" value="${ing.deduct}" style="width: 80px;"></div>`; });
-    document.getElementById("menuFormTitle").innerText = "Edit Menu Item"; document.getElementById("cancelEditBtn").classList.remove("hidden");
-}
-function resetMenuForm() {
-    editingMenuId = null; document.getElementById("newMenuName").value = ""; document.getElementById("menuPrice").value = ""; document.getElementById("menuFormTitle").innerText = "Create New Menu Item"; document.getElementById("cancelEditBtn").classList.add("hidden");
-    document.getElementById("ingredientInputs").innerHTML = `<div class="ingredient-row"><input type="text" class="ing-name" placeholder="Ingredient Needed" style="flex: 1;"><input type="number" class="ing-qty" placeholder="Qty" style="width: 80px;"></div>`;
-}
-function saveMenuItem() {
-    const name = sanitizeHTML(document.getElementById("newMenuName").value.trim());
-    const price = parseFloat(document.getElementById("menuPrice").value) || 0;
-    const category = document.getElementById("menuCategory").value;
-    let recipe = [];
-    document.querySelectorAll(".ingredient-row").forEach(row => {
-        const n = sanitizeHTML(row.querySelector(".ing-name").value.trim());
-        const q = row.querySelector(".ing-qty").value;
-        if (n && q) recipe.push({ name: n, deduct: parseInt(q) });
+function loadMenu() {
+    loadMenuInventory();
+    db.collection("menu").orderBy("category").onSnapshot((snapshot) => {
+        const container = document.getElementById("menuGridContainer");
+        dynamicMenuRecipes = {};
+        dynamicMenuDocs = {};
+        let categories = {};
+
+        snapshot.forEach((doc) => {
+            const item = doc.data();
+            const cat = item.category || "Meals";
+            const isAvailable = item.available !== false;
+            dynamicMenuRecipes[item.name] = {
+                recipe: item.recipe || [],
+                price: Number(item.price) || 0,
+                available: isAvailable
+            };
+            dynamicMenuDocs[doc.id] = { id: doc.id, ...item, available: isAvailable };
+            if (!categories[cat]) categories[cat] = [];
+            categories[cat].push({ id: doc.id, ...item, available: isAvailable });
+        });
+
+        // 1. Render Cashier POS Grid
+        if (container) {
+            container.innerHTML = "";
+            for (let cat in categories) {
+                let catHTML = `<h3>${escapeMenuHTML(cat)}</h3><div class="menu-grid">`;
+                categories[cat].forEach((item) => {
+                    const encodedName = encodeURIComponent(item.name || "");
+                    const priceVal = Number(item.price) || 0;
+                    if (item.available) {
+                        catHTML += `
+                            <div class="menu-item-container">
+                                <button class="order-btn" onclick="addToCart(decodeURIComponent('${encodedName}'), ${priceVal})">
+                                    ${escapeMenuHTML(item.name)}<br><small>₱${priceVal.toFixed(2)}</small>
+                                </button>
+                                <div class="menu-actions no-print">
+                                    <button class="action-circle" style="background:#d4a373;" onclick="editMenuItem('${item.id}')">✎</button>
+                                    <button class="action-circle" style="background:#bd4b4b;" onclick="deleteMenuItem('${item.id}')">✕</button>
+                                </div>
+                            </div>`;
+                    } else {
+                        catHTML += `
+                            <div class="menu-item-container">
+                                <button class="order-btn" onclick="showToast(decodeURIComponent('${encodedName}') + ' is currently Sold Out (86).')" style="background: #b0b7b0; opacity: 0.65; cursor: not-allowed; box-shadow: none;">
+                                    <span style="text-decoration: line-through;">${escapeMenuHTML(item.name)}</span><br>
+                                    <small style="background: #bd4b4b; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 3px;">SOLD OUT</small>
+                                </button>
+                            </div>`;
+                    }
+                });
+                catHTML += `</div>`;
+                container.innerHTML += catHTML;
+            }
+        }
+
+        // 2. Sync Admin Menu Builder Cards
+        renderAdminMenuBoard();
     });
-    if (!name) return showToast("Menu Name is required.");
-    const payload = { name, price, category, recipe };
-    if (editingMenuId) {
-        db.collection("menu").doc(editingMenuId).update(payload).then(resetMenuForm);
-    } else {
-        payload.timestamp = firebase.firestore.FieldValue.serverTimestamp();
-        db.collection("menu").add(payload).then(resetMenuForm);
-    }
-    showToast("Menu Item Saved");
 }
-async function deleteMenu(id) {
-    const confirmed = window.hilomConfirm
-        ? await hilomConfirm("Are you sure you want to delete this menu item?")
-        : confirm("Delete menu item?");
-    if (confirmed) {
-        const itemInfo = dynamicMenuDocs[id];
-        await db.collection("menu").doc(id).delete();
+
+function loadAdminMenuBoard() {
+    loadMenuInventory();
+    renderAdminMenuBoard();
+}
+
+function computeRecipeCost(recipe) {
+    if (!Array.isArray(recipe) || recipe.length === 0) return { cost: 0, missing: [] };
+    let total = 0;
+    let missing = [];
+    recipe.forEach((ing) => {
+        const inv = menuInventoryMap[ing.name];
+        const qty = Number(ing.deduct) || 0;
+        if (inv) {
+            total += inv.cost * qty;
+        } else if (ing.name) {
+            missing.push(ing.name);
+        }
+    });
+    return { cost: total, missing };
+}
+
+function renderAdminMenuBoard() {
+    const adminGrid = document.getElementById("adminMenuGridContainer");
+    if (!adminGrid) return;
+
+    const allItems = Object.values(dynamicMenuDocs || {});
+    const searchEl = document.getElementById("menuSearchInput");
+    const catFilterEl = document.getElementById("menuAdminCatFilter");
+    const searchTerm = searchEl ? searchEl.value.trim().toLowerCase() : "";
+    const activeCat = catFilterEl ? catFilterEl.value : "ALL";
+
+    // Update Summary Metrics
+    let availCount = 0;
+    let soldOutCount = 0;
+    let noRecipeCount = 0;
+    allItems.forEach((item) => {
+        if (item.available !== false) availCount++;
+        else soldOutCount++;
+        if (!item.recipe || item.recipe.length === 0) noRecipeCount++;
+    });
+
+    const mTotal = document.getElementById("menuMetricTotal");
+    const mAvail = document.getElementById("menuMetricAvailable");
+    const mSold = document.getElementById("menuMetricSoldOut");
+    const mNoRec = document.getElementById("menuMetricNoRecipe");
+    if (mTotal) mTotal.innerText = allItems.length;
+    if (mAvail) mAvail.innerText = availCount;
+    if (mSold) mSold.innerText = soldOutCount;
+    if (mNoRec) mNoRec.innerText = noRecipeCount;
+
+    const filtered = allItems.filter((item) => {
+        const cat = item.category || "Uncategorized";
+        const matchesCat = activeCat === "ALL" || cat === activeCat;
+        const matchesSearch = !searchTerm || (item.name || "").toLowerCase().includes(searchTerm);
+        return matchesCat && matchesSearch;
+    });
+
+    adminGrid.innerHTML = "";
+    if (filtered.length === 0) {
+        adminGrid.innerHTML = `<p style="color:#888; text-align:center; padding: 20px;">${allItems.length === 0 ? "No menu items yet. Click '+ Add Menu Item' to create one!" : "No menu items match your search or category filter."}</p>`;
+        return;
+    }
+
+    let categories = {};
+    filtered.forEach((item) => {
+        const cat = item.category || "Uncategorized";
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push(item);
+    });
+
+    for (const [category, items] of Object.entries(categories)) {
+        items.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+
+        let catHTML = `
+            <h4 style="width: 100%; border-bottom: 2px solid #e0e5e0; padding-bottom: 6px; margin-top: 22px; margin-bottom: 14px; color: #2b4227; font-size: 15px; letter-spacing: 0.5px; text-transform: uppercase;">
+                ${escapeMenuHTML(category)} <span style="font-size: 12px; color: #888; font-weight: normal;">(${items.length})</span>
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px;">
+        `;
+
+        items.forEach((item) => {
+            const isAvail = item.available !== false;
+            const price = Number(item.price) || 0;
+            const recipe = Array.isArray(item.recipe) ? item.recipe : [];
+            const { cost, missing } = computeRecipeCost(recipe);
+
+            let metaBadgeHTML = "";
+            if (recipe.length === 0) {
+                metaBadgeHTML = `<div style="font-size: 11px; color: #8c5d3a; background: #fff3cd; border: 1px solid #ffeeba; padding: 3px 8px; border-radius: 4px; margin-top: 8px; display: inline-block;">No recipe linked</div>`;
+            } else {
+                const marginPct = price > 0 ? ((price - cost) / price) * 100 : 0;
+                const marginColor = marginPct >= 50 ? "#2e7d32" : (marginPct >= 25 ? "#8c5d3a" : "#bd4b4b");
+                const marginBg = marginPct >= 50 ? "#e8f5e9" : (marginPct >= 25 ? "#fff3cd" : "#ffebee");
+                const missingWarn = missing.length > 0 ? ` • ⚠️ ${missing.length} missing` : "";
+                metaBadgeHTML = `
+                    <div style="font-size: 11px; color: ${marginColor}; background: ${marginBg}; padding: 4px 8px; border-radius: 4px; margin-top: 8px; display: inline-block; font-weight: 600;">
+                        ${recipe.length} ing • Cost ₱${cost.toFixed(2)} (${marginPct.toFixed(0)}%)${missingWarn}
+                    </div>`;
+            }
+
+            const cardBorder = isAvail ? "#e0e5e0" : "#f5c6cb";
+            const cardBg = isAvail ? "#ffffff" : "#fffafa";
+            const toggleBg = isAvail ? "#e8f5e9" : "#ffebee";
+            const toggleColor = isAvail ? "#2e7d32" : "#bd4b4b";
+            const toggleBorder = isAvail ? "#c8e6c9" : "#f5c6cb";
+            const toggleLabel = isAvail ? "🟢 Available" : "🔴 Sold Out (86)";
+
+            catHTML += `
+                <div style="background: ${cardBg}; border: 1.5px solid ${cardBorder}; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+                    <div style="padding: 10px 12px 0 12px; display: flex; justify-content: flex-end;">
+                        <button onclick="toggleMenuAvailability('${item.id}', ${isAvail})" title="Click to toggle Available / Sold Out" style="background: ${toggleBg}; color: ${toggleColor}; border: 1px solid ${toggleBorder}; padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer;">
+                            ${toggleLabel}
+                        </button>
+                    </div>
+                    <div style="padding: 10px 14px 14px 14px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                        <div style="font-weight: 700; color: ${isAvail ? "#222" : "#888"}; text-decoration: ${isAvail ? "none" : "line-through"}; margin-bottom: 4px; font-size: 15px; line-height: 1.3;">${escapeMenuHTML(item.name)}</div>
+                        <div style="color: #557a46; font-size: 16px; font-weight: bold;">₱${price.toFixed(2)}</div>
+                        ${metaBadgeHTML}
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #eee; background: #fcfbf8;">
+                        <button onclick="editMenuItem('${item.id}')" style="padding: 10px 0; background: transparent; color: #4a6fa5; border: none; border-right: 1px solid #eee; cursor: pointer; font-size: 13px; font-weight: bold; border-radius: 0;">✏️ Edit</button>
+                        <button onclick="deleteMenuItem('${item.id}')" style="padding: 10px 0; background: transparent; color: #bd4b4b; border: none; cursor: pointer; font-size: 13px; font-weight: bold; border-radius: 0;">🗑️ Delete</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        catHTML += `</div>`;
+        adminGrid.innerHTML += catHTML;
+    }
+}
+
+// --- MODAL CONTROLS ---
+function openMenuModal() {
+    resetMenuForm();
+    const titleEl = document.getElementById("menuModalTitle");
+    if (titleEl) titleEl.innerText = "Create New Menu Item";
+    document.getElementById("menuItemModal").classList.remove("hidden");
+    setTimeout(() => document.getElementById("newMenuName").focus(), 50);
+}
+
+function closeMenuModal() {
+    const modal = document.getElementById("menuItemModal");
+    if (modal) modal.classList.add("hidden");
+    resetMenuForm();
+}
+
+function openCategoryModal() {
+    document.getElementById("categoryModal").classList.remove("hidden");
+    setTimeout(() => document.getElementById("newCategoryName").focus(), 50);
+}
+
+function closeCategoryModal() {
+    const modal = document.getElementById("categoryModal");
+    if (modal) modal.classList.add("hidden");
+}
+
+// --- INVENTORY INGREDIENT DROPDOWN & LIVE MARGIN CALCULATOR ---
+function buildInventoryOptionsHTML(selectedName = "") {
+    let options = `<option value="">-- Select Inventory Ingredient --</option>`;
+    let foundSelected = false;
+
+    menuInventoryList.forEach((inv) => {
+        const isSel = inv.name === selectedName;
+        if (isSel) foundSelected = true;
+        options += `<option value="${escapeMenuHTML(inv.name)}" ${isSel ? "selected" : ""}>${escapeMenuHTML(inv.name)} (${escapeMenuHTML(inv.unit)}) — ₱${inv.cost.toFixed(4)}/${escapeMenuHTML(inv.unit)}</option>`;
+    });
+
+    if (selectedName && !foundSelected) {
+        options += `<option value="${escapeMenuHTML(selectedName)}" selected>⚠️ ${escapeMenuHTML(selectedName)} (Not in Inventory)</option>`;
+    }
+    return options;
+}
+
+function addIngredientRow(selectedName = "", qtyVal = "") {
+    const container = document.getElementById("ingredientInputs");
+    if (!container) return;
+
+    const inv = menuInventoryMap[selectedName];
+    const unitText = inv ? inv.unit : (selectedName ? "unit" : "—");
+
+    const row = document.createElement("div");
+    row.className = "ingredient-row";
+    row.style.cssText = "display: grid; grid-template-columns: 1fr 85px 44px 36px; gap: 8px; align-items: center; margin-bottom: 8px;";
+    row.innerHTML = `
+        <select class="ing-name" onchange="updateIngredientRowMeta(this)" style="width: 100%; margin: 0; padding: 9px; box-sizing: border-box;">
+            ${buildInventoryOptionsHTML(selectedName)}
+        </select>
+        <input type="number" class="ing-qty" placeholder="Qty" min="0" step="any" value="${qtyVal !== "" && qtyVal !== undefined ? qtyVal : ""}" oninput="calculateMenuMargin()" style="width: 100%; margin: 0; padding: 9px; box-sizing: border-box;">
+        <span class="ing-unit-badge" style="font-size: 12px; font-weight: bold; color: #557a46; background: #e8f5e9; padding: 6px 4px; border-radius: 4px; text-align: center;">${escapeMenuHTML(unitText)}</span>
+        <button type="button" onclick="removeIngredientRow(this)" title="Remove ingredient" style="background: #ffebee; color: #bd4b4b; border: 1px solid #f5c6cb; padding: 8px 0; border-radius: 6px; font-size: 13px; cursor: pointer; margin: 0;">✕</button>
+    `;
+    container.appendChild(row);
+    calculateMenuMargin();
+}
+
+function updateIngredientRowMeta(selectEl) {
+    const row = selectEl.closest(".ingredient-row");
+    if (!row) return;
+    const inv = menuInventoryMap[selectEl.value];
+    const unitBadge = row.querySelector(".ing-unit-badge");
+    if (unitBadge) unitBadge.innerText = inv ? inv.unit : "—";
+    calculateMenuMargin();
+}
+
+function removeIngredientRow(btnEl) {
+    const row = btnEl.closest(".ingredient-row");
+    if (row) row.remove();
+    calculateMenuMargin();
+}
+
+function refreshOpenIngredientSelects() {
+    const modal = document.getElementById("menuItemModal");
+    if (!modal || modal.classList.contains("hidden")) return;
+    document.querySelectorAll("#ingredientInputs .ing-name").forEach((sel) => {
+        const currentVal = sel.value;
+        sel.innerHTML = buildInventoryOptionsHTML(currentVal);
+        updateIngredientRowMeta(sel);
+    });
+}
+
+function calculateMenuMargin() {
+    const priceEl = document.getElementById("menuPrice");
+    const costEl = document.getElementById("menuCalcCost");
+    const profitEl = document.getElementById("menuCalcProfit");
+    const marginEl = document.getElementById("menuCalcMargin");
+    if (!priceEl || !costEl || !profitEl || !marginEl) return;
+
+    const sellingPrice = parseFloat(priceEl.value) || 0;
+    let totalCost = 0;
+
+    document.querySelectorAll("#ingredientInputs .ingredient-row").forEach((row) => {
+        const name = row.querySelector(".ing-name")?.value || "";
+        const qty = parseFloat(row.querySelector(".ing-qty")?.value) || 0;
+        const inv = menuInventoryMap[name];
+        if (inv && qty > 0) {
+            totalCost += inv.cost * qty;
+        }
+    });
+
+    const grossProfit = sellingPrice - totalCost;
+    const marginPct = sellingPrice > 0 ? (grossProfit / sellingPrice) * 100 : 0;
+
+    costEl.innerText = `₱${totalCost.toFixed(2)}`;
+    profitEl.innerText = `₱${grossProfit.toFixed(2)}`;
+    profitEl.style.color = grossProfit >= 0 ? "#2b4227" : "#bd4b4b";
+
+    marginEl.innerText = `${marginPct.toFixed(1)}%`;
+    marginEl.style.color = marginPct >= 50 ? "#2e7d32" : (marginPct >= 25 ? "#8c5d3a" : "#bd4b4b");
+}
+
+// --- UNIFIED EDIT / SAVE / DELETE / SOLD OUT TOGGLE ---
+function editMenuItem(id) {
+    const docData = dynamicMenuDocs[id];
+    if (!docData) return showToast("Menu item not found.");
+
+    editingMenuId = id;
+    document.getElementById("newMenuName").value = docData.name || "";
+    document.getElementById("menuPrice").value = docData.price ?? 0;
+
+    const catSelect = document.getElementById("menuCategory");
+    if (catSelect) {
+        const hasCat = Array.from(catSelect.options).some((o) => o.value === docData.category);
+        if (hasCat) catSelect.value = docData.category;
+    }
+
+    const availCheck = document.getElementById("menuAvailableCheck");
+    if (availCheck) availCheck.checked = docData.available !== false;
+
+    const container = document.getElementById("ingredientInputs");
+    container.innerHTML = "";
+    const recipe = Array.isArray(docData.recipe) ? docData.recipe : [];
+    if (recipe.length > 0) {
+        recipe.forEach((ing) => addIngredientRow(ing.name, ing.deduct));
+    } else {
+        addIngredientRow();
+    }
+
+    const titleEl = document.getElementById("menuModalTitle");
+    if (titleEl) titleEl.innerText = `Edit Menu Item: ${docData.name || ""}`;
+
+    const saveBtn = document.getElementById("saveMenuBtn");
+    if (saveBtn) {
+        saveBtn.innerText = "💾 Update Menu Item";
+        saveBtn.style.backgroundColor = "#4a6fa5";
+    }
+
+    calculateMenuMargin();
+    document.getElementById("menuItemModal").classList.remove("hidden");
+    setTimeout(() => document.getElementById("newMenuName").focus(), 50);
+}
+
+function resetMenuForm() {
+    editingMenuId = null;
+    const nameEl = document.getElementById("newMenuName");
+    const priceEl = document.getElementById("menuPrice");
+    const availCheck = document.getElementById("menuAvailableCheck");
+    const container = document.getElementById("ingredientInputs");
+    const saveBtn = document.getElementById("saveMenuBtn");
+
+    if (nameEl) nameEl.value = "";
+    if (priceEl) priceEl.value = "";
+    if (availCheck) availCheck.checked = true;
+    if (container) {
+        container.innerHTML = "";
+        addIngredientRow();
+    }
+    if (saveBtn) {
+        saveBtn.innerText = "💾 Save Menu Item";
+        saveBtn.style.backgroundColor = "";
+    }
+    calculateMenuMargin();
+}
+
+async function saveMenuItem() {
+    const rawName = document.getElementById("newMenuName").value.trim();
+    const name = typeof sanitizeHTML === "function" ? sanitizeHTML(rawName) : rawName.replace(/[<>]/g, "");
+    const price = parseFloat(document.getElementById("menuPrice").value);
+    const category = document.getElementById("menuCategory").value || "Meals";
+    const availCheck = document.getElementById("menuAvailableCheck");
+    const available = availCheck ? availCheck.checked : true;
+
+    if (!name) return showToast("Menu Name is required.");
+    if (isNaN(price) || price < 0) return showToast("Please enter a valid selling price.");
+
+    let recipe = [];
+    document.querySelectorAll("#ingredientInputs .ingredient-row").forEach((row) => {
+        const n = (row.querySelector(".ing-name")?.value || "").trim();
+        const q = parseFloat(row.querySelector(".ing-qty")?.value);
+        if (n && !isNaN(q) && q > 0) {
+            recipe.push({ name: n, deduct: q });
+        }
+    });
+
+    const payload = { name, price, category, recipe, available };
+
+    try {
+        if (editingMenuId) {
+            const oldItem = dynamicMenuDocs[editingMenuId] || {};
+            payload.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection("menu").doc(editingMenuId).update(payload);
+
+            if (typeof window.recordAuditEvent === "function") {
+                window.recordAuditEvent({
+                    category: "SECURITY",
+                    action: "EDIT_MENU",
+                    tableNo: "Menu Builder",
+                    amount: price,
+                    details: `Updated menu "${name}" (${category}): ₱${(Number(oldItem.price) || 0).toFixed(2)} → ₱${price.toFixed(2)}, ${recipe.length} ingredient(s), Status: ${available ? "Available" : "Sold Out"}.`
+                });
+            }
+            showToast(`"${name}" updated!`);
+        } else {
+            payload.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection("menu").add(payload);
+            showToast(`"${name}" added to menu!`);
+        }
+        closeMenuModal();
+    } catch (err) {
+        console.error("Error saving menu item:", err);
+        showToast("Failed to save menu item.");
+    }
+}
+
+async function toggleMenuAvailability(id, currentAvailable) {
+    const item = dynamicMenuDocs[id];
+    const newStatus = !currentAvailable;
+    try {
+        await db.collection("menu").doc(id).update({ available: newStatus });
         if (typeof window.recordAuditEvent === "function") {
             window.recordAuditEvent({
-                category: "SECURITY",
-                action: "DELETE_MENU",
+                category: "TRANSACTION",
+                action: newStatus ? "MENU_RESTOCKED" : "MENU_SOLD_OUT",
                 tableNo: "Menu Builder",
-                amount: itemInfo ? (Number(itemInfo.price) || 0) : 0,
-                details: `Deleted menu item: ${itemInfo ? itemInfo.name : id}`
+                amount: item ? (Number(item.price) || 0) : 0,
+                details: `Marked "${item ? item.name : id}" as ${newStatus ? "Available" : "Sold Out (86)"} on POS.`
             });
+        }
+        showToast(`${item ? item.name : "Item"} marked ${newStatus ? "Available" : "Sold Out (86)"}.`);
+    } catch (err) {
+        console.error("Error toggling availability:", err);
+        showToast("Failed to update availability.");
+    }
+}
+
+async function deleteMenuItem(id) {
+    const itemInfo = dynamicMenuDocs[id];
+    const confirmed = window.hilomConfirm
+        ? await hilomConfirm(`Permanently delete "${itemInfo ? itemInfo.name : "this menu item"}"?`)
+        : confirm("Delete menu item?");
+    if (confirmed) {
+        try {
+            await db.collection("menu").doc(id).delete();
+            if (editingMenuId === id) closeMenuModal();
+            if (typeof window.recordAuditEvent === "function") {
+                window.recordAuditEvent({
+                    category: "SECURITY",
+                    action: "DELETE_MENU",
+                    tableNo: "Menu Builder",
+                    amount: itemInfo ? (Number(itemInfo.price) || 0) : 0,
+                    details: `Deleted menu item: ${itemInfo ? itemInfo.name : id}`
+                });
+            }
+            showToast("Menu item deleted.");
+        } catch (err) {
+            console.error("Error deleting menu item:", err);
+            showToast("Failed to delete menu item.");
         }
     }
 }
+
+// Keep legacy aliases pointing to the unified functions
+window.editMenu = editMenuItem;
+window.deleteMenu = deleteMenuItem;
 // ==========================================
 // --- SPLIT BILL LOGIC (SENIOR/PWD SAFE) ---
 // ==========================================
@@ -1158,27 +1602,43 @@ function loadCategories() {
     db.collection("settings").doc("categories").onSnapshot((doc) => {
         const listDiv = document.getElementById("categoryList");
         const selectDropdown = document.getElementById("menuCategory");
-        listDiv.innerHTML = "";
-        selectDropdown.innerHTML = "";
-        
+        const filterDropdown = document.getElementById("menuAdminCatFilter");
+
+        if (listDiv) listDiv.innerHTML = "";
+        if (selectDropdown) selectDropdown.innerHTML = "";
+
+        const prevFilter = filterDropdown ? filterDropdown.value : "ALL";
+        if (filterDropdown) filterDropdown.innerHTML = `<option value="ALL">All Categories</option>`;
+
         if (doc.exists && doc.data().list) {
             menuCategories = doc.data().list;
         } else {
-            // Default categories if none exist yet
-            menuCategories = ["Meals", "Drinks", "Add-ons"]; 
+            menuCategories = ["Meals", "Drinks", "Add-ons"];
             db.collection("settings").doc("categories").set({ list: menuCategories });
         }
-        
-        menuCategories.forEach(cat => {
-            // Build the visual badge list
-            listDiv.innerHTML += `
-                <span style="background: #e9ece9; border: 1px solid #c8dac8; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #2b4227; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                    ${cat} 
-                    <button onclick="deleteCategory('${cat}')" style="background:none; border:none; color:#bd4b4b; cursor:pointer; padding:0; font-size:14px; font-weight:bold; transition: transform 0.2s;">✕</button>
-                </span>`;
-            // Populate the dropdown menu
-            selectDropdown.innerHTML += `<option value="${cat}">${cat}</option>`;
+
+        menuCategories.forEach((cat) => {
+            const safeCat = escapeMenuHTML(cat);
+            const encodedCat = encodeURIComponent(cat);
+            if (listDiv) {
+                listDiv.innerHTML += `
+                    <span style="background: #e9ece9; border: 1px solid #c8dac8; padding: 6px 12px; border-radius: 20px; font-size: 13px; color: #2b4227; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; margin: 0 8px 8px 0;">
+                        ${safeCat}
+                        <button onclick="deleteCategory(decodeURIComponent('${encodedCat}'))" style="background:none; border:none; color:#bd4b4b; cursor:pointer; padding:0; font-size:14px; font-weight:bold;">✕</button>
+                    </span>`;
+            }
+            if (selectDropdown) {
+                selectDropdown.innerHTML += `<option value="${safeCat}">${safeCat}</option>`;
+            }
+            if (filterDropdown) {
+                filterDropdown.innerHTML += `<option value="${safeCat}">${safeCat}</option>`;
+            }
         });
+
+        if (filterDropdown) {
+            const hasPrev = Array.from(filterDropdown.options).some((o) => o.value === prevFilter);
+            filterDropdown.value = hasPrev ? prevFilter : "ALL";
+        }
     });
 }
 
