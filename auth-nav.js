@@ -89,21 +89,35 @@ async function verifyPin() {
 
     const result = await window.verifyManagerPinServer(enteredPin, "POS_MODAL_AUTH");
 
-    if (result.valid) {
+    if (result && result.valid) {
         window.lastPinAuthorizer = result.authorizedBy || "Manager PIN";
         if (pinInput) pinInput.value = "";
         document.getElementById("pinModal").classList.add("hidden");
 
+        // 1. If triggered by a Promise-based action (e.g., Void / Discount)
         if (typeof pinResolvePromise === "function") {
             const resolve = pinResolvePromise;
             pinResolvePromise = null;
             resolve(true);
+            return;
+        }
+
+        // 2. If triggered by clicking a protected tab (Inventory / Menu / Sales)
+        isAdminUnlocked = true;
+        window.isAdminUnlocked = true;
+
+        if (typeof pendingViewId !== "undefined" && pendingViewId) {
+            const targetView = pendingViewId;
+            const targetNav = typeof pendingNavElement !== "undefined" ? pendingNavElement : null;
+            pendingViewId = null;
+            pendingNavElement = null;
+            switchView(targetView, targetNav);
         }
         return;
     }
 
     if (pinInput) pinInput.value = "";
-    showToast(result.error || "Invalid Manager PIN.");
+    showToast((result && result.error) || "Invalid Manager PIN.");
 }
 
 function closePinModal() { 
