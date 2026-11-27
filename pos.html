@@ -375,62 +375,7 @@
                     <button id="cancelEditAssetBtn" class="delete-btn hidden no-print" onclick="resetAssetForm()" style="margin: 0; padding: 10px 16px; background: #888; font-size: 13px;">Cancel Edit</button>
                 </div>
                 
-                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                    <thead>
-                        <tr style="background: #e9ece9; border-bottom: 2px solid #557a46; text-align: left;">
-                            <th style="padding: 10px;">Item Name</th>
-                            <th style="padding: 10px;">Category</th>
-                            <th style="padding: 10px;">Department</th>
-                            <th style="padding: 10px;">Qty</th>
-                            <th style="padding: 10px;">Cost (₱)</th>
-                            <th style="padding: 10px;">Serial No.</th>
-                            <th style="padding: 10px;">Status</th>
-                            <th style="padding: 10px;">Purchased</th>
-                            <th class="no-print" style="padding: 10px;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="assetsList">
-                        <tr><td colspan="9" style="text-align: center; color: #888; padding: 15px;">Loading assets...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            </div>
 
-           <!-- ================= VIEW 3: MENU BUILDER ================= -->
-            <div id="menuManageView" class="view-section hidden">
-                
-                <!-- DYNAMIC CATEGORY MANAGER -->
-                <div class="card" id="categoryManageCard" style="margin-bottom: 20px;">
-                    <h2 style="color: #8c5d3a; border-bottom: 1px dashed #ccc;">Manage Menu Categories</h2>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
-                        <input type="text" id="newCategoryName" placeholder="New Category (e.g., Pastries, Coffee)" style="flex:1; min-width: 200px; margin: 0;">
-                        <button class="add-btn" onclick="addCategory()">+ Add Category</button>
-                    </div>
-                    <div id="categoryList" style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <p style="color:#888; font-size:14px; margin:0;">Loading categories...</p>
-                    </div>
-                </div>
-
-                <!-- MENU ITEM BUILDER -->
-                <div class="card" id="menuFormCard">
-                    <h2 id="menuFormTitle">Create New Menu Item</h2>
-                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                        <input type="text" id="newMenuName" placeholder="Menu Name" style="flex: 1; min-width: 200px;">
-                        <input type="number" id="menuPrice" placeholder="Selling Price (₱)" style="width: 130px;">
-                        <!-- This is now completely empty so JS can populate it -->
-                        <select id="menuCategory"></select>
-                    </div>
-                    
-                    <div id="ingredientInputs">
-                        <div class="ingredient-row"><input type="text" class="ing-name" placeholder="Ingredient Needed" style="flex: 1;"><input type="number" class="ing-qty" placeholder="Qty" style="width: 80px;"></div>
-                    </div>
-                    
-                    <div style="margin-top: 10px; display: flex; gap: 10px;">
-                        <button class="add-btn" onclick="addIngredientRow()">+ Add Ingredient</button>
-                        <button class="save-btn" id="saveMenuBtn" onclick="saveMenuItem()">Save Menu Recipe</button>
-                        <button class="delete-btn hidden" id="cancelEditBtn" onclick="resetMenuForm()">Cancel Edit</button>
-                    </div>
-                </div>
 
                 <!-- ADMIN MENU VIEWER -->
                 <div class="card" style="margin-top: 20px;">
