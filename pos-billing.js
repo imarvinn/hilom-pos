@@ -128,33 +128,146 @@ function tearReceipt() {
     }, 800); 
 }
 
-// --- CART LOGIC ---
+// ==========================================
+// --- CART & KITCHEN MODIFIER LOGIC ---
+// ==========================================
+let activeModifierItemName = null;
+let posTableElapsedTimer = null;
+
 function addToCart(itemName, price) {
-    if (cart[itemName]) cart[itemName].qty += 1; else cart[itemName] = { qty: 1, price: price }; renderCart();
+    if (cart[itemName]) {
+        cart[itemName].qty += 1;
+    } else {
+        cart[itemName] = { qty: 1, price: Number(price) || 0, note: "" };
+    }
+    renderCart();
 }
+
 function updateCartQty(itemName, change) {
-    if (cart[itemName]) { cart[itemName].qty += change; if (cart[itemName].qty <= 0) delete cart[itemName]; renderCart(); }
+    if (cart[itemName]) {
+        cart[itemName].qty += change;
+        if (cart[itemName].qty <= 0) delete cart[itemName];
+        renderCart();
+    }
 }
-function clearCart() { cart = {}; document.getElementById('tableNoInput').value = ""; renderCart(); }
+
+async function clearCart(skipConfirm = false) {
+    if (!skipConfirm && Object.keys(cart).length > 0) {
+        const confirmed = window.hilomConfirm
+            ? await hilomConfirm("Clear all items from the current order?")
+            : confirm("Clear all items from the current order?");
+        if (!confirmed) return;
+    }
+    cart = {};
+    const tableInput = document.getElementById("tableNoInput");
+    if (tableInput) tableInput.value = "";
+    renderCart();
+}
+
+function openModifierModal(itemName) {
+    if (!cart[itemName]) return;
+    activeModifierItemName = itemName;
+    const titleEl = document.getElementById("modItemName");
+    const inputEl = document.getElementById("modifierInput");
+    if (titleEl) titleEl.innerText = `Note: ${itemName}`;
+    if (inputEl) inputEl.value = cart[itemName].note || "";
+    document.getElementById("modifierModal").classList.remove("hidden");
+    if (inputEl) setTimeout(() => inputEl.focus(), 50);
+}
+
+function addQuickMod(modText) {
+    const inputEl = document.getElementById("modifierInput");
+    if (!inputEl) return;
+    const current = inputEl.value.trim();
+    if (!current) {
+        inputEl.value = modText;
+    } else if (!current.toLowerCase().includes(modText.toLowerCase())) {
+        inputEl.value = `${current}, ${modText}`;
+    }
+    inputEl.focus();
+}
+
+function clearModifierInput() {
+    const inputEl = document.getElementById("modifierInput");
+    if (inputEl) {
+        inputEl.value = "";
+        inputEl.focus();
+    }
+}
+
+function confirmModifierNote() {
+    if (!activeModifierItemName || !cart[activeModifierItemName]) return closeModifierModal();
+    const inputEl = document.getElementById("modifierInput");
+    const rawNote = inputEl ? inputEl.value.trim() : "";
+    const cleanNote = typeof sanitizeHTML === "function" ? sanitizeHTML(rawNote) : rawNote.replace(/[<>]/g, "");
+    cart[activeModifierItemName].note = cleanNote;
+    renderCart();
+    closeModifierModal();
+    showToast(cleanNote ? "Kitchen note saved." : "Kitchen note cleared.");
+}
+
+function closeModifierModal() {
+    const modal = document.getElementById("modifierModal");
+    if (modal) modal.classList.add("hidden");
+    activeModifierItemName = null;
+}
+
+window.confirmAddToCart = confirmModifierNote;
 
 function renderCart() {
     const container = document.getElementById("cartItemsContainer");
-    cartTotalRaw = 0; container.innerHTML = "";
-    if (Object.keys(cart).length === 0) {
-        container.innerHTML = "<p style='color:#888; text-align:center;'>Cart is empty</p>"; document.getElementById("cartTotal").innerText = "Total: ₱0.00"; return;
+    const countBadge = document.getElementById("cartItemCountBadge");
+    if (!container) return;
+
+    cartTotalRaw = 0;
+    let totalUnits = 0;
+    container.innerHTML = "";
+
+    const entries = Object.entries(cart);
+    if (entries.length === 0) {
+        container.innerHTML = "<p style='color:#888; text-align:center; padding: 12px 0;'>Cart is empty</p>";
+        document.getElementById("cartTotal").innerText = "Total: ₱0.00";
+        if (countBadge) countBadge.innerText = "0 items";
+        return;
     }
-    for (let [itemName, data] of Object.entries(cart)) {
-        cartTotalRaw += (data.price * data.qty);
-        container.innerHTML += `<div class="cart-item"><div><div class="cart-item-title">${itemName}</div><small>₱${data.price.toFixed(2)}</small></div><div class="cart-controls"><button onclick="updateCartQty('${itemName}', -1)">-</button><span style="margin: 0 10px; font-weight: bold;">${data.qty}</span><button onclick="updateCartQty('${itemName}', 1)">+</button></div></div>`;
+
+    for (let [itemName, data] of entries) {
+        const lineTotal = data.price * data.qty;
+        cartTotalRaw += lineTotal;
+        totalUnits += data.qty;
+
+        const encoded = encodeURIComponent(itemName);
+        const safeName = typeof escapeMenuHTML === "function" ? escapeMenuHTML(itemName) : itemName;
+        const safeNote = data.note ? (typeof escapeMenuHTML === "function" ? escapeMenuHTML(data.note) : data.note) : "";
+        const noteHTML = safeNote
+            ? `<div style="margin-top: 4px;"><span style="background: #fff3cd; color: #856404; border: 1px solid #ffeeba; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600; display: inline-block;">📝 ${safeNote}</span></div>`
+            : "";
+
+        container.innerHTML += `
+            <div class="cart-item" style="align-items: flex-start; gap: 8px;">
+                <div style="flex: 1; min-width: 0;">
+                    <div class="cart-item-title">${safeName}</div>
+                    <small style="color: #666;">₱${data.price.toFixed(2)} &times; ${data.qty} = <strong style="color: #2b4227;">₱${lineTotal.toFixed(2)}</strong></small>
+                    ${noteHTML}
+                </div>
+                <div class="cart-controls" style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                    <button type="button" onclick="openModifierModal(decodeURIComponent('${encoded}'))" title="Add kitchen note" style="background: ${safeNote ? "#fff3cd" : "#f4f6f4"}; color: #8c5d3a; border: 1px solid #d4a373; padding: 5px 7px; font-size: 12px;">📝</button>
+                    <button type="button" onclick="updateCartQty(decodeURIComponent('${encoded}'), -1)">-</button>
+                    <span style="min-width: 22px; text-align: center; font-weight: bold;">${data.qty}</span>
+                    <button type="button" onclick="updateCartQty(decodeURIComponent('${encoded}'), 1)">+</button>
+                </div>
+            </div>`;
     }
+
     document.getElementById("cartTotal").innerText = `Total: ₱${cartTotalRaw.toFixed(2)}`;
+    if (countBadge) countBadge.innerText = `${totalUnits} ${totalUnits === 1 ? "item" : "items"}`;
 }
 
-// --- SEND TO KITCHEN (SUPPORTS ADDITIONAL ORDERS / MERGING) ---
+// --- SEND TO KITCHEN (SUPPORTS ADDITIONAL ORDERS, MERGING & MODIFIER NOTES) ---
 async function sendToKitchen() {
     if (Object.keys(cart).length === 0) return showToast("Cart is empty!");
     const tableNoRaw = document.getElementById("tableNoInput").value.trim();
-    if (!tableNoRaw) return showToast("Please enter a Table Number.");
+    if (!tableNoRaw) return showToast("Please enter a Table Number or tap Takeout / Walk-In.");
     const tableNo = tableNoRaw.toUpperCase(); 
     let checkoutTime = new Date(); 
     
@@ -168,6 +281,7 @@ async function sendToKitchen() {
         newItemsPayload[itemName] = { 
             qty: cartData.qty, 
             basePrice: cartData.price, 
+            note: cartData.note || "",
             totalCost: 0, 
             deductionsString: "", 
             rawDeductions: [] 
@@ -210,7 +324,6 @@ async function sendToKitchen() {
     const receiptItems = document.getElementById("ticketItems"); 
     receiptItems.innerHTML = "";
 
-    // Build payload & Kitchen Ticket (ONLY prints the new additional items for the kitchen)
     for (let [itemName, payload] of Object.entries(newItemsPayload)) {
         let usedIngredients = []; 
         let calculatedCost = 0;
@@ -221,20 +334,21 @@ async function sendToKitchen() {
         }
         payload.totalCost = calculatedCost; 
         payload.deductionsString = usedIngredients.join(", ");
-        receiptItems.innerHTML += `<div class="receipt-item"><span><b>${payload.qty}x</b> ${itemName.toUpperCase()}</span></div>`;
+        const noteLine = payload.note
+            ? `<div style="font-size: 12px; font-weight: bold; padding-left: 16px; margin-bottom: 6px;">&rarr; NOTE: ${escapeMenuHTML(payload.note).toUpperCase()}</div>`
+            : "";
+        receiptItems.innerHTML += `<div class="receipt-item"><span><b>${payload.qty}x</b> ${escapeMenuHTML(itemName).toUpperCase()}</span></div>${noteLine}`;
     }
 
-    // Deduct inventory for the new items
     for (let [name, data] of Object.entries(totalNeeds)) {
         const docRef = db.collection("inventory").doc(data.id);
         batch.update(docRef, { quantity: firebase.firestore.FieldValue.increment(-data.needed) });
     }
 
-    // CHECK IF THIS TABLE ALREADY HAS AN ACTIVE OPEN BILL
     let existingTableId = null;
     let existingTableData = null;
     for (let [id, data] of Object.entries(activeTablesData)) {
-        if (data.tableNo.toUpperCase() === tableNo) {
+        if (!data.chargedToFolio && data.tableNo.toUpperCase() === tableNo) {
             existingTableId = id;
             existingTableData = data;
             break;
@@ -242,14 +356,18 @@ async function sendToKitchen() {
     }
 
     if (existingTableId && existingTableData) {
-        // MERGE INTO EXISTING TABLE
         let mergedItems = JSON.parse(JSON.stringify(existingTableData.items || {}));
         
         for (let [itemName, newPayload] of Object.entries(newItemsPayload)) {
             if (mergedItems[itemName]) {
-                // Item already exists on bill -> add quantities, costs, and combine rawDeductions
                 mergedItems[itemName].qty += newPayload.qty;
                 mergedItems[itemName].totalCost += newPayload.totalCost;
+                if (newPayload.note) {
+                    const prevNote = mergedItems[itemName].note || "";
+                    mergedItems[itemName].note = prevNote
+                        ? (prevNote.includes(newPayload.note) ? prevNote : `${prevNote} | ${newPayload.note}`)
+                        : newPayload.note;
+                }
                 
                 let combinedMap = {};
                 (mergedItems[itemName].rawDeductions || []).forEach(d => {
@@ -262,7 +380,6 @@ async function sendToKitchen() {
                 mergedItems[itemName].rawDeductions = Object.entries(combinedMap).map(([n, q]) => ({ name: n, qty: q }));
                 mergedItems[itemName].deductionsString = mergedItems[itemName].rawDeductions.map(d => `${d.name} (${d.qty})`).join(", ");
             } else {
-                // Brand new item on this table's bill
                 mergedItems[itemName] = newPayload;
             }
         }
@@ -273,7 +390,7 @@ async function sendToKitchen() {
         batch.update(existingTableRef, {
             items: mergedItems,
             subtotal: updatedSubtotal,
-            served: false, // Reset served status so Kitchen KDS highlights the table again!
+            served: false,
             lastUpdated: checkoutTime
         });
 
@@ -283,14 +400,13 @@ async function sendToKitchen() {
             document.getElementById("ticketTableNo").innerText = `${tableNo} (ADD-ON)`; 
             document.getElementById("ticketTime").innerText = checkoutTime.toLocaleTimeString();
             showDigitalReceipt('kitchenTicketArea'); 
-            clearCart();
+            clearCart(true);
         } catch(err) { 
             showToast("Network error updating order."); 
             console.error(err); 
         }
 
     } else {
-        // CREATE BRAND NEW ACTIVE TABLE
         const newTableRef = db.collection("active_tables").doc();
         batch.set(newTableRef, { 
             tableNo: tableNo, 
@@ -305,7 +421,7 @@ async function sendToKitchen() {
             document.getElementById("ticketTableNo").innerText = `${tableNo}`; 
             document.getElementById("ticketTime").innerText = checkoutTime.toLocaleTimeString();
             showDigitalReceipt('kitchenTicketArea'); 
-            clearCart();
+            clearCart(true);
         } catch(err) { 
             showToast("Network error saving order."); 
             console.error(err); 
@@ -323,7 +439,7 @@ async function directCheckout() {
     let totalNeeds = {}; let tableItemsPayload = {};
     for (let [itemName, cartData] of Object.entries(cart)) {
         const menuData = dynamicMenuRecipes[itemName]; if (!menuData) continue;
-        tableItemsPayload[itemName] = { qty: cartData.qty, basePrice: cartData.price, totalCost: 0, deductionsString: "", rawDeductions: [] };
+        tableItemsPayload[itemName] = { qty: cartData.qty, basePrice: cartData.price, note: cartData.note || "", totalCost: 0, deductionsString: "", rawDeductions: [] };
         for (const ingredient of menuData.recipe) {
             const qtyNeeded = ingredient.deduct * cartData.qty;
             if (!totalNeeds[ingredient.name]) totalNeeds[ingredient.name] = { needed: 0, cost: 0, id: null, currentQty: 0 };
@@ -365,21 +481,28 @@ async function directCheckout() {
         batch.update(docRef, { quantity: firebase.firestore.FieldValue.increment(-data.needed) });
     }
 
-    // Create table but tag it to skip the kitchen
     const newTableRef = db.collection("active_tables").doc();
     batch.set(newTableRef, { tableNo: tableNo, subtotal: cartTotalRaw, items: tableItemsPayload, timestamp: checkoutTime, skipKitchen: true });
 
     try {
         await batch.commit();
-        // Manually inject locally so the modal opens instantly without waiting for the server sync
         activeTablesData[newTableRef.id] = { tableNo: tableNo, subtotal: cartTotalRaw, items: tableItemsPayload, timestamp: { toDate: () => checkoutTime }, skipKitchen: true };
-        
-        clearCart();
+        clearCart(true);
         openBillingModal(newTableRef.id);
     } catch(err) { showToast("Error during direct checkout."); console.error(err); }
 }
 
 // --- VISUAL MAP & ACTIVE TABLES ---
+function formatElapsedMins(ts) {
+    if (!ts) return "Now";
+    const d = typeof ts.toDate === "function" ? ts.toDate() : new Date(ts);
+    const mins = Math.max(0, Math.floor((Date.now() - d.getTime()) / 60000));
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m`;
+    const hrs = Math.floor(mins / 60);
+    return `${hrs}h ${mins % 60}m`;
+}
+
 function loadActiveTables() {
     db.collection("active_tables").orderBy("timestamp", "asc").onSnapshot((snapshot) => {
         activeTablesData = {};
@@ -387,44 +510,93 @@ function loadActiveTables() {
         renderTableMap();
         if(typeof renderKitchenBoard === "function") renderKitchenBoard();
     });
+
+    if (!posTableElapsedTimer) {
+        posTableElapsedTimer = setInterval(() => {
+            if (Object.keys(activeTablesData || {}).length > 0) {
+                renderTableMap();
+            }
+        }, 30000);
+    }
 }
 
 function renderTableMap() {
     const container = document.getElementById("activeTablesContainer"); 
-    if (!container) return; // <--- Safely exits if we are on the kitchen screen!
-    
+    if (!container) return;
+
+    const countBadge = document.getElementById("activeTablesCountBadge");
     container.innerHTML = "";
     const standardTables = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9"];
     let mapHTML = '<div class="table-map-grid">';
     let usedStandardIds = [];
+    let openCount = 0;
 
     standardTables.forEach(tableName => {
         let activeId = null; let activeData = null;
         for (let [id, data] of Object.entries(activeTablesData)) {
-            if (data.tableNo === tableName) { activeId = id; activeData = data; usedStandardIds.push(id); break; }
+            if (!data.chargedToFolio && data.tableNo === tableName) {
+                activeId = id; activeData = data; usedStandardIds.push(id); break;
+            }
         }
 
         if (activeId) {
-            mapHTML += `<div class="map-table occupied" onclick="openBillingModal('${activeId}')"><div style="font-weight: bold; color: #8c5d3a;">${tableName}</div><div style="font-size: 13px; color: #bd4b4b;">₱${activeData.subtotal.toFixed(2)}</div></div>`;
+            openCount++;
+            const elapsed = formatElapsedMins(activeData.timestamp);
+            const statusPill = activeData.served
+                ? `<span style="background: #e8f5e9; color: #2e7d32; font-size: 9px; padding: 1px 5px; border-radius: 8px; font-weight: bold;">✓ Ready</span>`
+                : `<span style="background: #fff3cd; color: #8c5d3a; font-size: 9px; padding: 1px 5px; border-radius: 8px; font-weight: bold;">🍳 ${elapsed}</span>`;
+
+            mapHTML += `
+                <div class="map-table occupied" onclick="openBillingModal('${activeId}')" style="height: auto; min-height: 68px; padding: 6px 4px; gap: 2px;">
+                    <div style="font-weight: bold; color: #8c5d3a; font-size: 13px;">${tableName}</div>
+                    <div style="font-size: 12px; color: #bd4b4b; font-weight: bold;">₱${(activeData.subtotal || 0).toFixed(2)}</div>
+                    ${statusPill}
+                </div>`;
         } else {
-            mapHTML += `<div class="map-table empty" onclick="selectTableForOrder('${tableName}')"><div style="font-weight: bold;">${tableName}</div><div style="font-size: 11px;">Available</div></div>`;
+            mapHTML += `
+                <div class="map-table empty" onclick="selectTableForOrder('${tableName}')" style="min-height: 68px;">
+                    <div style="font-weight: bold;">${tableName}</div>
+                    <div style="font-size: 11px;">Available</div>
+                </div>`;
         }
     });
     mapHTML += '</div>';
 
     let customHTML = "";
     for (let [id, data] of Object.entries(activeTablesData)) {
+        if (data.chargedToFolio) continue;
         if (!usedStandardIds.includes(id)) {
-            let time = data.timestamp ? data.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
-            customHTML += `<div class="table-item" style="padding: 10px;"><div style="display: flex; justify-content: space-between; font-weight: bold; color: #2b4227; margin-bottom: 5px;"><span>${data.tableNo}</span><span style="color:#666; font-size:11px; font-weight:normal;">${time}</span></div><div style="font-weight: bold; margin-bottom: 8px;">₱${(data.subtotal || 0).toFixed(2)}</div><button class="save-btn" style="width: 100%; font-size:12px; padding: 6px;" onclick="openBillingModal('${id}')">Open Bill</button></div>`;
+            openCount++;
+            const elapsed = formatElapsedMins(data.timestamp);
+            const itemCount = Object.values(data.items || {}).reduce((sum, i) => sum + (Number(i.qty) || 0), 0);
+            const statusTag = data.served
+                ? `<span style="background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: bold;">✓ Ready</span>`
+                : `<span style="background: #fff3cd; color: #8c5d3a; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: bold;">🍳 ${elapsed}</span>`;
+
+            customHTML += `
+                <div class="table-item" style="padding: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #2b4227; margin-bottom: 5px;">
+                        <span>${escapeMenuHTML(data.tableNo)}</span>
+                        ${statusTag}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: bold; color: #bd4b4b;">₱${(data.subtotal || 0).toFixed(2)}</span>
+                        <small style="color: #666;">${itemCount} ${itemCount === 1 ? "item" : "items"}</small>
+                    </div>
+                    <button class="save-btn" style="width: 100%; font-size:12px; padding: 6px;" onclick="openBillingModal('${id}')">Open Bill</button>
+                </div>`;
         }
     }
-    
-    if(customHTML) { mapHTML += `<h3 style="font-size:14px; margin-top:0; border-bottom: none; color: #8c5d3a;">Takeout / Custom Tables</h3>` + customHTML; }
+
+    if (countBadge) countBadge.innerText = `${openCount} open`;
+    if (customHTML) { mapHTML += `<h3 style="font-size:14px; margin-top:0; border-bottom: none; color: #8c5d3a;">Takeout / Custom Tables</h3>` + customHTML; }
     container.innerHTML = mapHTML;
 }
 
-function selectTableForOrder(tableName) { document.getElementById("tableNoInput").value = tableName; showToast(`${tableName} selected.`); }
+function selectTableForOrder(tableName) {
+    document.getElementById("tableNoInput").value = tableName;
+    showToast(`${tableName} selected.`);
+}
 
 // --- VOID TABLES ---
 async function voidActiveTable(tableId) {
@@ -947,6 +1119,166 @@ function escapeMenuHTML(val) {
         .replace(/'/g, "&#39;");
 }
 
+let activePosCategory = "ALL";
+
+window.POS_CATEGORY_THEMES = {
+    "Meals":      { bg: "linear-gradient(135deg, #557a46, #3b592f)", tabBg: "#e8f5e9", tabText: "#2b4227", tabBorder: "#a5d6a7" },
+    "Entrées":    { bg: "linear-gradient(135deg, #a66838, #7d4a23)", tabBg: "#fff3e0", tabText: "#8c5d3a", tabBorder: "#ffcc80" },
+    "Entrees":    { bg: "linear-gradient(135deg, #a66838, #7d4a23)", tabBg: "#fff3e0", tabText: "#8c5d3a", tabBorder: "#ffcc80" },
+    "Drinks":     { bg: "linear-gradient(135deg, #2b7a78, #1f5c5a)", tabBg: "#e0f2f1", tabText: "#00695c", tabBorder: "#80cbc4" },
+    "Beverages":  { bg: "linear-gradient(135deg, #2b7a78, #1f5c5a)", tabBg: "#e0f2f1", tabText: "#00695c", tabBorder: "#80cbc4" },
+    "Coffee":     { bg: "linear-gradient(135deg, #6d4c41, #4e342e)", tabBg: "#efebe9", tabText: "#4e342e", tabBorder: "#bcaaa4" },
+    "Bar":        { bg: "linear-gradient(135deg, #6a1b9a, #4a148c)", tabBg: "#f3e5f5", tabText: "#6a1b9a", tabBorder: "#ce93d8" },
+    "Desserts":   { bg: "linear-gradient(135deg, #ad1457, #880e4f)", tabBg: "#fce4ec", tabText: "#ad1457", tabBorder: "#f48fb1" },
+    "Pastries":   { bg: "linear-gradient(135deg, #c77c2e, #9c5b19)", tabBg: "#fff8e1", tabText: "#9c5b19", tabBorder: "#ffe082" },
+    "Add-ons":    { bg: "linear-gradient(135deg, #4a6fa5, #35527d)", tabBg: "#e3f2fd", tabText: "#1565c0", tabBorder: "#90caf9" },
+    "Snacks":     { bg: "linear-gradient(135deg, #d87a2c, #b05c18)", tabBg: "#fff3e0", tabText: "#bf360c", tabBorder: "#ffab91" }
+};
+
+const POS_FALLBACK_THEMES = [
+    { bg: "linear-gradient(135deg, #4b7bec, #3867d6)", tabBg: "#e8eaf6", tabText: "#283593", tabBorder: "#9fa8da" },
+    { bg: "linear-gradient(135deg, #20bf6b, #0fb9b1)", tabBg: "#e0f7fa", tabText: "#006064", tabBorder: "#80deea" },
+    { bg: "linear-gradient(135deg, #8854d0, #6c3cb9)", tabBg: "#ede7f6", tabText: "#4527a0", tabBorder: "#b39ddb" },
+    { bg: "linear-gradient(135deg, #b36b39, #8c4f24)", tabBg: "#fbe9e7", tabText: "#8c4f24", tabBorder: "#ffab91" }
+];
+
+function getPosCategoryTheme(catName) {
+    if (window.POS_CATEGORY_THEMES && window.POS_CATEGORY_THEMES[catName]) {
+        return window.POS_CATEGORY_THEMES[catName];
+    }
+    let hash = 0;
+    const str = String(catName || "Meals");
+    for (let i = 0; i < str.length; i++) hash = (hash * 31 + str.charCodeAt(i)) % 997;
+    return POS_FALLBACK_THEMES[Math.abs(hash) % POS_FALLBACK_THEMES.length];
+}
+
+function setPosCategory(catName) {
+    activePosCategory = catName;
+    renderPosCategoryTabs();
+    renderPosMenuGrid();
+}
+
+function renderPosCategoryTabs() {
+    const tabsEl = document.getElementById("posCategoryTabs");
+    if (!tabsEl) return;
+
+    const allCats = new Set(Array.isArray(menuCategories) ? menuCategories : []);
+    Object.values(dynamicMenuDocs || {}).forEach((item) => {
+        if (item.category) allCats.add(item.category);
+    });
+
+    const catArray = Array.from(allCats);
+    if (activePosCategory !== "ALL" && !allCats.has(activePosCategory)) {
+        activePosCategory = "ALL";
+    }
+
+    const isAllActive = activePosCategory === "ALL";
+    let html = `
+        <button type="button" onclick="setPosCategory('ALL')" style="padding: 7px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; background: ${isAllActive ? "#2b4227" : "#eef2ee"}; color: ${isAllActive ? "#fff" : "#2b4227"}; border: 1.5px solid ${isAllActive ? "#2b4227" : "#c8dac8"};">
+            All (${Object.keys(dynamicMenuDocs || {}).length})
+        </button>`;
+
+    catArray.forEach((cat) => {
+        const count = Object.values(dynamicMenuDocs || {}).filter((i) => (i.category || "Meals") === cat).length;
+        const theme = getPosCategoryTheme(cat);
+        const isActive = activePosCategory === cat;
+        const encoded = encodeURIComponent(cat);
+        html += `
+            <button type="button" onclick="setPosCategory(decodeURIComponent('${encoded}'))" style="padding: 7px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; background: ${isActive ? theme.tabText : theme.tabBg}; color: ${isActive ? "#fff" : theme.tabText}; border: 1.5px solid ${isActive ? theme.tabText : theme.tabBorder};">
+                ${escapeMenuHTML(cat)} (${count})
+            </button>`;
+    });
+
+    tabsEl.innerHTML = html;
+}
+
+function getItemIngredientStockStatus(recipe) {
+    if (!Array.isArray(recipe) || recipe.length === 0 || Object.keys(menuInventoryMap || {}).length === 0) {
+        return "OK";
+    }
+    let hasLow = false;
+    for (const ing of recipe) {
+        const inv = menuInventoryMap[ing.name];
+        const need = Number(ing.deduct) || 0;
+        if (need <= 0) continue;
+        if (!inv || inv.quantity < need) return "OUT";
+        if (inv.quantity < need * 3) hasLow = true;
+    }
+    return hasLow ? "LOW" : "OK";
+}
+
+function renderPosMenuGrid() {
+    const container = document.getElementById("menuGridContainer");
+    if (!container) return;
+
+    const searchEl = document.getElementById("posMenuSearch");
+    const searchTerm = searchEl ? searchEl.value.trim().toLowerCase() : "";
+
+    const allItems = Object.values(dynamicMenuDocs || {});
+    const filtered = allItems.filter((item) => {
+        const cat = item.category || "Meals";
+        const matchCat = activePosCategory === "ALL" || cat === activePosCategory;
+        const matchSearch = !searchTerm || (item.name || "").toLowerCase().includes(searchTerm) || cat.toLowerCase().includes(searchTerm);
+        return matchCat && matchSearch;
+    });
+
+    container.innerHTML = "";
+    if (filtered.length === 0) {
+        container.innerHTML = `<p style="color:#888; text-align:center; padding: 30px 10px;">${allItems.length === 0 ? "No menu items yet. Add items in Menu Builder." : "No matching menu items found."}</p>`;
+        return;
+    }
+
+    let categories = {};
+    filtered.forEach((item) => {
+        const cat = item.category || "Meals";
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push(item);
+    });
+
+    for (const [cat, items] of Object.entries(categories)) {
+        items.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+        const theme = getPosCategoryTheme(cat);
+        let catHTML = `<h3 style="color: ${theme.tabText}; border-bottom-color: ${theme.tabBorder};">${escapeMenuHTML(cat)}</h3><div class="menu-grid">`;
+
+        items.forEach((item) => {
+            const encodedName = encodeURIComponent(item.name || "");
+            const priceVal = Number(item.price) || 0;
+            const stockStatus = getItemIngredientStockStatus(item.recipe);
+
+            if (!item.available) {
+                catHTML += `
+                    <div class="menu-item-container">
+                        <button class="order-btn" onclick="showToast(decodeURIComponent('${encodedName}') + ' is currently Sold Out (86).')" style="background: #b0b7b0; opacity: 0.65; cursor: not-allowed; box-shadow: none;">
+                            <span style="text-decoration: line-through;">${escapeMenuHTML(item.name)}</span><br>
+                            <small style="background: #bd4b4b; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 4px;">SOLD OUT</small>
+                        </button>
+                    </div>`;
+            } else {
+                let stockBadge = "";
+                if (stockStatus === "OUT") {
+                    stockBadge = `<br><small style="background: rgba(189,75,75,0.92); color: white; padding: 1px 6px; border-radius: 4px; font-size: 10px; display: inline-block; margin-top: 4px;">⚠️ No Stock</small>`;
+                } else if (stockStatus === "LOW") {
+                    stockBadge = `<br><small style="background: rgba(255,243,205,0.95); color: #856404; padding: 1px 6px; border-radius: 4px; font-size: 10px; display: inline-block; margin-top: 4px;">Low Stock</small>`;
+                }
+
+                catHTML += `
+                    <div class="menu-item-container">
+                        <button class="order-btn" onclick="addToCart(decodeURIComponent('${encodedName}'), ${priceVal})" style="background: ${theme.bg};">
+                            ${escapeMenuHTML(item.name)}<br><small>₱${priceVal.toFixed(2)}</small>${stockBadge}
+                        </button>
+                        <div class="menu-actions no-print">
+                            <button class="action-circle" style="background:#d4a373;" onclick="editMenuItem('${item.id}')">✎</button>
+                            <button class="action-circle" style="background:#bd4b4b;" onclick="deleteMenuItem('${item.id}')">✕</button>
+                        </div>
+                    </div>`;
+            }
+        });
+
+        catHTML += `</div>`;
+        container.innerHTML += catHTML;
+    }
+}
+
 function loadMenuInventory() {
     if (menuInventoryListener !== null) return;
     menuInventoryListener = db.collection("inventory").orderBy("name").onSnapshot((snapshot) => {
@@ -964,6 +1296,7 @@ function loadMenuInventory() {
             menuInventoryMap[entry.name] = entry;
             menuInventoryList.push(entry);
         });
+        renderPosMenuGrid();
         renderAdminMenuBoard();
         refreshOpenIngredientSelects();
         calculateMenuMargin();
@@ -975,14 +1308,11 @@ function loadMenuInventory() {
 function loadMenu() {
     loadMenuInventory();
     db.collection("menu").orderBy("category").onSnapshot((snapshot) => {
-        const container = document.getElementById("menuGridContainer");
         dynamicMenuRecipes = {};
         dynamicMenuDocs = {};
-        let categories = {};
 
         snapshot.forEach((doc) => {
             const item = doc.data();
-            const cat = item.category || "Meals";
             const isAvailable = item.available !== false;
             dynamicMenuRecipes[item.name] = {
                 recipe: item.recipe || [],
@@ -990,45 +1320,10 @@ function loadMenu() {
                 available: isAvailable
             };
             dynamicMenuDocs[doc.id] = { id: doc.id, ...item, available: isAvailable };
-            if (!categories[cat]) categories[cat] = [];
-            categories[cat].push({ id: doc.id, ...item, available: isAvailable });
         });
 
-        // 1. Render Cashier POS Grid
-        if (container) {
-            container.innerHTML = "";
-            for (let cat in categories) {
-                let catHTML = `<h3>${escapeMenuHTML(cat)}</h3><div class="menu-grid">`;
-                categories[cat].forEach((item) => {
-                    const encodedName = encodeURIComponent(item.name || "");
-                    const priceVal = Number(item.price) || 0;
-                    if (item.available) {
-                        catHTML += `
-                            <div class="menu-item-container">
-                                <button class="order-btn" onclick="addToCart(decodeURIComponent('${encodedName}'), ${priceVal})">
-                                    ${escapeMenuHTML(item.name)}<br><small>₱${priceVal.toFixed(2)}</small>
-                                </button>
-                                <div class="menu-actions no-print">
-                                    <button class="action-circle" style="background:#d4a373;" onclick="editMenuItem('${item.id}')">✎</button>
-                                    <button class="action-circle" style="background:#bd4b4b;" onclick="deleteMenuItem('${item.id}')">✕</button>
-                                </div>
-                            </div>`;
-                    } else {
-                        catHTML += `
-                            <div class="menu-item-container">
-                                <button class="order-btn" onclick="showToast(decodeURIComponent('${encodedName}') + ' is currently Sold Out (86).')" style="background: #b0b7b0; opacity: 0.65; cursor: not-allowed; box-shadow: none;">
-                                    <span style="text-decoration: line-through;">${escapeMenuHTML(item.name)}</span><br>
-                                    <small style="background: #bd4b4b; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; display: inline-block; margin-top: 3px;">SOLD OUT</small>
-                                </button>
-                            </div>`;
-                    }
-                });
-                catHTML += `</div>`;
-                container.innerHTML += catHTML;
-            }
-        }
-
-        // 2. Sync Admin Menu Builder Cards
+        renderPosCategoryTabs();
+        renderPosMenuGrid();
         renderAdminMenuBoard();
     });
 }
@@ -1639,6 +1934,7 @@ function loadCategories() {
             const hasPrev = Array.from(filterDropdown.options).some((o) => o.value === prevFilter);
             filterDropdown.value = hasPrev ? prevFilter : "ALL";
         }
+    if (typeof renderPosCategoryTabs === "function") renderPosCategoryTabs();
     });
 }
 
@@ -1714,36 +2010,61 @@ async function secureVoidActiveTableModal() {
 // ==========================================
 function renderKitchenBoard() {
     const board = document.getElementById("kitchenBoard");
+    if (!board) return;
     board.innerHTML = ""; 
 
-    if (Object.keys(activeTablesData).length === 0) {
-        board.innerHTML = '<p style="color: #666;">No active orders...</p>';
+    const kitchenOrders = Object.entries(activeTablesData).filter(([_, d]) => !d.skipKitchen);
+    if (kitchenOrders.length === 0) {
+        board.innerHTML = `
+            <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 55vh; opacity: 0.5;">
+                <span style="font-size: 64px; margin-bottom: 16px; filter: grayscale(1);">🍽️</span>
+                <h3 style="color: #888; font-size: 24px; margin: 0; font-weight: normal; border: none;">No active orders</h3>
+                <p style="color: #666; font-size: 14px; margin-top: 8px;">Waiting for new tickets from the POS...</p>
+            </div>`;
         return;
     }
 
-    for (let [tableId, data] of Object.entries(activeTablesData)) {
-        if (data.skipKitchen) continue;
+    for (let [tableId, data] of kitchenOrders) {
         let timeString = "Just now";
+        let urgencyClass = "";
         
         if (data.timestamp) {
-            const orderTime = data.timestamp.toDate();
+            const orderTime = typeof data.timestamp.toDate === "function" ? data.timestamp.toDate() : new Date(data.timestamp);
             timeString = orderTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const minsElapsed = Math.floor((Date.now() - orderTime.getTime()) / 60000);
+            if (!data.served) {
+                if (minsElapsed >= 20) urgencyClass = "urgent";
+                else if (minsElapsed >= 10) urgencyClass = "warning";
+            }
         }
 
         let itemsHTML = "";
-        for (let [itemName, itemData] of Object.entries(data.items)) {
-            let modHTML = ""; 
-            itemsHTML += `<div class="kds-item"><b>${itemData.qty}x</b> ${itemName} ${modHTML}</div>`;
+        for (let [itemName, itemData] of Object.entries(data.items || {})) {
+            const modHTML = itemData.note
+                ? `<div class="kds-modifier">📝 ${escapeMenuHTML(itemData.note)}</div>`
+                : "";
+            itemsHTML += `
+                <div class="kds-item">
+                    <div class="kds-item-main">
+                        <span class="kds-qty">${itemData.qty}x</span>
+                        <span>${escapeMenuHTML(itemName)}</span>
+                    </div>
+                    ${modHTML}
+                </div>`;
         }
 
-        let servedClass = data.served ? "served" : "";
+        const folioBadge = data.chargedToFolio
+            ? `<span style="background: #4a6fa5; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle;">ROOM FOLIO</span>`
+            : "";
+
+        let servedClass = data.served ? "served" : urgencyClass;
         let btnText = data.served ? "Undo" : "✔️ Mark as Served";
         let btnColor = data.served ? "#8c5d3a" : "#557a46";
 
         board.innerHTML += `
             <div class="kds-card ${servedClass}" id="kds-${tableId}">
                 <div class="kds-header">
-                    <span>${data.tableNo}</span>
+                    <span><strong>${escapeMenuHTML(data.tableNo)}</strong>${folioBadge}</span>
                     <span class="kds-time">${timeString}</span>
                 </div>
                 <div class="kds-body">${itemsHTML}</div>
@@ -1764,7 +2085,6 @@ function toggleServeStatus(tableId, currentStatus) {
         });
 }
 
-// Function to completely remove/clear a finished order from the database queue
 async function clearKitchenOrder(tableId) {
     const confirmed = window.hilomConfirm
         ? await hilomConfirm("Clear this order from the kitchen queue?")
@@ -1777,10 +2097,12 @@ async function clearKitchenOrder(tableId) {
         if (typeof window.recordAuditEvent === "function") {
             window.recordAuditEvent({
                 category: "TRANSACTION",
-                action: "KITCHEN_ORDER_CLEARED",
+                action: tData.chargedToFolio ? "KITCHEN_FOLIO_COMPLETED" : "KITCHEN_ORDER_CLEARED",
                 tableNo: tData.tableNo || tableId,
-                amount: Number(tData.subtotal) || 0,
-                details: `Cleared unpaid active order directly from Kitchen KDS (${itemsSummary || "items"}).`
+                amount: tData.chargedToFolio ? 0 : (Number(tData.subtotal) || 0),
+                details: tData.chargedToFolio
+                    ? `Cleared completed Room Folio kitchen ticket (${itemsSummary || "items"}).`
+                    : `Cleared unpaid active order directly from Kitchen KDS (${itemsSummary || "items"}).`
             });
         }
         showToast("Order cleared from queue.");
@@ -1790,11 +2112,10 @@ async function clearKitchenOrder(tableId) {
     }
 }
 
-// --- CHARGE POS CART DIRECTLY TO A GUEST'S ROOM FOLIO ---
+// --- CHARGE POS CART DIRECTLY TO A GUEST'S ROOM FOLIO (WITH OPTIONAL KITCHEN TICKET) ---
 async function chargeToRoomFolio() {
     if (Object.keys(cart).length === 0) return showToast("Cart is empty!");
 
-    // Fetch all OCCUPIED rooms so the waiter/cashier can pick from a dropdown
     const occSnap = await db.collection("rooms").where("status", "==", "OCCUPIED").get();
     if (occSnap.empty) {
         return alert("There are currently no occupied rooms checked in.");
@@ -1814,21 +2135,33 @@ async function chargeToRoomFolio() {
         : prompt("Enter the Room Number to charge this order to:");
     if (!roomId) return;
 
+    const sendKitchen = window.hilomConfirm
+        ? await hilomConfirm("Send this order to the Kitchen KDS & print a Kitchen Ticket?\n\n(Click Cancel for bar/counter items like bottled water that don't need kitchen prep.)")
+        : confirm("Send this order to the Kitchen KDS & print a Kitchen Ticket?");
+
     try {
-        // 1. Verify Room exists and is occupied
         const roomDoc = await db.collection("rooms").doc(roomId.trim()).get();
         if (!roomDoc.exists || roomDoc.data().status !== "OCCUPIED" || !roomDoc.data().currentFolioId) {
             return alert(`Room ${roomId} is not currently occupied.`);
         }
 
-        // 2. Validate and deduct inventory for the food ordered
-        let totalNeeds = {}; 
+        let totalNeeds = {};
+        let kdsItemsPayload = {};
         for (let [itemName, cartData] of Object.entries(cart)) {
-            const menuData = dynamicMenuRecipes[itemName]; if (!menuData) continue;
+            const menuData = dynamicMenuRecipes[itemName];
+            kdsItemsPayload[itemName] = {
+                qty: cartData.qty,
+                basePrice: cartData.price,
+                note: cartData.note || "",
+                totalCost: 0,
+                rawDeductions: []
+            };
+            if (!menuData) continue;
             for (const ingredient of menuData.recipe) {
                 const qtyNeeded = ingredient.deduct * cartData.qty;
                 if (!totalNeeds[ingredient.name]) totalNeeds[ingredient.name] = { needed: 0, id: null, currentQty: 0 };
                 totalNeeds[ingredient.name].needed += qtyNeeded;
+                kdsItemsPayload[itemName].rawDeductions.push({ name: ingredient.name, qty: qtyNeeded });
             }
         }
 
@@ -1850,33 +2183,63 @@ async function chargeToRoomFolio() {
 
         if (missingStockMessages.length > 0) return showToast(`Charge paused! Missing stock: ${missingStockMessages.join(", ")}`);
 
+        const orderTime = new Date();
         const batch = db.batch();
         for (let [name, data] of Object.entries(totalNeeds)) {
             const docRef = db.collection("inventory").doc(data.id);
             batch.update(docRef, { quantity: firebase.firestore.FieldValue.increment(-data.needed) });
         }
 
-        // 3. Append charge to the Guest's Room Folio Ledger
         const folioRef = db.collection("folios").doc(roomDoc.data().currentFolioId);
-        
         let itemsSummaryArr = [];
         for (let [itemName, data] of Object.entries(cart)) {
-            itemsSummaryArr.push(`${data.qty}x ${itemName}`);
+            itemsSummaryArr.push(`${data.qty}x ${itemName}${data.note ? ` [${data.note}]` : ""}`);
         }
         
         batch.update(folioRef, {
             posOrders: firebase.firestore.FieldValue.arrayUnion({
                 itemsSummary: itemsSummaryArr.join(", "),
                 amount: cartTotalRaw,
-                timestamp: new Date().toISOString()
+                timestamp: orderTime.toISOString()
             }),
             posChargesTotal: firebase.firestore.FieldValue.increment(cartTotalRaw),
             grandTotal: firebase.firestore.FieldValue.increment(cartTotalRaw)
         });
 
+        if (sendKitchen) {
+            const kdsTicketRef = db.collection("active_tables").doc();
+            batch.set(kdsTicketRef, {
+                tableNo: `ROOM ${roomId.trim()}`,
+                subtotal: cartTotalRaw,
+                items: kdsItemsPayload,
+                timestamp: orderTime,
+                chargedToFolio: true
+            });
+
+            const ticketItemsEl = document.getElementById("ticketItems");
+            if (ticketItemsEl) {
+                ticketItemsEl.innerHTML = "";
+                for (let [itemName, payload] of Object.entries(kdsItemsPayload)) {
+                    const noteLine = payload.note
+                        ? `<div style="font-size: 12px; font-weight: bold; padding-left: 16px; margin-bottom: 6px;">&rarr; NOTE: ${escapeMenuHTML(payload.note).toUpperCase()}</div>`
+                        : "";
+                    ticketItemsEl.innerHTML += `<div class="receipt-item"><span><b>${payload.qty}x</b> ${escapeMenuHTML(itemName).toUpperCase()}</span></div>${noteLine}`;
+                }
+            }
+        }
+
         await batch.commit();
-        showToast(`₱${cartTotalRaw.toFixed(2)} successfully charged to Room ${roomId}!`);
-        clearCart();
+
+        if (sendKitchen) {
+            document.getElementById("ticketTableNo").innerText = `ROOM ${roomId.trim()} (FOLIO)`;
+            document.getElementById("ticketTime").innerText = orderTime.toLocaleTimeString();
+            showDigitalReceipt('kitchenTicketArea');
+            showToast(`₱${cartTotalRaw.toFixed(2)} charged to Room ${roomId} & sent to Kitchen!`);
+        } else {
+            showToast(`₱${cartTotalRaw.toFixed(2)} charged to Room ${roomId}!`);
+        }
+
+        clearCart(true);
         
     } catch(err) { 
         console.error(err); 

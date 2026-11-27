@@ -200,33 +200,62 @@
             <div id="posView" class="view-section active">
                 <div class="pos-container">
                     <div class="card menu-section" style="margin-bottom: 0;">
-                        <h2>Customer Menu</h2>
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 2px solid #e0e5e0; padding-bottom: 10px; margin-bottom: 12px;">
+                            <h2 style="margin: 0; border: none; padding: 0;">Customer Menu</h2>
+                            <input type="text" id="posMenuSearch" placeholder="🔍 Search menu..." oninput="renderPosMenuGrid()" style="width: 220px; max-width: 100%; margin: 0; padding: 8px 12px; font-size: 14px;">
+                        </div>
+
+                        <!-- CATEGORY FILTER PILLS -->
+                        <div id="posCategoryTabs" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+                            <button type="button" onclick="setPosCategory('ALL')" style="padding: 7px 14px; background: #2b4227; color: white; border-radius: 20px; font-size: 12px;">All</button>
+                        </div>
+
                         <div id="menuGridContainer">
-    <!-- Hardcoded Skeleton Cards for LCP Optimization -->
-    <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
-    <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
-    <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
-    <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
-    <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
-</div>
+                            <!-- Hardcoded Skeleton Cards for LCP Optimization -->
+                            <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
+                            <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
+                            <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
+                            <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
+                            <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-text title"></div><div class="skeleton-text price"></div></div>
+                        </div>
                     </div>
 
                     <div class="sidebar-section">
                         <!-- CART -->
                         <div class="card cart-card" style="margin-bottom: 0;">
-                            <h2 style="color: #8c5d3a; border-color: #e0e5e0;">Current Order</h2>
-                            <input type="text" id="tableNoInput" placeholder="Table Number (e.g., T1 or Takeout)" style="width: 100%; box-sizing: border-box; margin-bottom: 15px; font-weight: bold; font-size: 16px; text-transform: uppercase;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e0e5e0; padding-bottom: 10px; margin-bottom: 12px;">
+                                <h2 style="color: #8c5d3a; margin: 0; border: none; padding: 0;">Current Order</h2>
+                                <span id="cartItemCountBadge" style="background: #f4ebe1; color: #8c5d3a; border: 1px solid #d4a373; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">0 items</span>
+                            </div>
+
+                            <input type="text" id="tableNoInput" placeholder="Table Number (e.g., T1 or Takeout)" style="width: 100%; box-sizing: border-box; margin-bottom: 8px; font-weight: bold; font-size: 15px; text-transform: uppercase;">
+
+                            <!-- QUICK ORDER-TYPE CHIPS -->
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px;">
+                                <button type="button" onclick="selectTableForOrder('TAKEOUT')" style="flex: 1; padding: 6px 8px; font-size: 11px; background: #f4ebe1; color: #8c5d3a; border: 1px solid #d4a373; border-radius: 16px;">🥡 Takeout</button>
+                                <button type="button" onclick="selectTableForOrder('WALK-IN')" style="flex: 1; padding: 6px 8px; font-size: 11px; background: #e8f5e9; color: #2b4227; border: 1px solid #c8dac8; border-radius: 16px;">🚶 Walk-In</button>
+                                <button type="button" onclick="selectTableForOrder('BAR')" style="flex: 1; padding: 6px 8px; font-size: 11px; background: #f3e5f5; color: #6a1b9a; border: 1px solid #e1bee7; border-radius: 16px;">🍹 Bar</button>
+                                <button type="button" onclick="selectTableForOrder('POOLSIDE')" style="flex: 1; padding: 6px 8px; font-size: 11px; background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; border-radius: 16px;">🏖️ Pool</button>
+                            </div>
+
                             <div id="cartItemsContainer"><p style="color:#888; text-align:center;">Cart is empty</p></div>
                             <div class="cart-total" id="cartTotal">Total: ₱0.00</div>
+
+                            <!-- UPGRADED ACTION BUTTON HIERARCHY -->
                             <button class="checkout-btn" onclick="sendToKitchen()">Send to Kitchen 🖨️</button>
-                            <button class="save-btn" style="width: 100%; margin-top: 5px; background: #2b4227; font-size: 16px; padding: 12px;" onclick="directCheckout()">Direct Pay (Skip Kitchen)</button>
-                            <button class="save-btn" style="width: 100%; margin-top: 5px; background: #4a6fa5; font-size: 16px; padding: 12px;" onclick="chargeToRoomFolio()">Charge to Room Folio</button>
-                            <button class="warn-btn" style="width: 100%; margin-top: 5px;" onclick="clearCart()">Clear Cart</button>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+                                <button class="save-btn" style="background: #2b4227; font-size: 13px; padding: 11px 6px; margin: 0;" onclick="directCheckout()">💵 Direct Pay</button>
+                                <button class="save-btn" style="background: #4a6fa5; font-size: 13px; padding: 11px 6px; margin: 0;" onclick="chargeToRoomFolio()">🛏️ Room Folio</button>
+                            </div>
+                            <button style="width: 100%; margin-top: 8px; background: transparent; color: #bd4b4b; border: 1.5px solid #e0b4b4; padding: 8px; font-size: 13px; border-radius: 6px;" onclick="clearCart()">Clear Cart</button>
                         </div>
                         
                         <!-- VISUAL ACTIVE TABLES -->
                         <div class="card active-tables-card" style="margin-bottom: 0;">
-                            <h2 style="color: #557a46; border-color: #c8dac8;">Active Tables</h2>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #c8dac8; padding-bottom: 10px; margin-bottom: 12px;">
+                                <h2 style="color: #557a46; margin: 0; border: none; padding: 0;">Active Tables</h2>
+                                <span id="activeTablesCountBadge" style="background: #e8f5e9; color: #2b4227; border: 1px solid #c8dac8; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">0 open</span>
+                            </div>
                             <div id="activeTablesContainer"><p style="color:#888; text-align:center; font-size: 14px;">Loading Map...</p></div>
                         </div>
                     </div>
@@ -1140,24 +1169,27 @@
     </div>
 </div>
 
-    <!-- ITEM MODIFIER MODAL -->
-    <div id="modifierModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2 style="border-bottom:none; color: #2b4227; margin-bottom: 5px;" id="modItemName">Add Modifiers</h2>
-            <p style="color:#666; margin-top:0; font-size: 14px;">Add notes for the kitchen.</p>
+    <!-- ITEM MODIFIER / KITCHEN NOTE MODAL -->
+    <div id="modifierModal" class="modal-overlay hidden no-print" style="z-index: 2600;" onclick="if(event.target === this) closeModifierModal()">
+        <div class="modal-content" style="max-width: 420px; width: 92vw; text-align: left;">
+            <h2 style="border-bottom: 2px solid #e0e5e0; color: #2b4227; margin-top: 0; margin-bottom: 6px; padding-bottom: 8px;" id="modItemName">Kitchen Note</h2>
+            <p style="color:#666; margin-top:0; margin-bottom: 12px; font-size: 13px;">Tap quick presets or type special instructions for the kitchen.</p>
             
-            <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px;">
-                <button class="add-btn" style="background: #e9ece9; color: #333; font-size: 12px; padding: 6px 10px;" onclick="addQuickMod('No Garlic')">No Garlic</button>
-                <button class="add-btn" style="background: #e9ece9; color: #333; font-size: 12px; padding: 6px 10px;" onclick="addQuickMod('Extra Egg')">Extra Egg</button>
-                <button class="add-btn" style="background: #e9ece9; color: #333; font-size: 12px; padding: 6px 10px;" onclick="addQuickMod('Less Sugar')">Less Sugar</button>
-                <button class="add-btn" style="background: #e9ece9; color: #333; font-size: 12px; padding: 6px 10px;" onclick="addQuickMod('Spicy')">Spicy</button>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 14px;">
+                <button type="button" style="background: #e9ece9; color: #2b4227; border: 1px solid #c8dac8; font-size: 12px; padding: 8px 6px; margin: 0;" onclick="addQuickMod('No Garlic')">No Garlic</button>
+                <button type="button" style="background: #e9ece9; color: #2b4227; border: 1px solid #c8dac8; font-size: 12px; padding: 8px 6px; margin: 0;" onclick="addQuickMod('Extra Egg')">Extra Egg</button>
+                <button type="button" style="background: #e9ece9; color: #2b4227; border: 1px solid #c8dac8; font-size: 12px; padding: 8px 6px; margin: 0;" onclick="addQuickMod('Less Sugar')">Less Sugar</button>
+                <button type="button" style="background: #e9ece9; color: #2b4227; border: 1px solid #c8dac8; font-size: 12px; padding: 8px 6px; margin: 0;" onclick="addQuickMod('Spicy')">Spicy</button>
+                <button type="button" style="background: #e9ece9; color: #2b4227; border: 1px solid #c8dac8; font-size: 12px; padding: 8px 6px; margin: 0;" onclick="addQuickMod('No Ice')">No Ice</button>
+                <button type="button" style="background: #e9ece9; color: #2b4227; border: 1px solid #c8dac8; font-size: 12px; padding: 8px 6px; margin: 0;" onclick="addQuickMod('Takeout Box')">Takeout Box</button>
             </div>
             
-            <input type="text" id="modifierInput" placeholder="Type custom note..." style="width: 100%; box-sizing: border-box; margin-bottom: 15px;">
+            <input type="text" id="modifierInput" placeholder="e.g., Sauce on the side, well-done..." style="width: 100%; box-sizing: border-box; margin: 0 0 16px 0; padding: 10px;" onkeydown="if(event.key === 'Enter') confirmModifierNote()">
             
-            <div style="display: flex; gap: 10px;">
-                <button class="add-btn" style="flex:2;" onclick="confirmAddToCart()">➕ Add to Order</button>
-                <button class="delete-btn" style="flex:1;" onclick="closeModifierModal()">Cancel</button>
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px;">
+                <button type="button" class="add-btn" style="padding: 11px; margin: 0;" onclick="confirmModifierNote()">💾 Save Note</button>
+                <button type="button" class="warn-btn" style="padding: 11px; margin: 0;" onclick="clearModifierInput()">Clear</button>
+                <button type="button" class="delete-btn" style="padding: 11px; background: #888; margin: 0;" onclick="closeModifierModal()">Cancel</button>
             </div>
         </div>
     </div>
