@@ -486,31 +486,6 @@ function getAssetBadgeStyle(colorMap, key) {
     return `background: ${c.bg}; color: ${c.text}; border: 1px solid ${c.border}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; white-space: nowrap;`;
 }
 
-window.ASSET_CATEGORY_COLORS = {
-    "Linens":             { bg: "#e0f2f1", text: "#00695c", border: "#b2dfdb" },
-    "Kitchenware":        { bg: "#fff3e0", text: "#e65100", border: "#ffe0b2" },
-    "Furniture":          { bg: "#efebe9", text: "#5d4037", border: "#d7ccc8" },
-    "Appliances":         { bg: "#e3f2fd", text: "#1565c0", border: "#bbdefb" },
-    "IT/Electronics":     { bg: "#ede7f6", text: "#4527a0", border: "#d1c4e9" },
-    "Decor":              { bg: "#fce4ec", text: "#ad1457", border: "#f8bbd0" },
-    "Cleaning Equipment": { bg: "#e0f7fa", text: "#00838f", border: "#b2ebf2" },
-    "Other":              { bg: "#eceff1", text: "#455a64", border: "#cfd8dc" }
-};
-
-window.ASSET_DEPT_COLORS = {
-    "Kitchen":                 { bg: "#fbe9e7", text: "#bf360c", border: "#ffccbc" },
-    "Rooms":                   { bg: "#e8f5e9", text: "#2b4227", border: "#c8e6c9" },
-    "Bar":                     { bg: "#f3e5f5", text: "#6a1b9a", border: "#e1bee7" },
-    "Restaurant":              { bg: "#fff8e1", text: "#8c5d3a", border: "#ffecb3" },
-    "Cleaning / Housekeeping": { bg: "#e0f2f1", text: "#00695c", border: "#b2dfdb" },
-    "Front Desk":              { bg: "#e8eaf6", text: "#283593", border: "#c5cae9" },
-    "Maintenance":             { bg: "#fff3cd", text: "#856404", border: "#ffeeba" },
-    "Admin / Office":          { bg: "#e3f2fd", text: "#0d47a1", border: "#bbdefb" },
-    "General / Shared":        { bg: "#f1f8e9", text: "#558b2f", border: "#dcedc8" },
-    "Unassigned":              { bg: "#f5f5f5", text: "#757575", border: "#e0e0e0" }
-};
-
-
 function renderAssetsTable() {
     const list = document.getElementById("assetsList");
     if (!list) return;
