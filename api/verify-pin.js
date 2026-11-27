@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { admin, db, auth } = require("./_firebaseAdmin");
+const { getFirebaseAdmin } = require("./_firebaseAdmin");
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 5 * 60 * 1000; // 5 minutes
@@ -17,6 +17,8 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const { admin, db, auth } = getFirebaseAdmin();
+
     // 1. Verify caller's Firebase Auth ID Token
     const authHeader = req.headers.authorization || "";
     const match = authHeader.match(/^Bearer\s+(.+)$/i);
@@ -105,9 +107,10 @@ module.exports = async function handler(req, res) {
     }
 
     // Record failed attempt & lock out after 5 failures
-    const prevAttempts = attemptDoc.exists && (!attemptDoc.data().lockedUntil || attemptDoc.data().lockedUntil <= now)
-      ? Number(attemptDoc.data().attempts || 0)
-      : 0;
+    const prevAttempts =
+      attemptDoc.exists && (!attemptDoc.data().lockedUntil || attemptDoc.data().lockedUntil <= now)
+        ? Number(attemptDoc.data().attempts || 0)
+        : 0;
     const newAttempts = prevAttempts + 1;
     const lockedUntil = newAttempts >= MAX_ATTEMPTS ? now + LOCKOUT_MS : null;
 
@@ -141,6 +144,9 @@ module.exports = async function handler(req, res) {
     });
   } catch (err) {
     console.error("verify-pin error:", err);
-    return res.status(500).json({ valid: false, error: "Authorization service error." });
+    return res.status(500).json({
+      valid: false,
+      error: `Auth server error: ${err.message || "Unknown error"}`,
+    });
   }
 };

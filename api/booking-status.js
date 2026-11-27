@@ -1,4 +1,4 @@
-const { db } = require("./_firebaseAdmin");
+const { getFirebaseAdmin } = require("./_firebaseAdmin");
 
 // Best-effort in-memory per-IP rate limiter (15 lookups per minute per instance)
 const ipHits = new Map();
@@ -35,6 +35,8 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const { db } = getFirebaseAdmin();
+
     const contact = String((req.body && req.body.contact) || "").trim();
     if (contact.length < 7 || contact.length > 40) {
       return res.status(400).json({ error: "Please enter a valid contact number." });
