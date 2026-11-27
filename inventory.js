@@ -299,6 +299,22 @@ function printInventoryReport() {
 
 let editingAssetId = null;
 
+// Open Modal in Add Mode
+function openAssetModal() {
+    resetAssetForm();
+    const titleEl = document.getElementById("assetModalTitle");
+    if (titleEl) titleEl.innerText = "Add New Fixed Asset";
+    document.getElementById("assetModal").classList.remove("hidden");
+    setTimeout(() => document.getElementById("assetName").focus(), 50);
+}
+
+// Close Modal & Reset
+function closeAssetModal() {
+    const modal = document.getElementById("assetModal");
+    if (modal) modal.classList.add("hidden");
+    resetAssetForm();
+}
+
 // 1. Add or Update Asset in Firebase
 async function addAsset() {
     const rawName = document.getElementById("assetName").value.trim();
@@ -343,12 +359,12 @@ async function addAsset() {
             }
 
             showToast(`Asset "${name}" updated!`);
-            resetAssetForm();
+            closeAssetModal();
         } else {
             payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection("fixed_assets").add(payload);
             showToast(`Asset added to ${department} (${category})!`);
-            resetAssetForm();
+            closeAssetModal();
         }
     } catch (error) {
         console.error("Error saving asset:", error);
@@ -356,7 +372,7 @@ async function addAsset() {
     }
 }
 
-// 1b. Load Existing Asset Into Form for Editing
+// 1b. Load Existing Asset Into Modal for Editing
 function editAsset(id) {
     const asset = allFixedAssetsData.find(a => a.id === id);
     if (!asset) return showToast("Asset record not found.");
@@ -388,22 +404,17 @@ function editAsset(id) {
         statusSelect.value = hasStatus ? asset.status : "Active";
     }
 
+    const titleEl = document.getElementById("assetModalTitle");
+    if (titleEl) titleEl.innerText = `Edit Fixed Asset: ${asset.name || ""}`;
+
     const submitBtn = document.getElementById("assetSubmitBtn");
     if (submitBtn) {
         submitBtn.innerText = "💾 Update Asset";
         submitBtn.style.backgroundColor = "#4a6fa5";
     }
 
-    const cancelBtn = document.getElementById("cancelEditAssetBtn");
-    if (cancelBtn) cancelBtn.classList.remove("hidden");
-
-    const banner = document.getElementById("assetEditBanner");
-    const bannerName = document.getElementById("assetEditNameDisplay");
-    if (bannerName) bannerName.innerText = asset.name || "Unnamed Asset";
-    if (banner) banner.classList.remove("hidden");
-
-    document.getElementById("assetName").scrollIntoView({ behavior: "smooth", block: "center" });
-    document.getElementById("assetName").focus();
+    document.getElementById("assetModal").classList.remove("hidden");
+    setTimeout(() => document.getElementById("assetName").focus(), 50);
 }
 
 // 1c. Reset Asset Form Back to Add Mode
@@ -420,15 +431,9 @@ function resetAssetForm() {
 
     const submitBtn = document.getElementById("assetSubmitBtn");
     if (submitBtn) {
-        submitBtn.innerText = "+ Add Asset";
+        submitBtn.innerText = "+ Save Asset";
         submitBtn.style.backgroundColor = "";
     }
-
-    const cancelBtn = document.getElementById("cancelEditAssetBtn");
-    if (cancelBtn) cancelBtn.classList.add("hidden");
-
-    const banner = document.getElementById("assetEditBanner");
-    if (banner) banner.classList.add("hidden");
 }
 
 // 2. Listen to Assets Collection & Render Filtered Table + Metrics
