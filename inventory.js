@@ -1,3 +1,5 @@
+
+
 // Safe HTML escaper for inventory & asset labels
 function escapeInvHTML(val) {
     return String(val ?? "")
@@ -450,6 +452,60 @@ function loadAssets() {
     });
 }
 
+const ASSET_CATEGORY_COLORS = {
+    "Linens":             { bg: "#e0f2f1", text: "#00695c", border: "#b2dfdb" },
+    "Kitchenware":        { bg: "#fff3e0", text: "#e65100", border: "#ffe0b2" },
+    "Furniture":          { bg: "#efebe9", text: "#5d4037", border: "#d7ccc8" },
+    "Appliances":         { bg: "#e3f2fd", text: "#1565c0", border: "#bbdefb" },
+    "IT/Electronics":     { bg: "#ede7f6", text: "#4527a0", border: "#d1c4e9" },
+    "Decor":              { bg: "#fce4ec", text: "#ad1457", border: "#f8bbd0" },
+    "Cleaning Equipment": { bg: "#e0f7fa", text: "#00838f", border: "#b2ebf2" },
+    "Other":              { bg: "#eceff1", text: "#455a64", border: "#cfd8dc" }
+};
+
+const ASSET_DEPT_COLORS = {
+    "Kitchen":                 { bg: "#fbe9e7", text: "#bf360c", border: "#ffccbc" },
+    "Rooms":                   { bg: "#e8f5e9", text: "#2b4227", border: "#c8e6c9" },
+    "Bar":                     { bg: "#f3e5f5", text: "#6a1b9a", border: "#e1bee7" },
+    "Restaurant":              { bg: "#fff8e1", text: "#8c5d3a", border: "#ffecb3" },
+    "Cleaning / Housekeeping": { bg: "#e0f2f1", text: "#00695c", border: "#b2dfdb" },
+    "Front Desk":              { bg: "#e8eaf6", text: "#283593", border: "#c5cae9" },
+    "Maintenance":             { bg: "#fff3cd", text: "#856404", border: "#ffeeba" },
+    "Admin / Office":          { bg: "#e3f2fd", text: "#0d47a1", border: "#bbdefb" },
+    "General / Shared":        { bg: "#f1f8e9", text: "#558b2f", border: "#dcedc8" },
+    "Unassigned":              { bg: "#f5f5f5", text: "#757575", border: "#e0e0e0" }
+};
+
+function getAssetBadgeStyle(colorMap, key) {
+    const c = colorMap[key] || { bg: "#eceff1", text: "#455a64", border: "#cfd8dc" };
+    return `background: ${c.bg}; color: ${c.text}; border: 1px solid ${c.border}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; white-space: nowrap;`;
+}
+
+window.ASSET_CATEGORY_COLORS = {
+    "Linens":             { bg: "#e0f2f1", text: "#00695c", border: "#b2dfdb" },
+    "Kitchenware":        { bg: "#fff3e0", text: "#e65100", border: "#ffe0b2" },
+    "Furniture":          { bg: "#efebe9", text: "#5d4037", border: "#d7ccc8" },
+    "Appliances":         { bg: "#e3f2fd", text: "#1565c0", border: "#bbdefb" },
+    "IT/Electronics":     { bg: "#ede7f6", text: "#4527a0", border: "#d1c4e9" },
+    "Decor":              { bg: "#fce4ec", text: "#ad1457", border: "#f8bbd0" },
+    "Cleaning Equipment": { bg: "#e0f7fa", text: "#00838f", border: "#b2ebf2" },
+    "Other":              { bg: "#eceff1", text: "#455a64", border: "#cfd8dc" }
+};
+
+window.ASSET_DEPT_COLORS = {
+    "Kitchen":                 { bg: "#fbe9e7", text: "#bf360c", border: "#ffccbc" },
+    "Rooms":                   { bg: "#e8f5e9", text: "#2b4227", border: "#c8e6c9" },
+    "Bar":                     { bg: "#f3e5f5", text: "#6a1b9a", border: "#e1bee7" },
+    "Restaurant":              { bg: "#fff8e1", text: "#8c5d3a", border: "#ffecb3" },
+    "Cleaning / Housekeeping": { bg: "#e0f2f1", text: "#00695c", border: "#b2dfdb" },
+    "Front Desk":              { bg: "#e8eaf6", text: "#283593", border: "#c5cae9" },
+    "Maintenance":             { bg: "#fff3cd", text: "#856404", border: "#ffeeba" },
+    "Admin / Office":          { bg: "#e3f2fd", text: "#0d47a1", border: "#bbdefb" },
+    "General / Shared":        { bg: "#f1f8e9", text: "#558b2f", border: "#dcedc8" },
+    "Unassigned":              { bg: "#f5f5f5", text: "#757575", border: "#e0e0e0" }
+};
+
+
 function renderAssetsTable() {
     const list = document.getElementById("assetsList");
     if (!list) return;
@@ -504,8 +560,8 @@ function renderAssetsTable() {
         list.innerHTML += `
             <tr style="border-bottom: 1px solid #eee;">
                 <td style="padding: 10px; font-weight: bold; color: #333;">${escapeInvHTML(data.name)}</td>
-                <td style="padding: 10px;"><span style="background: #e9ece9; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #555; font-weight: bold;">${escapeInvHTML(data.category)}</span></td>
-                <td style="padding: 10px;"><span style="background: #eef4fb; border: 1px solid #c5daf2; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #2d5986; font-weight: bold;">${escapeInvHTML(department)}</span></td>
+                <td style="padding: 10px;"><span style="${getAssetBadgeStyle(window.ASSET_CATEGORY_COLORS, data.category)}">${escapeInvHTML(data.category)}</span></td>
+                <td style="padding: 10px;"><span style="${getAssetBadgeStyle(window.ASSET_DEPT_COLORS, department)}">${escapeInvHTML(department)}</span></td>
                 <td style="padding: 10px; font-weight: bold; font-size: 15px; color: #2b4227;">${qty}</td>
                 <td style="padding: 10px; color: #555;">₱${cost.toFixed(2)}<br><small style="color:#888;">(Tot: ₱${itemTotalCost.toFixed(2)})</small></td>
                 <td style="padding: 10px; color: #888; font-family: monospace;">${escapeInvHTML(data.serialNumber || "-")}</td>
@@ -527,6 +583,7 @@ function renderAssetsTable() {
     document.getElementById("assetMetricMaintUnits").innerText = maintUnits;
     document.getElementById("assetMetricDisposedUnits").innerText = disposedUnits;
 }
+
 
 // 3. Update Quantity
 async function updateAssetQty(id, currentQty, change) {
@@ -588,8 +645,8 @@ function printAssetReport() {
         tableRows += `
             <tr>
                 <td style="border: 1px solid #ccc; padding: 8px;"><b>${escapeInvHTML(item.name)}</b></td>
-                <td style="border: 1px solid #ccc; padding: 8px;">${escapeInvHTML(item.category)}</td>
-                <td style="border: 1px solid #ccc; padding: 8px;">${escapeInvHTML(item.department || "Unassigned")}</td>
+               <td style="border: 1px solid #ccc; padding: 8px;"><span style="${getAssetBadgeStyle(window.ASSET_CATEGORY_COLORS, item.category)} -webkit-print-color-adjust: exact; print-color-adjust: exact;">${escapeInvHTML(item.category)}</span></td>
+                <td style="border: 1px solid #ccc; padding: 8px;"><span style="${getAssetBadgeStyle(window.ASSET_DEPT_COLORS, item.department || "Unassigned")} -webkit-print-color-adjust: exact; print-color-adjust: exact;">${escapeInvHTML(item.department || "Unassigned")}</span></td>
                 <td style="border: 1px solid #ccc; padding: 8px; text-align: center;">${item.quantity || 0}</td>
                 <td style="border: 1px solid #ccc; padding: 8px; text-align: right;">₱${(item.purchaseCost || 0).toFixed(2)}</td>
                 <td style="border: 1px solid #ccc; padding: 8px; text-align: right;">₱${subtotal.toFixed(2)}</td>
