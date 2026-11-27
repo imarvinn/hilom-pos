@@ -566,11 +566,13 @@
 
                 <!-- STAFF MANAGEMENT SECTION & DATA SHEET -->
 <div class="card no-print" style="margin-top: 40px; border-top: 2px dashed #ccc; padding-top: 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
         <div>
             <h3 style="color: #8c5d3a; margin-top: 0; margin-bottom: 5px;">Staff Information Sheet</h3>
             <p style="color: #666; font-size: 14px; margin: 0;">Manage your team's 201 files, contact details, and PIN access.</p>
         </div>
+        <button class="add-btn" onclick="openStaffModal()" style="margin: 0; padding: 10px 18px;">+ Register Staff Member</button>
+    </div>
     </div>
     
     <!-- Registration Form -->
@@ -934,6 +936,65 @@
 
             <div style="display: grid; grid-template-columns: 1fr; margin-top: 16px;">
                 <button class="save-btn" onclick="closeCategoryModal()" style="padding: 11px; background: #2b4227; margin: 0;">Done</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- STAFF REGISTER / EDIT MODAL -->
+    <div id="staffModal" class="modal-overlay hidden no-print" style="z-index: 2600;" onclick="if(event.target === this) closeStaffModal()">
+        <div class="modal-content" style="max-width: 560px; width: 94vw; text-align: left;">
+            <h2 id="staffModalTitle" style="border-bottom: 2px solid #e0e5e0; color: #8c5d3a; margin-top: 0; margin-bottom: 16px; padding-bottom: 10px;">Register Staff Member</h2>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="grid-column: 1 / -1;">
+                    <label style="display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 4px;">Full Name *</label>
+                    <input type="text" id="newStaffName" placeholder="e.g. Juan Dela Cruz" style="width: 100%; margin: 0; padding: 10px; box-sizing: border-box;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 4px;">Assigned Role</label>
+                    <select id="newStaffRole" style="width: 100%; margin: 0; padding: 10px; box-sizing: border-box;">
+                        <option value="Front Desk">Front Desk</option>
+                        <option value="Waiter">Waiter</option>
+                        <option value="F&B">F&amp;B</option>
+                        <option value="Housekeeping">Housekeeping</option>
+                        <option value="Kitchen">Kitchen</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Master">Master</option>
+                        <option value="IT">IT</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 4px;">4-Digit PIN Code *</label>
+                    <input type="password" id="newStaffPin" placeholder="e.g. 1234" maxlength="4" inputmode="numeric" style="width: 100%; margin: 0; padding: 10px; box-sizing: border-box;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 4px;">Email Address</label>
+                    <input type="email" id="newStaffEmail" placeholder="e.g. staff@hilom.com" style="width: 100%; margin: 0; padding: 10px; box-sizing: border-box;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 4px;">Contact Number</label>
+                    <input type="text" id="newStaffContact" placeholder="e.g. 0917-123-4567" style="width: 100%; margin: 0; padding: 10px; box-sizing: border-box;">
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                    <label style="display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 4px;">Home Address</label>
+                    <input type="text" id="newStaffAddress" placeholder="Street, City, Province" style="width: 100%; margin: 0; padding: 10px; box-sizing: border-box;">
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                    <label style="display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 4px;">Emergency Contact</label>
+                    <input type="text" id="newStaffEmergency" placeholder="e.g. Maria (0917-123-4567)" style="width: 100%; margin: 0; padding: 10px; box-sizing: border-box;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-top: 20px;">
+                <button id="staffSubmitBtn" class="add-btn" onclick="addStaffMember()" style="padding: 12px; font-size: 15px; margin: 0;">+ Register Staff Member</button>
+                <button class="delete-btn" onclick="closeStaffModal()" style="padding: 12px; font-size: 15px; background: #888; margin: 0;">Cancel</button>
             </div>
         </div>
     </div>
@@ -1673,30 +1734,57 @@ function createProductCard(product) {
 
        let currentEditStaffId = null;
 
-        // --- EDIT STAFF UI ---
+        function openStaffModal() {
+            resetStaffForm();
+            const titleEl = document.getElementById("staffModalTitle");
+            if (titleEl) titleEl.innerText = "Register Staff Member";
+            document.getElementById("staffModal").classList.remove("hidden");
+            setTimeout(() => document.getElementById("newStaffName").focus(), 50);
+        }
+
+        function closeStaffModal() {
+            const modal = document.getElementById("staffModal");
+            if (modal) modal.classList.add("hidden");
+            resetStaffForm();
+        }
+
+        // --- EDIT STAFF MODAL ---
         async function editStaffMember(staffId) {
             try {
                 const doc = await db.collection("staff").doc(staffId).get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    document.getElementById("newStaffName").value = data.name || "";
-                    document.getElementById("newStaffRole").value = data.role || "Front Desk";
-                    document.getElementById("newStaffPin").value = data.pinCode || "";
-                    document.getElementById("newStaffEmail").value = data.email || ""; // NEW: Fills the email
-                    document.getElementById("newStaffContact").value = data.contact || "";
-                    document.getElementById("newStaffAddress").value = data.address || "";
-                    document.getElementById("newStaffEmergency").value = data.emergencyContact || "";
-                    
-                    currentEditStaffId = staffId;
-                    
-                    document.getElementById("staffSubmitBtn").innerText = "Update Staff Member";
-                    document.getElementById("staffSubmitBtn").style.background = "#4a6fa5";
-                    document.getElementById("cancelEditStaffBtn").style.display = "block";
-                    
-                    document.getElementById("newStaffName").scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (!doc.exists) return showToast("Staff record not found.");
+
+                const data = doc.data();
+                currentEditStaffId = staffId;
+
+                document.getElementById("newStaffName").value = data.name || "";
+
+                const roleSelect = document.getElementById("newStaffRole");
+                if (roleSelect) {
+                    const hasRole = Array.from(roleSelect.options).some(opt => opt.value === data.role);
+                    roleSelect.value = hasRole ? data.role : "Front Desk";
                 }
+
+                document.getElementById("newStaffPin").value = data.pinCode || "";
+                document.getElementById("newStaffEmail").value = (data.email && data.email !== "No Email") ? data.email : "";
+                document.getElementById("newStaffContact").value = (data.contact && data.contact !== "N/A") ? data.contact : "";
+                document.getElementById("newStaffAddress").value = (data.address && data.address !== "N/A") ? data.address : "";
+                document.getElementById("newStaffEmergency").value = (data.emergencyContact && data.emergencyContact !== "N/A") ? data.emergencyContact : "";
+
+                const titleEl = document.getElementById("staffModalTitle");
+                if (titleEl) titleEl.innerText = `Edit Staff: ${data.name || ""}`;
+
+                const submitBtn = document.getElementById("staffSubmitBtn");
+                if (submitBtn) {
+                    submitBtn.innerText = "💾 Update Staff Member";
+                    submitBtn.style.backgroundColor = "#4a6fa5";
+                }
+
+                document.getElementById("staffModal").classList.remove("hidden");
+                setTimeout(() => document.getElementById("newStaffName").focus(), 50);
             } catch (error) {
                 console.error("Error fetching staff details:", error);
+                showToast("Unable to load staff details.");
             }
         }
 
@@ -1706,30 +1794,36 @@ function createProductCard(product) {
             document.getElementById("newStaffName").value = "";
             document.getElementById("newStaffRole").value = "Front Desk";
             document.getElementById("newStaffPin").value = "";
-            document.getElementById("newStaffEmail").value = ""; // NEW: Clears the email
+            document.getElementById("newStaffEmail").value = "";
             document.getElementById("newStaffContact").value = "";
             document.getElementById("newStaffAddress").value = "";
             document.getElementById("newStaffEmergency").value = "";
-            
-            document.getElementById("staffSubmitBtn").innerText = "+ Register Staff Member";
-            document.getElementById("staffSubmitBtn").style.background = "#557a46";
-            document.getElementById("cancelEditStaffBtn").style.display = "none";
+
+            const submitBtn = document.getElementById("staffSubmitBtn");
+            if (submitBtn) {
+                submitBtn.innerText = "+ Register Staff Member";
+                submitBtn.style.backgroundColor = "";
+            }
         }
 
         // --- ADD OR UPDATE STAFF ---
         async function addStaffMember() {
-            const name = document.getElementById("newStaffName").value.trim();
+            const clean = (v) => typeof sanitizeHTML === "function" ? sanitizeHTML(v) : String(v ?? "").replace(/[<>]/g, "");
+
+            const name = clean(document.getElementById("newStaffName").value.trim());
             const role = document.getElementById("newStaffRole").value;
             const pin = document.getElementById("newStaffPin").value.trim();
-            const email = document.getElementById("newStaffEmail").value.trim() || "No Email"; // NEW: Captures the email
-            const contact = document.getElementById("newStaffContact").value.trim() || "N/A";
-            const address = document.getElementById("newStaffAddress").value.trim() || "N/A";
-            const emergency = document.getElementById("newStaffEmergency").value.trim() || "N/A";
+            const email = clean(document.getElementById("newStaffEmail").value.trim()) || "No Email";
+            const contact = clean(document.getElementById("newStaffContact").value.trim()) || "N/A";
+            const address = clean(document.getElementById("newStaffAddress").value.trim()) || "N/A";
+            const emergency = clean(document.getElementById("newStaffEmergency").value.trim()) || "N/A";
 
-            if (!name || pin.length !== 4 || isNaN(pin)) return alert("Please enter a valid name and a 4-digit numeric PIN.");
+            if (!name || !/^\d{4}$/.test(pin)) {
+                return alert("Please enter a valid full name and a 4-digit numeric PIN.");
+            }
 
             try {
-                // Ensure PIN isn't taken by SOMEONE ELSE
+                // Ensure PIN isn't already assigned to another staff member
                 const pinCheck = await db.collection("staff").where("pinCode", "==", pin).get();
                 if (!pinCheck.empty) {
                     const isPinTaken = pinCheck.docs.some(doc => doc.id !== currentEditStaffId);
@@ -1739,22 +1833,41 @@ function createProductCard(product) {
                 }
 
                 if (currentEditStaffId) {
-                    // Update Existing Record (Now includes email)
                     await db.collection("staff").doc(currentEditStaffId).update({
-                        name: name, role: role, pinCode: pin, email: email, contact: contact, address: address, emergencyContact: emergency
+                        name, role, pinCode: pin, email, contact, address, emergencyContact: emergency
                     });
+                    if (typeof window.recordAuditEvent === "function") {
+                        window.recordAuditEvent({
+                            category: "SECURITY",
+                            action: "EDIT_STAFF",
+                            tableNo: "Staff Directory",
+                            amount: 0,
+                            details: `Updated staff profile for ${name} (Role: ${role}).`
+                        });
+                    }
+                    closeStaffModal();
                     alert(`Success! ${name}'s information has been updated.`);
                 } else {
-                    // Add New Record (Now includes email)
                     await db.collection("staff").add({
-                        name: name, role: role, pinCode: pin, email: email, contact: contact, address: address, emergencyContact: emergency, status: "CLOCKED_OUT", dateHired: firebase.firestore.FieldValue.serverTimestamp()
+                        name, role, pinCode: pin, email, contact, address, emergencyContact: emergency,
+                        status: "CLOCKED_OUT",
+                        dateHired: firebase.firestore.FieldValue.serverTimestamp()
                     });
+                    if (typeof window.recordAuditEvent === "function") {
+                        window.recordAuditEvent({
+                            category: "SECURITY",
+                            action: "ADD_STAFF",
+                            tableNo: "Staff Directory",
+                            amount: 0,
+                            details: `Registered new staff member: ${name} (Role: ${role}).`
+                        });
+                    }
+                    closeStaffModal();
                     alert(`Success! ${name} has been added to the system.`);
                 }
-                
-                resetStaffForm();
             } catch (error) {
-                console.error("Error saving staff:", error); alert("Failed to save staff member.");
+                console.error("Error saving staff:", error);
+                alert("Failed to save staff member.");
             }
         }
 
