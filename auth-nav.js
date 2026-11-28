@@ -87,12 +87,21 @@ async function verifyPin() {
     const enteredPin = pinInput ? pinInput.value.trim() : "";
     if (!enteredPin) return showToast("Please enter a 4-digit PIN.");
 
-    const result = await window.verifyManagerPinServer(enteredPin, "POS_MODAL_AUTH");
+    const contextLabel =
+        typeof pendingViewId !== "undefined" && pendingViewId
+            ? `TAB_${pendingViewId.toUpperCase()}`
+            : "POS_MODAL_AUTH";
+
+    const result = await window.verifyManagerPinServer(enteredPin, contextLabel);
 
     if (result && result.valid) {
-        window.lastPinAuthorizer = result.authorizedBy || "Manager PIN";
+        const authBy = result.authorizedBy || "Manager PIN";
+        const authRole = result.role ? ` (${result.role})` : "";
+        window.lastPinAuthorizer = `${authBy}${authRole}`;
+
         if (pinInput) pinInput.value = "";
-        document.getElementById("pinModal").classList.add("hidden");
+        const pinModal = document.getElementById("pinModal");
+        if (pinModal) pinModal.classList.add("hidden");
 
         // 1. If triggered by a Promise-based action (e.g., Void / Discount)
         if (typeof pinResolvePromise === "function") {
@@ -102,7 +111,7 @@ async function verifyPin() {
             return;
         }
 
-        // 2. If triggered by clicking a protected tab (Inventory / Menu / Sales)
+        // 2. Unlock protected views and switch to the requested tab
         isAdminUnlocked = true;
         window.isAdminUnlocked = true;
 
@@ -113,6 +122,8 @@ async function verifyPin() {
             pendingNavElement = null;
             switchView(targetView, targetNav);
         }
+
+        showToast(`Authorized by ${window.lastPinAuthorizer}`);
         return;
     }
 

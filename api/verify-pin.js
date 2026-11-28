@@ -93,12 +93,29 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // 7. Handle Success vs. Failure
+   // 7. Handle Success vs. Failure
     if (authorizedBy) {
-      await attemptRef.set(
-        { attempts: 0, lockedUntil: null, lastSuccessAt: admin.firestore.FieldValue.serverTimestamp() },
-        { merge: true }
-      );
+      await Promise.all([
+        attemptRef.set(
+          {
+            attempts: 0,
+            lockedUntil: null,
+            lastSuccessAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        ),
+        db.collection("audit_logs").add({
+          category: "SECURITY",
+          action: "PIN_VERIFIED",
+          tableNo: cleanContext,
+          amount: 0,
+          performedBy: callerLabel,
+          authorizedBy: `${authorizedBy} (${authorizedRole || "Manager"})`,
+          details: `PIN verified for ${cleanContext} by ${authorizedBy} (${authorizedRole || "Manager"}).`,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        }),
+      ]);
+
       return res.status(200).json({
         valid: true,
         authorizedBy,
