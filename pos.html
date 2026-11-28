@@ -15,6 +15,23 @@
     <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.min.js"></script>
  <style>
 
+    /* Unlock main page vertical scrolling */
+html,
+body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+#appScreen.dashboard-layout,
+.main-content,
+#roomsView {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+
     /* Align Audit & Activity Logs flush left inside .main-content */
 #auditLogView {
     width: 100% !important;
